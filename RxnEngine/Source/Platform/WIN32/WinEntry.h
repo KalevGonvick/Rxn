@@ -13,7 +13,7 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
     auto entry = EntryApplication();
 
     entry->ConfigureEngine();
-    RXN_LOGGER::SetLogLevel(static_cast<Rxn::Common::LogLevel>(_wtoi(Rxn::Engine::EngineContext::GetEngineSettings().GetLogLevel())));
+    RXN_LOGGER::SetLogLevel(Rxn::Engine::EngineContext::GetEngineSettings().GetLogLevel());
 
     Rxn::Common::Cmd::ReadCommandLineArguments();
 

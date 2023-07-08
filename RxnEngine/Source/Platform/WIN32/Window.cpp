@@ -1,4 +1,4 @@
-#include "Rxn.h"
+﻿#include "Rxn.h"
 #include "Window.h"
 
 namespace Rxn::Platform::Win32
@@ -7,16 +7,14 @@ namespace Rxn::Platform::Win32
         : SubComponent(title, title, icon)
         , m_iActive(0)
         , m_ulWindowStyle(WindowStyle::RESIZEABLE)
-        , m_xySize(SIZE(Constants::Win32::kulDefaultWindowWidth, Constants::Win32::kulDefaultWindowHeight))
+        , m_xySize(SIZE(Constants::Win32::DEFAULTWINDOWWIDTH, Constants::Win32::DEFAULTWINDOWHEIGHT))
         , m_xyzulWindowBackgroundColour(RGB(36, 36, 36))
         , m_xyzulWindowBorderColour(RGB(46, 46, 46))
         , m_WindowCaption()
     {
     }
 
-    Window::~Window()
-    {
-    }
+    Window::~Window() = default;
 
     DWORD Window::GetWindowStyle()
     {
@@ -134,12 +132,14 @@ namespace Rxn::Platform::Win32
         {
         case WM_NCCREATE:
         {
+            RXN_LOGGER::Trace(L"Handling WM_NCCREATE");
             this->HandleNonClientCreate();
             return 1;
         }
 
         case WM_NCACTIVATE:
         {
+            RXN_LOGGER::Trace(L"Handling WM_NCACTIVATE");
             this->HandleNonClientActivate(LOWORD(wParam) != WA_INACTIVE);
             return 1;
         }
@@ -147,6 +147,18 @@ namespace Rxn::Platform::Win32
         {
             this->HandleNonClientPaint((HRGN)wParam);
             return 0;
+        }
+        case WM_NCMBUTTONDBLCLK:
+        {
+            RXN_LOGGER::Trace(L"Handling WM_NCMBUTTONDBLCLK");
+            this->HandleNonClientAreaDoubleClick();
+            return 0;
+        }
+        case WM_NCLBUTTONDOWN:
+        {
+            RXN_LOGGER::Trace(L"Handling WM_NCLBUTTONDOWN");
+            this->HandleNonClientLeftClickDown();
+            break;
         }
         case WM_PAINT:
         {
@@ -181,6 +193,21 @@ namespace Rxn::Platform::Win32
         SetClassLong(hWnd, GCL_STYLE, (style & ~flagsToDisable) | flagsToEnable);
     }
 
+    void Window::MaximizeWindow(const HWND &hwnd)
+    {
+        WINDOWPLACEMENT wPos;
+        GetWindowPlacement(hwnd, &wPos);
+
+        if (wPos.showCmd == SW_MAXIMIZE)
+        {
+            ShowWindow(hwnd, SW_NORMAL);
+        }
+        else
+        {
+            ShowWindow(hwnd, SW_MAXIMIZE);
+        }
+    }
+
     void Window::HandleNonClientPaint(const HRGN &region)
     {
         HDC hdc = GetDCEx(GetHandle(), region, DCX_WINDOW | DCX_INTERSECTRGN | DCX_USESTYLE);
@@ -190,22 +217,53 @@ namespace Rxn::Platform::Win32
         SIZE size = SIZE{ rect.right - rect.left, rect.bottom - rect.top };
         RECT adjustedRect = RECT{ 0, 0, size.cx, size.cy };
 
-        /* this was in the tutorial, but I don't think it does anything */
-        //HBITMAP bitMapHandle = CreateCompatibleBitmap(hdc, size.cx, size.cy);
-        //HANDLE hOld = SelectObject(hdc, bitMapHandle);
-
         this->PaintWindowBorder(hdc, adjustedRect);
         this->PaintWindowConditionalHighlight(hdc, adjustedRect);
+        this->PaintWindowCaption(hdc, size);
 
-        this->PaintWindowCaption(hdc, rect, size);
-
-        /* this was in the tutorial, but I don't think it does anything */
-        //BitBlt(hdc, 0, 0, size.cx, size.cy, hdc, 0, 0, SRCCOPY);
-        //SelectObject(hdc, hOld);
-        //DeleteObject(bitMapHandle);
-
-        //DeleteObject(brush);
         ReleaseDC(GetHandle(), hdc);
+    }
+
+    void Window::HandleNonClientLeftClickDown()
+    {
+        POINT pt;
+        GetCursorPos(&pt);
+
+        RECT rect;
+        GetWindowRect(this->GetHandle(), &rect);
+
+        Caption::Button *btn = this->GetCaption().GetWindowCaptionButtonClicked(pt, rect);
+
+        if (btn != nullptr /*&& btn->cDown*/)
+        {
+            //btn->cDown = false;
+            switch (btn->cmd)
+            {
+            case Command::CB_CLOSE:
+            {
+                SendMessage(this->GetHandle(), WM_CLOSE, 0, 0);
+                break;
+            }
+            case Command::CB_MAXIMIZE:
+            {
+                this->MaximizeWindow(this->GetHandle());
+                break;
+            }
+            case Command::CB_MINIMIZE:
+            {
+                ShowWindow(this->GetHandle(), SW_MINIMIZE);
+                break;
+            }
+            case Command::CB_NOP:
+            default:
+                break;
+            }
+        }
+    }
+
+    void Window::HandleNonClientLeftClickUp()
+    {
+        /*  */
     }
 
     void Window::PaintWindowBorder(const HDC &hdc, const RECT &rect)
@@ -232,15 +290,24 @@ namespace Rxn::Platform::Win32
         SendMessage(GetHandle(), WM_PAINT, 0, 0);
     }
 
+    void Window::HandleNonClientAreaDoubleClick()
+    {
+        this->MaximizeWindow(this->GetHandle());
+    }
+
     void Window::HandleNonClientCreate()
     {
         /* This is probably not correct, but this is what the tutorial did haha. */
-        //SetTimer(GetHandle(), 1, 144, 0);
+        SetTimer(GetHandle(), 1, 100, 0);
         RXN_LOGGER::Trace(L"Setting window theme.");
         SetWindowTheme(GetHandle(), L"", L"");
 
         RXN_LOGGER::Trace(L"Modyfying class style.");
         this->ModifyClassStyle(GetHandle(), 0, CS_DROPSHADOW);
+
+        this->GetCaption().AddButton(L"X", Command::CB_CLOSE);
+        this->GetCaption().AddButton(L"🗖", Command::CB_MAXIMIZE);
+        this->GetCaption().AddButton(L"🗕", Command::CB_MINIMIZE);
     }
 
     void Window::HandleNonClientActivate(const int &active)
@@ -280,6 +347,7 @@ namespace Rxn::Platform::Win32
             RXN_LOGGER::Error(L"Failed to load image from URL %s", szFileName);
             return 0;
         }
+
         GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP), reinterpret_cast<LPVOID>(&qBitmap));
 
         SelectObject(hLocalDC, hBitmap);
@@ -295,10 +363,14 @@ namespace Rxn::Platform::Win32
         return 1;
     }
 
-    void Window::PaintWindowCaption(const HDC &hdc, const RECT &rect, const SIZE &size)
+    void Window::PaintWindowCaption(const HDC &hdc, const SIZE &size)
     {
-        RXN_LOGGER::Trace(L"Setting window text with to %s", this->GetTitle().c_str());
+        this->PaintWindowCaptionTitle(hdc, size);
+        this->PaintWindowCaptionButtons(hdc, size);
+    }
 
+    void Window::PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size)
+    {
         if (this->GetCaption().ShowTitle())
         {
             RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
@@ -306,12 +378,15 @@ namespace Rxn::Platform::Win32
             SetTextColor(hdc, GetActive() ? RGB(255, 255, 255) : RGB(92, 92, 92));
             DrawText(hdc, this->GetTitle().c_str(), wcslen(this->GetTitle().c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
+    }
 
-        WString closeText = L"X";
-        int buttonWidth = 50;
-        RECT buttonRect = RECT{ size.cx - buttonWidth, 0, size.cx, 30 };
-
-        DrawText(hdc, closeText.c_str(), wcslen(closeText.c_str()), &buttonRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+    void Window::PaintWindowCaptionButtons(const HDC &hdc, const SIZE &size)
+    {
+        for (auto &button : this->GetCaption().GetButtons())
+        {
+            button.rect = RECT{ size.cx - button.width - button.offset, 0, size.cx, 30 };
+            DrawText(hdc, button.txt.c_str(), wcslen(button.txt.c_str()), &button.rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+        }
     }
 }
 

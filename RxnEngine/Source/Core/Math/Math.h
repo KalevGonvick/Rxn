@@ -13,8 +13,8 @@ namespace Rxn::Core::Math
             {
                 T x;
                 T y;
-            }
-        }
+            };
+        };
     };
 
 
@@ -29,8 +29,8 @@ namespace Rxn::Core::Math
                 T x;
                 T y;
                 T z;
-            }
-        }
+            };
+        };
     };
 
     template<typename T>
@@ -45,8 +45,8 @@ namespace Rxn::Core::Math
                 T y;
                 T z;
                 T w;
-            }
-        }
+            };
+        };
     };
 
     template<typename T>
@@ -59,8 +59,8 @@ namespace Rxn::Core::Math
             {
                 T x;
                 T y;
-            }
-        }
+            };
+        };
     };
 
     template<typename T>
@@ -74,8 +74,8 @@ namespace Rxn::Core::Math
                 T x;
                 T y;
                 T z;
-            }
-        }
+            };
+        };
     };
 
     template<typename T>
@@ -90,8 +90,8 @@ namespace Rxn::Core::Math
                 T y;
                 T z;
                 T w;
-            }
-        }
+            };
+        };
     };
 
 

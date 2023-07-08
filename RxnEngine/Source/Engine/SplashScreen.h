@@ -6,7 +6,7 @@ namespace Rxn::Engine::SplashScreen
 {
     void RXN_ENGINE_API Open();
     void RXN_ENGINE_API Close();
-    void RXN_ENGINE_API AddMessage(const wchar_t * msg);
+    void RXN_ENGINE_API AddMessage(const wchar_t *msg);
 
 }
 
@@ -25,7 +25,7 @@ namespace Rxn::Engine
 
     private:
 
-        wchar_t m_pwOutputMessage[Constants::kusMaxNameString];
+        wchar_t m_pwOutputMessage[Constants::MAXNAMESTRING];
     };
 }
 

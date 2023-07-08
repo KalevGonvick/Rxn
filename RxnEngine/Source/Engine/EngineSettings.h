@@ -5,47 +5,58 @@
 namespace Rxn::Engine
 {
 
-	class RXN_ENGINE_API EngineSettings
-	{
-	public:
+    class RXN_ENGINE_API EngineSettings
+    {
+    public:
 
-		EngineSettings();
-		~EngineSettings();
+        EngineSettings();
+        ~EngineSettings();
 
-	public:
+    public:
 
-		/* - Setters - */
-		void SetGameName(UINT id);
-		void SetGameShortName(UINT id);
-		void SetGameVersion(UINT id);
-		void SetBootTime(const wchar_t * time);
-		void SetMainIcon(UINT id);
-		void SetLogLevel(UINT id);
-		void SetLogWriteToConsole(UINT id);
-		void SetLogWriteToFile(UINT id);
-		void SetSplashScreenURL(UINT id);
+        /* - Setters - */
+        void SetGameName(const wchar_t *name);
+        void SetGameShortName(const wchar_t *shortName);
+        void SetGameVersion(const wchar_t *gameVersion);
+        void SetBootTime(const wchar_t *bootTime);
+        void SetMainIcon(const wchar_t *iconUrl);
+        void SetSplashScreenURL(const wchar_t *id);
 
-		/* - Getters - */
-		wchar_t * GetGameName();
-		wchar_t * GetGameShortName();
-		wchar_t * GetGameVersion();
-		wchar_t * GetBootTime();
-		wchar_t * GetLogLevel();
-		wchar_t * GetLogWriteToConsole();
-		wchar_t * GetLogWriteToFile();
-		wchar_t * GetSplashScreenURL();
+        void SetLogWriteToConsole(const bool &id);
+        void SetLogWriteToFile(const bool &id);
 
-	private:
+        void SetLogLevel(const Common::LogLevel &level);
 
-		/* - Settings - */
-		wchar_t m_wGameName[Constants::kusMaxNameString];
-		wchar_t m_wGameVersion[Constants::kusMaxNameString];
-		wchar_t m_wBootTime[Constants::kusMaxNameString];
-		wchar_t m_wGameShortName[Constants::kusMaxNameString];
-		wchar_t m_wLogLevel[Constants::kusMaxNameString];
-		wchar_t m_wLogWriteToConsole[Constants::kusMaxNameString];
-		wchar_t m_wLogWriteToFile[Constants::kusMaxNameString];
-		wchar_t m_wSplashScreenURL[Constants::kusMaxNameString];
-	};
+        /* - Getters - */
+        const wchar_t *GetGameName();
+        const wchar_t *GetGameShortName();
+        const wchar_t *GetGameVersion();
+        const wchar_t *GetBootTime();
+        const wchar_t *GetSplashScreenURL();
+        const wchar_t *GetMainIconURL();
+
+        const bool &GetLogWriteToConsole();
+        const bool &GetLogWriteToFile();
+
+        const Common::LogLevel GetLogLevel();
+
+    private:
+
+        /* - Settings - */
+        WString m_wcharGameName;
+        WString m_wcharGameVersion;
+        WString m_wcharBootTime;
+        WString m_wcharGameShortName;
+
+        WString m_wcharSplashScreenURL;
+        WString m_wcharMainIconURL;
+
+        bool m_bLogWriteToConsole;
+        bool m_bLogWriteToFile;
+
+        Common::LogLevel m_LogLevel;
+
+
+    };
 
 } // RxnEngine::Core

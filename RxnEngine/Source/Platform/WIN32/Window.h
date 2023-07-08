@@ -52,12 +52,19 @@ namespace Rxn::Platform::Win32
          */
         void Redraw();
 
+
+        void HandleNonClientAreaDoubleClick();
+
         /**
          * Handles non client paint messages.
          *
          * \param region            - region that requested painting.
          */
         void HandleNonClientPaint(const HRGN &region);
+
+        void HandleNonClientLeftClickDown();
+
+        void HandleNonClientLeftClickUp();
 
         /**
          * Paints the colour of the window border.
@@ -100,7 +107,29 @@ namespace Rxn::Platform::Win32
          */
         int AddBitmap(const wchar_t *szFileName, const HDC &hWinDC, int x = 0, int y = 0);
 
-        void PaintWindowCaption(const HDC &hdc, const RECT &rect, const SIZE &size);
+        /**
+         * Paints the window caption area (top bar icons, title, etc.).
+         *
+         * \param hdc               - hdc handle
+         * \param size              - size of the window
+         */
+        void PaintWindowCaption(const HDC &hdc, const SIZE &size);
+
+        /**
+         * Paints the title in the non-client area.
+         *
+         * \param hdc               - hdc handle.
+         * \param size              - size of the window.
+         */
+        void PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size);
+
+        /**
+         * Paints the buttons in the non-client area.
+         *
+         * \param hdc               - hdc handle
+         * \param size              - size of the window
+         */
+        void PaintWindowCaptionButtons(const HDC &hdc, const SIZE &size);
 
         /**
          * Modify the class style of the window.
@@ -110,6 +139,15 @@ namespace Rxn::Platform::Win32
          * \param flagsToEnable     - all flags you want to enable on the window class.
          */
         void ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable);
+
+        /**
+         * Maximizes the window.
+         *
+         * \param hwnd              - window handle
+         */
+        void MaximizeWindow(const HWND &hwnd);
+
+
 
     private:
 

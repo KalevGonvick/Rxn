@@ -264,9 +264,10 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::knMaxLogLine];
+        wchar_t b[Constants::MAXLOGLINE];
         vswprintf_s(b, fmt, args);
-        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_INFO, b);
+        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_INFO, b);
+        this->PrintLn(LogLevel::RXN_INFO, b);
 
     }
 
@@ -277,9 +278,10 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::knMaxLogLine];
+        wchar_t b[Constants::MAXLOGLINE];
         vswprintf_s(b, fmt, args);
-        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_DEBUG, b);
+        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_DEBUG, b);
+        this->PrintLn(LogLevel::RXN_DEBUG, b);
     }
 
     void Logger::LoggerImpl::Warn(const wchar_t *fmt, char *args)
@@ -289,9 +291,10 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::knMaxLogLine];
+        wchar_t b[Constants::MAXLOGLINE];
         vswprintf_s(b, fmt, args);
-        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_WARN, b);
+        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_WARN, b);
+        this->PrintLn(LogLevel::RXN_WARN, b);
     }
 
     void Logger::LoggerImpl::Error(const wchar_t *fmt, char *args)
@@ -301,9 +304,10 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::knMaxLogLine];
+        wchar_t b[Constants::MAXLOGLINE];
         vswprintf_s(b, fmt, args);
-        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_ERROR, b);
+        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_ERROR, b);
+        this->PrintLn(LogLevel::RXN_ERROR, b);
     }
 
     void Logger::LoggerImpl::Trace(const wchar_t *fmt, char *args)
@@ -313,9 +317,10 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::knMaxLogLine];
+        wchar_t b[Constants::MAXLOGLINE];
         vswprintf_s(b, fmt, args);
-        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_TRACE, b);
+        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_TRACE, b);
+        this->PrintLn(LogLevel::RXN_TRACE, b);
     }
 
 #pragma endregion // LoggerImpl

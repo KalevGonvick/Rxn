@@ -2,104 +2,108 @@
 
 namespace Rxn::Engine
 {
-	
-	EngineSettings::EngineSettings()
-		: m_wBootTime(L"undefined")
-		, m_wGameName(L"undefined")
-		, m_wLogLevel(L"undefined")
-		, m_wGameShortName(L"undefined")
-		, m_wLogWriteToConsole(L"undefined")
-		, m_wLogWriteToFile(L"undefined")
-	{}
 
-	EngineSettings::~EngineSettings()
-	{}
+    EngineSettings::EngineSettings()
+        : m_wcharBootTime(L"undefined")
+        , m_wcharGameName(L"undefined")
+        , m_wcharGameShortName(L"undefined")
+        , m_LogLevel(Common::LogLevel::RXN_TRACE)
+        , m_bLogWriteToConsole(true)
+        , m_bLogWriteToFile(true)
+    {}
 
-	/* - Setters - */
-	void EngineSettings::SetGameName(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wGameName, Constants::kusMaxNameString);
-	}
+    EngineSettings::~EngineSettings() = default;
 
-	void EngineSettings::SetGameShortName(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wGameShortName, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetGameName(const wchar_t *name)
+    {
+        this->m_wcharGameName = name;
+    }
 
-	void EngineSettings::SetGameVersion(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wGameVersion, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetGameShortName(const wchar_t *shortName)
+    {
+        this->m_wcharGameShortName = shortName;
+    }
 
-	void EngineSettings::SetBootTime(const wchar_t * time)
-	{
-		wcscpy_s(this->m_wBootTime, time);
-	}
+    void EngineSettings::SetGameVersion(const wchar_t *gameVersion)
+    {
+        this->m_wcharGameVersion = gameVersion;
+    }
 
-	void EngineSettings::SetMainIcon(UINT id)
-	{
-		LoadIcon(HInstance(), MAKEINTRESOURCE(id));
-	}
+    void EngineSettings::SetBootTime(const wchar_t *bootTime)
+    {
+        this->m_wcharBootTime = bootTime;
+    }
 
-	void EngineSettings::SetLogLevel(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wLogLevel, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetMainIcon(const wchar_t *iconUrl)
+    {
+        this->m_wcharMainIconURL = iconUrl;
+    }
 
-	void EngineSettings::SetLogWriteToConsole(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wLogWriteToConsole, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetLogWriteToConsole(const bool &logToConsole)
+    {
+        this->m_bLogWriteToConsole = logToConsole;
+    }
 
-	void EngineSettings::SetLogWriteToFile(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wLogWriteToFile, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetLogWriteToFile(const bool &logToFile)
+    {
+        this->m_bLogWriteToFile = logToFile;
+    }
 
-	void EngineSettings::SetSplashScreenURL(UINT id)
-	{
-		LoadString(HInstance(), id, this->m_wSplashScreenURL, Constants::kusMaxNameString);
-	}
+    void EngineSettings::SetSplashScreenURL(const wchar_t *splashUrl)
+    {
+        this->m_wcharSplashScreenURL = splashUrl;
+    }
 
-	/* - Getters - */
-	wchar_t* EngineSettings::GetGameName()
-	{
-		return this->m_wGameName;
-	}
+    void EngineSettings::SetLogLevel(const Common::LogLevel &level)
+    {
+        this->m_LogLevel = level;
+    }
 
-	wchar_t* EngineSettings::GetGameShortName()
-	{
-		return this->m_wGameShortName;
-	}
 
-	wchar_t* EngineSettings::GetGameVersion()
-	{
-		return this->m_wGameVersion;
-	}
+    /* - Getters - */
+    const wchar_t *EngineSettings::GetGameName()
+    {
+        return this->m_wcharGameName.c_str();
+    }
 
-	wchar_t* EngineSettings::GetBootTime()
-	{
-		return this->m_wBootTime;
-	}
+    const wchar_t *EngineSettings::GetGameShortName()
+    {
+        return this->m_wcharGameShortName.c_str();
+    }
 
-	wchar_t* EngineSettings::GetLogLevel()
-	{
-		return this->m_wLogLevel;
-	}
+    const wchar_t *EngineSettings::GetGameVersion()
+    {
+        return this->m_wcharGameVersion.c_str();
+    }
 
-	wchar_t* EngineSettings::GetLogWriteToConsole()
-	{
-		return this->m_wLogWriteToConsole;
-	}
+    const wchar_t *EngineSettings::GetBootTime()
+    {
+        return this->m_wcharBootTime.c_str();
+    }
 
-	wchar_t* EngineSettings::GetLogWriteToFile()
-	{
-		return this->m_wLogWriteToFile;
-	}
+    const Common::LogLevel EngineSettings::GetLogLevel()
+    {
+        return this->m_LogLevel;
+    }
 
-	wchar_t* EngineSettings::GetSplashScreenURL()
-	{
-		return this->m_wSplashScreenURL;
-	}
+    const bool &EngineSettings::GetLogWriteToConsole()
+    {
+        return this->m_bLogWriteToConsole;
+    }
+
+    const bool &EngineSettings::GetLogWriteToFile()
+    {
+        return this->m_bLogWriteToFile;
+    }
+
+    const wchar_t *EngineSettings::GetSplashScreenURL()
+    {
+        return this->m_wcharSplashScreenURL.c_str();
+    }
+
+    const wchar_t *EngineSettings::GetMainIconURL()
+    {
+        return this->m_wcharMainIconURL.c_str();
+    }
 
 } // Core

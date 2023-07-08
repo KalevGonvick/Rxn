@@ -51,16 +51,15 @@ using WString = std::wstring;
 namespace Rxn::Constants
 {
 
-
-    const unsigned short kusMaxNameString = 256;
-    const unsigned short knMaxDirLen = 1024;
-    const unsigned short knMaxLogLine = 4096;
+    const unsigned short MAXNAMESTRING = 256;
+    const unsigned short MAXDIRLENGTH = 1024;
+    const unsigned short MAXLOGLINE = 4096;
 
 
     namespace Win32
     {
-        const unsigned long kulDefaultWindowWidth = 800;
-        const unsigned long kulDefaultWindowHeight = 600;
+        const unsigned short DEFAULTWINDOWWIDTH = 800;
+        const unsigned short DEFAULTWINDOWHEIGHT = 600;
     }
 
 }
