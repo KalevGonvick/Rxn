@@ -6,7 +6,7 @@
 namespace Rxn::Common::Time
 {
 
-    RWString GetTime(bool stripped)
+    WString GetTime(bool stripped)
     {
         time_t now = time(0);
         tm ltm;
@@ -14,7 +14,7 @@ namespace Rxn::Common::Time
         std::wstringstream wss;
         wss << std::put_time(&ltm, L"%T");
 
-        RWString timeString = wss.str();
+        WString timeString = wss.str();
 
         if (stripped)
         {
@@ -24,7 +24,7 @@ namespace Rxn::Common::Time
         return timeString;
     }
 
-    RWString GetDate(bool stripped)
+    WString GetDate(bool stripped)
     {
         time_t now = time(0);
         tm ltm;
@@ -44,9 +44,9 @@ namespace Rxn::Common::Time
         return timeString;
     }
 
-    RWString GetDateTimeString(bool stripped)
+    WString GetDateTimeString(bool stripped)
     {
-        RWString timeString = GetDate(stripped) + L"T" + GetTime(stripped);
+        WString timeString = GetDate(stripped) + L"T" + GetTime(stripped);
 
         if (stripped)
         {
@@ -56,7 +56,7 @@ namespace Rxn::Common::Time
         return timeString;
     }
 
-    RWString StripString(RWString in, RWString marker)
+    WString StripString(WString in, WString marker)
     {
         for (auto c : marker) {
             in.erase(std::remove(in.begin(), in.end(), c), in.end());

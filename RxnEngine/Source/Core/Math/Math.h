@@ -17,6 +17,7 @@ namespace Rxn::Core::Math
         }
     };
 
+
     template<typename T>
     struct FVector3D
     {

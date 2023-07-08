@@ -17,7 +17,7 @@ namespace Rxn::Platform::Win32
     {
     public:
 
-        Window(RWString title, HICON icon);
+        Window(WString title, HICON icon);
         ~Window();
 
     public:

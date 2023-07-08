@@ -65,7 +65,7 @@ namespace Rxn::Engine
 
             if (Engine::Runtime::GetEngineMode() != Engine::Runtime::EngineRuntimeMode::PRODUCTION)
             {
-                RWString engineModeText = Engine::Runtime::GetEngineModeString() + L"Mode";
+                WString engineModeText = Engine::Runtime::GetEngineModeString() + L"Mode";
                 SetTextAlign(hdc, TA_RIGHT);
                 TextOut(hdc, this->GetSize().cx - 15, 15, engineModeText.c_str(), wcslen(engineModeText.c_str()));
             }

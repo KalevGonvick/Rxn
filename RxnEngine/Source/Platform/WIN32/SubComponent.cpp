@@ -3,7 +3,7 @@
 
 namespace Rxn::Platform::Win32
 {
-    SubComponent::SubComponent(RWString className, RWString classTitle, HICON icon)
+    SubComponent::SubComponent(WString className, WString classTitle, HICON icon)
         : m_pszClass(className)
         , m_pszTitle(classTitle)
         , m_hIcon(icon)
@@ -13,12 +13,12 @@ namespace Rxn::Platform::Win32
 
     SubComponent::~SubComponent() = default;
 
-    RWString &SubComponent::GetClass()
+    WString &SubComponent::GetClass()
     {
         return this->m_pszClass;
     }
 
-    RWString &SubComponent::GetTitle()
+    WString &SubComponent::GetTitle()
     {
         return this->m_pszTitle;
     }

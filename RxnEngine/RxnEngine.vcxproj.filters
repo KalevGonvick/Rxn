@@ -62,6 +62,12 @@
     <Filter Include="Source\Platform\Win32\Public">
       <UniqueIdentifier>{2f13315d-5c86-47a6-b76b-a98a94ec625e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core\Private\Math">
+      <UniqueIdentifier>{fbd0e2e9-df3a-4a27-bf7f-bcdaf6ac3da5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Public\Math">
+      <UniqueIdentifier>{d2d9a438-f065-4b85-8c2c-85013568bfcd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -117,6 +123,9 @@
     </ClCompile>
     <ClCompile Include="Source\Platform\WIN32\Caption.cpp">
       <Filter>Source\Platform\Win32\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Math.cpp">
+      <Filter>Source\Core\Private\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -179,6 +188,9 @@
     </ClInclude>
     <ClInclude Include="Source\Platform\WIN32\Caption.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Math.h">
+      <Filter>Source\Core\Public\Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

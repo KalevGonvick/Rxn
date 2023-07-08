@@ -101,6 +101,7 @@
     <ClCompile Include="Source\Core\Core.cpp" />
     <ClCompile Include="Source\Core\CoreDefinitions.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
+    <ClCompile Include="Source\Core\Math\Math.cpp" />
     <ClCompile Include="Source\Core\RxnBinaryHandler.cpp" />
     <ClCompile Include="Source\Engine\EngineContext.cpp" />
     <ClCompile Include="Source\Engine\EngineSettings.cpp" />
@@ -122,6 +123,7 @@
     <ClInclude Include="Source\Core\Core.h" />
     <ClInclude Include="Source\Core\CoreDefinitions.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
+    <ClInclude Include="Source\Core\Math\Math.h" />
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
     <ClInclude Include="Source\Engine\EngineSettings.h" />

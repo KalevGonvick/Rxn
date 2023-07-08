@@ -3,7 +3,7 @@
 
 namespace Rxn::Platform::Win32
 {
-    Window::Window(RWString title, HICON icon)
+    Window::Window(WString title, HICON icon)
         : SubComponent(title, title, icon)
         , m_iActive(0)
         , m_ulWindowStyle(WindowStyle::RESIZEABLE)
@@ -307,7 +307,7 @@ namespace Rxn::Platform::Win32
             DrawText(hdc, this->GetTitle().c_str(), wcslen(this->GetTitle().c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
 
-        RWString closeText = L"X";
+        WString closeText = L"X";
         int buttonWidth = 50;
         RECT buttonRect = RECT{ size.cx - buttonWidth, 0, size.cx, 30 };
 

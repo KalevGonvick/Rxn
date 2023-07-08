@@ -3,9 +3,9 @@
 
 namespace Rxn::Common::Time
 {
-    RWString RXN_ENGINE_API GetTime(bool stripped = false);
-    RWString RXN_ENGINE_API GetDate(bool stripped = false);
-    RWString RXN_ENGINE_API GetDateTimeString(bool stripped = false);
-    RWString StripString(RWString in, RWString marker);
+    WString RXN_ENGINE_API GetTime(bool stripped = false);
+    WString RXN_ENGINE_API GetDate(bool stripped = false);
+    WString RXN_ENGINE_API GetDateTimeString(bool stripped = false);
+    WString StripString(WString in, WString marker);
 
 }
