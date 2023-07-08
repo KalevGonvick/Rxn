@@ -1,0 +1,10 @@
+rxn.common.game:
+    gameName: BlankProject
+    gameShortName: BP
+rxn.platform.win32:
+    splashScreenURL: Content\\Images\\splashscreen.bmp
+rxn.common.logger:
+    logLevel: 5
+    outputFile: true
+    outputConsole: true
+
