@@ -4,22 +4,20 @@
 
 namespace Rxn::Platform::Win32
 {
-	class RXN_ENGINE_API IApplication
-	{
+    class RXN_ENGINE_API IApplication
+    {
 
-	public:
-		IApplication();
+    public:
 
-		virtual ~IApplication() {};
+        IApplication();
+        virtual ~IApplication();
 
-	public:
-		virtual void ConfigureEngine() = 0;
+    public:
 
-		virtual void PreInitialize() = 0;
-
-		virtual void Initialize() = 0;
-
-		virtual void Update() = 0;
-	};
+        virtual void ConfigureEngine() = 0;
+        virtual void PreInitialize() = 0;
+        virtual void Initialize() = 0;
+        virtual void Update() = 0;
+    };
 
 } // Rxn::Platform::Win32

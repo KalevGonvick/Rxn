@@ -65,7 +65,7 @@ namespace Rxn::Common
         this->m_bWriteToConsole = writeToConsole;
     }
 
-    void Logger::LoggerImpl::PrintLn(LogLevel level, const wchar_t *b)
+    void Logger::LoggerImpl::PrintLn(const LogLevel &level, const wchar_t *b)
     {
         std::wfstream outfile;
         outfile.open(std::wstring(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
@@ -270,6 +270,54 @@ namespace Rxn::Common
 
     }
 
+    void Logger::LoggerImpl::Debug(const wchar_t *fmt, char *args)
+    {
+        if (!this->IsDebugEnabled())
+        {
+            return;
+        }
+
+        wchar_t b[Constants::knMaxLogLine];
+        vswprintf_s(b, fmt, args);
+        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_DEBUG, b);
+    }
+
+    void Logger::LoggerImpl::Warn(const wchar_t *fmt, char *args)
+    {
+        if (!this->IsWarnEnabled())
+        {
+            return;
+        }
+
+        wchar_t b[Constants::knMaxLogLine];
+        vswprintf_s(b, fmt, args);
+        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_WARN, b);
+    }
+
+    void Logger::LoggerImpl::Error(const wchar_t *fmt, char *args)
+    {
+        if (!this->IsErrorEnabled())
+        {
+            return;
+        }
+
+        wchar_t b[Constants::knMaxLogLine];
+        vswprintf_s(b, fmt, args);
+        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_ERROR, b);
+    }
+
+    void Logger::LoggerImpl::Trace(const wchar_t *fmt, char *args)
+    {
+        if (!this->IsTraceEnabled())
+        {
+            return;
+        }
+
+        wchar_t b[Constants::knMaxLogLine];
+        vswprintf_s(b, fmt, args);
+        std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_TRACE, b);
+    }
+
 #pragma endregion // LoggerImpl
     /* -------------------------------------------------------- */
 
@@ -319,82 +367,39 @@ namespace Rxn::Common
         va_start(args, fmt);
         Instance().m_pLoggerImpl->Info(fmt, args);
         va_end(args);
-
     }
 
-
-    void Logger::Warn(const wchar_t *fmt, ...)
+    void Logger::Warn(const wchar_t *fmt...)
     {
-        if (!Instance().IsWarnEnabled())
-        {
-            return;
-        }
-
-        wchar_t b[Constants::knMaxLogLine];
-
-        char *args;
-
-        __crt_va_start(args, fmt);
-        vswprintf_s(b, fmt, args);
-        __crt_va_end(args);
-
-
-        Instance().m_pLoggerImpl->PrintLn(LogLevel::RXN_WARN, b);
+        va_list args;
+        va_start(args, fmt);
+        Instance().m_pLoggerImpl->Warn(fmt, args);
+        va_end(args);
     }
 
-    void Logger::Error(const wchar_t *fmt, ...)
+    void Logger::Error(const wchar_t *fmt...)
     {
-        if (!Instance().IsErrorEnabled())
-        {
-            return;
-        }
-
-        wchar_t b[Constants::knMaxLogLine];
-
-        char *args;
-
-        __crt_va_start(args, fmt);
-        vswprintf_s(b, fmt, args);
-        __crt_va_end(args);
-
-        Instance().m_pLoggerImpl->PrintLn(LogLevel::RXN_ERROR, b);
+        va_list args;
+        va_start(args, fmt);
+        Instance().m_pLoggerImpl->Error(fmt, args);
+        va_end(args);
     }
 
-    void Logger::Debug(const wchar_t *fmt, ...)
+    void Logger::Debug(const wchar_t *fmt...)
     {
-        if (!Instance().IsDebugEnabled())
-        {
-            return;
-        }
-
-        wchar_t b[Constants::knMaxLogLine];
-
-        char *args;
-
-        __crt_va_start(args, fmt);
-        vswprintf_s(b, fmt, args);
-        __crt_va_end(args);
-
-        Instance().m_pLoggerImpl->PrintLn(LogLevel::RXN_DEBUG, b);
+        va_list args;
+        va_start(args, fmt);
+        Instance().m_pLoggerImpl->Debug(fmt, args);
+        va_end(args);
     }
 
-    void Logger::Trace(const wchar_t *fmt, ...)
+    void Logger::Trace(const wchar_t *fmt...)
     {
 
-        if (!Instance().IsTraceEnabled())
-        {
-            return;
-        }
-
-        wchar_t b[Constants::knMaxLogLine];
-
-        char *args;
-
-        __crt_va_start(args, fmt);
-        vswprintf_s(b, fmt, args);
-        __crt_va_end(args);
-
-        Instance().m_pLoggerImpl->PrintLn(LogLevel::RXN_TRACE, b);
+        va_list args;
+        va_start(args, fmt);
+        Instance().m_pLoggerImpl->Trace(fmt, args);
+        va_end(args);
     }
 
     void Logger::PrintLnSeperator()

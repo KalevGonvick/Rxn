@@ -6,6 +6,7 @@
 #pragma region Definitions
 
 #include "CoreDefinitions.h"
+#include "Core/Math/Math.h"
 
 #pragma endregion
 /* -------------------------------------------------------- */
@@ -14,7 +15,6 @@
 /*  Singleton                                               */
 /* -------------------------------------------------------- */
 #pragma region Singletons
-
 
 #include "Common/Logger.h"
 #include "Common/Time.h"

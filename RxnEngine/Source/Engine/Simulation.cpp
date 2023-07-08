@@ -21,19 +21,19 @@ namespace Rxn::Engine
     void Simulation::PreInitialize()
     {
         Engine::SplashScreen::Open();
-        Common::Logger::GetLogDirectory();
+        RXN_LOGGER::GetLogDirectory();
 
-        Common::Logger::PrintLnHeader(L"Engine Config");
-        Common::Logger::Info(L"Application Starting...");
-        Common::Logger::Info(L"Log Dir: %s", Common::Logger::GetLogDirectory().c_str());
-        Common::Logger::Info(L"Game Name: %s", Engine::EngineContext::GetEngineSettings().GetGameName());
-        Common::Logger::Info(L"Boot Time: %s", Common::Time::GetDateTimeString().c_str());
-        Common::Logger::Info(L"Mode: %s", Engine::Runtime::GetEngineModeString().c_str());
-        Common::Logger::PrintLnSeperator();
+        RXN_LOGGER::PrintLnHeader(L"Engine Config");
+        RXN_LOGGER::Info(L"Application Starting...");
+        RXN_LOGGER::Info(L"Log Dir: %s", RXN_LOGGER::GetLogDirectory().c_str());
+        RXN_LOGGER::Info(L"Game Name: %s", Engine::EngineContext::GetEngineSettings().GetGameName());
+        RXN_LOGGER::Info(L"Boot Time: %s", Common::Time::GetDateTimeString().c_str());
+        RXN_LOGGER::Info(L"Mode: %s", Engine::Runtime::GetEngineModeString().c_str());
+        RXN_LOGGER::PrintLnSeperator();
 
         //Core::RxnBinaryHandler::ReadRxnFile();
 
-        Common::Logger::Info(L"Loaded up... %s", Engine::EngineContext::GetEngineSettings().GetGameName());
+        RXN_LOGGER::Info(L"Loaded up... %s", Engine::EngineContext::GetEngineSettings().GetGameName());
     }
 
     LRESULT Simulation::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

@@ -15,14 +15,14 @@ namespace Rxn::Common
     {
         std::filesystem::path filePath = szFileName;
 
-        if (!std::filesystem::exists(filePath)) 
+        if (!std::filesystem::exists(filePath))
         {
-            Logger::Error(L"config '%s' does not exist.", szFileName);
+            RXN_LOGGER::Error(L"config '%s' does not exist.", szFileName);
         }
 
         std::ifstream fileStream(filePath, std::ios::in);
 
-        if (!fileStream.is_open()) 
+        if (!fileStream.is_open())
         {
             Logger::Error(L"Failed to open config %s", szFileName);
         }
@@ -34,58 +34,58 @@ namespace Rxn::Common
         fileStream.close();
     }
 
-    void YAMLParser::ParseNode(Node& node, std::ifstream& filestream)
+    void YAMLParser::ParseNode(Node &node, std::ifstream &filestream)
     {
         std::string line;
-        while (std::getline(filestream, line)) 
+        while (std::getline(filestream, line))
         {
-            
+
             size_t depth = GetIndentDepth(line);
             std::string value = TrimLine(line);
-        
+
             if (depth == 0)
             {
                 // Root level key
                 node.SetMapValue(std::unordered_map<std::string, Node>());
                 //ParseKeyValue(node.GetMapValue(), value);
             }
-            else 
+            else
             {
                 // Nested key
                 std::unordered_map<std::string, Node> mapValue = GetLastMapValue(node);
                 //ParseKeyValue(mapValue, value);
             }
         }
-        
+
     }
 
-    void YAMLParser::ParseKeyValue(Node& node, const std::string line)
+    void YAMLParser::ParseKeyValue(Node &node, const String line)
     {
         size_t colonIndex = line.find(':');
-        
-        std::vector<std::string> pairs;
+
+        std::vector<String> pairs;
         std::stringstream stream(line);
-        std::string streamedString;
+        String streamedString;
         while (std::getline(stream, streamedString, ':'))
         {
             pairs.push_back(streamedString);
         }
-        
-        if (pairs.size() > 1) 
+
+        if (pairs.size() > 1)
         {
             std::string key = pairs.at(0);
             std::string value = pairs.at(1);
-            
+
             Trim(key);
             Trim(value);
-        
+
             Node node;
             ParseValue(node, value);
             //map[key] = node;
         }
     }
 
-    void YAMLParser::ParseList(std::vector<Node> listNode, std::ifstream& filestream)
+    void YAMLParser::ParseList(std::vector<Node> listNode, std::ifstream &filestream)
     {
         /*std::string line;
 
@@ -97,7 +97,7 @@ namespace Rxn::Common
                 std::unordered_map<std::string, Node> mapValue = GetLastMapValue(listNode);
                 ParseKeyValue(mapValue, value, indentLevel);
             }
-            else 
+            else
             {
                 Node node;
                 ParseValue(node, value);
@@ -106,21 +106,21 @@ namespace Rxn::Common
         }*/
     }
 
-    void YAMLParser::ParseValue(Node node, const std::string& value)
+    void YAMLParser::ParseValue(Node node, const std::string &value)
     {
-        /*if (IsNested(value)) 
+        /*if (IsNested(value))
         {
             std::unordered_map<std::string, Node> mapNode;
             ParseNode(mapNode, CreateStringStream(value));
             node.SetMapValue(mapNode);
         }
-        else if (IsListNode(value)) 
+        else if (IsListNode(value))
         {
             std::vector<Node> listNode;
             ParseList(listNode, CreateStringStream(value));
             node.SetListValue(listNode);
         }
-        else 
+        else
         {
             node.SetScalarValue(value);
         }*/
@@ -129,19 +129,19 @@ namespace Rxn::Common
     std::stringstream YAMLParser::CreateStringStream(const std::string str)
     {
         std::stringstream stream(str);
-        return stream; 
+        return stream;
     }
 
-    void YAMLParser::Trim(std::string& str)
+    void YAMLParser::Trim(std::string &str)
     {
         size_t startPos = str.find_first_not_of(' ');
         size_t endPos = str.find_last_not_of(' ');
-        
-        if (startPos != std::string::npos && endPos != std::string::npos) 
+
+        if (startPos != std::string::npos && endPos != std::string::npos)
         {
             str = str.substr(startPos, endPos - startPos + 1);
         }
-        else 
+        else
         {
             str.clear();
         }
@@ -159,12 +159,12 @@ namespace Rxn::Common
 
     std::unordered_map<std::string, Node> YAMLParser::GetLastMapValue(std::vector<Node> node)
     {
-       /* Node lastNode = node.back();
-        if (lastNode.IsScalar())
-        {
-            lastNode.SetMapValue(std::unordered_map<std::string, Node>());
-        }
-        return lastNode.GetMapValue();*/
+        /* Node lastNode = node.back();
+         if (lastNode.IsScalar())
+         {
+             lastNode.SetMapValue(std::unordered_map<std::string, Node>());
+         }
+         return lastNode.GetMapValue();*/
         return std::unordered_map<std::string, Node>();
     }
 
@@ -177,11 +177,11 @@ namespace Rxn::Common
     {
         size_t startPos = line.find_first_not_of(' ');
         size_t endPos = line.find_last_not_of(' ');
-        
+
         if (startPos != std::string::npos && endPos != std::string::npos) {
             return line.substr(startPos, endPos - startPos + 1);
         }
-        
+
         return "";
     }
 
@@ -208,24 +208,24 @@ namespace Rxn::Common
 
     Node::~Node() = default;
 
-    void Node::SetNodeKey(const std::string& k)
+    void Node::SetNodeKey(const std::string &k)
     {
         this->m_szNodeKey = k;
     }
 
-    void Node::SetScalarValue(const std::string& v)
+    void Node::SetScalarValue(const std::string &v)
     {
         this->m_bIsScalar = true;
         this->m_szScalarValue = v;
     }
 
-    void Node::SetListValue(const std::vector<Node>& v)
+    void Node::SetListValue(const std::vector<Node> &v)
     {
         this->m_bIsScalar = false;
         this->m_ulListValue = v;
     }
 
-    void Node::SetMapValue(const std::unordered_map<std::string, Node>& v)
+    void Node::SetMapValue(const std::unordered_map<std::string, Node> &v)
     {
         this->m_bIsScalar = false;
         this->m_umMapValue = v;

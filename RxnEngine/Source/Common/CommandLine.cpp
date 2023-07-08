@@ -5,7 +5,7 @@
 
 namespace Rxn::Common::Cmd
 {
-    inline void HandleEngineMode(const wchar_t* arg)
+    inline void HandleEngineMode(const wchar_t *arg)
     {
         if (wcscmp(arg, L"debug") == 0)
         {
@@ -28,13 +28,13 @@ namespace Rxn::Common::Cmd
         }
     }
 
-    inline void HandleLoggerMode(const wchar_t * arg)
+    inline void HandleLoggerMode(const wchar_t *arg)
     {
         if (wcscmp(arg, L"mtail") == 0)
         {
-            if (!Common::Logger::StartMTail())
+            if (!RXN_LOGGER::StartMTail())
             {
-                Common::Logger::Error(L"Failed to start MTail... exiting...");
+                RXN_LOGGER::Error(L"Failed to start MTail... exiting...");
                 throw std::runtime_error("Failed to start MTail... exiting...");
             }
         }
@@ -45,13 +45,13 @@ namespace Rxn::Common::Cmd
     void ReadCommandLineArguments()
     {
         int argc = 0;
-        wchar_t ** argv = CommandLineToArgvW(GetCommandLine(), &argc);
+        wchar_t **argv = CommandLineToArgvW(GetCommandLine(), &argc);
         const char DASH = '-';
 
         for (int x = 1; x < argc; x++)
         {
             std::wstring key = argv[x];
-            
+
             if (key[0] == DASH && key[1] == DASH)
             {
                 key.erase(0, 2);
@@ -67,20 +67,20 @@ namespace Rxn::Common::Cmd
         }
     }
 
-    void ReadArgument(const wchar_t* argKey, const wchar_t* argValue, boolean argumentIsFlag)
+    void ReadArgument(const wchar_t *argKey, const wchar_t *argValue, boolean argumentIsFlag)
     {
         if (argumentIsFlag)
         {
             HandleLoggerMode(argKey);
             HandleEngineMode(argKey);
         }
-        else 
+        else
         {
             // TODO handle parameter args
         }
-        
+
     }
 
-    
+
 }
 

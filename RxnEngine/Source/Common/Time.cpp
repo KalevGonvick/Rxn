@@ -5,65 +5,65 @@
 
 namespace Rxn::Common::Time
 {
-	
-	std::wstring GetTime(bool stripped)
-	{
-		time_t now = time(0);
-		tm ltm;
-		localtime_s(&ltm, &now);
-		std::wstringstream wss;
-		wss << std::put_time(&ltm, L"%T");
 
-		std::wstring timeString = wss.str();
+    RWString GetTime(bool stripped)
+    {
+        time_t now = time(0);
+        tm ltm;
+        localtime_s(&ltm, &now);
+        std::wstringstream wss;
+        wss << std::put_time(&ltm, L"%T");
 
-		if (stripped)
-		{
-			timeString = Common::Time::StripString(timeString, L":");
-		}
+        RWString timeString = wss.str();
 
-		return timeString;
-	}
+        if (stripped)
+        {
+            timeString = Common::Time::StripString(timeString, L":");
+        }
 
-	std::wstring GetDate(bool stripped)
-	{
-		time_t now = time(0);
-		tm ltm;
-		localtime_s(&ltm, &now);
+        return timeString;
+    }
 
-		std::wstringstream wss;
+    RWString GetDate(bool stripped)
+    {
+        time_t now = time(0);
+        tm ltm;
+        localtime_s(&ltm, &now);
 
-		wss << std::put_time(&ltm, L"%F");
+        std::wstringstream wss;
 
-		std::wstring timeString = wss.str();
+        wss << std::put_time(&ltm, L"%F");
 
-		if (stripped)
-		{
-			timeString = Common::Time::StripString(timeString, L"/");
-		}
+        std::wstring timeString = wss.str();
 
-		return timeString;
-	}
+        if (stripped)
+        {
+            timeString = Common::Time::StripString(timeString, L"/");
+        }
 
-	std::wstring GetDateTimeString(bool stripped)
-	{
-		std::wstring timeString = GetDate(stripped) + L"T" + GetTime(stripped);
+        return timeString;
+    }
 
-		if (stripped)
-		{
-			timeString = Time::StripString(timeString, L"T");
-		}
+    RWString GetDateTimeString(bool stripped)
+    {
+        RWString timeString = GetDate(stripped) + L"T" + GetTime(stripped);
 
-		return timeString;
-	}
+        if (stripped)
+        {
+            timeString = Time::StripString(timeString, L"T");
+        }
 
-	std::wstring StripString(std::wstring in, std::wstring marker)
-	{
-		for (auto c : marker) {
-			in.erase(std::remove(in.begin(), in.end(), c), in.end());
-		}
+        return timeString;
+    }
 
-		return in;
-	}
+    RWString StripString(RWString in, RWString marker)
+    {
+        for (auto c : marker) {
+            in.erase(std::remove(in.begin(), in.end(), c), in.end());
+        }
+
+        return in;
+    }
 } // Rxn::Common::Time
 
 

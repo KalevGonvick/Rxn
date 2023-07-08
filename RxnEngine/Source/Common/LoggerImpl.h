@@ -6,60 +6,60 @@
 namespace Rxn::Common
 {
 
-	class Logger::LoggerImpl
-	{
-	public:
-		
-		LoggerImpl();
-		~LoggerImpl();
-	
-	public:
+    class Logger::LoggerImpl
+    {
+    public:
 
-		void SetLogLevel(LogLevel level);
-		void SetWriteToFile(bool writeToFile);
-		void SetWriteToConsole(bool writeToConsole);
+        LoggerImpl();
+        ~LoggerImpl();
 
-		void PrintLnSeperator();
-		void PrintLnHeader(const wchar_t* fmt);
-		void PrintLn(LogLevel level, const wchar_t* fmt);
+    public:
 
-		bool IsMTailRunning();
-		bool StartMTail();
+        void SetLogLevel(LogLevel level);
+        void SetWriteToFile(bool writeToFile);
+        void SetWriteToConsole(bool writeToConsole);
 
-		bool IsInfoEnabled();
-		bool IsWarnEnabled();
-		bool IsErrorEnabled();
-		bool IsDebugEnabled();
-		bool IsTraceEnabled();
-		bool IsLevelEnabled(LogLevel level);
+        void PrintLnSeperator();
+        void PrintLnHeader(const wchar_t *fmt);
+        void PrintLn(const LogLevel &level, const wchar_t *fmt);
 
-		void Info(const wchar_t* fmt, char* args);
-		void Debug(const wchar_t* fmt...);
-		void Warn(const wchar_t* fmt...);
-		void Error(const wchar_t* fmt...);
-		void Trace(const wchar_t* fmt...);
+        bool IsMTailRunning();
+        bool StartMTail();
 
-		std::wstring GetLogFileName();
-		std::wstring GetLogDirectory();
-		LogLevel GetLogLevel();
+        bool IsInfoEnabled();
+        bool IsWarnEnabled();
+        bool IsErrorEnabled();
+        bool IsDebugEnabled();
+        bool IsTraceEnabled();
+        bool IsLevelEnabled(LogLevel level);
 
-	private:
+        void Info(const wchar_t *fmt, char *args);
+        void Debug(const wchar_t *fmt, char *args);
+        void Warn(const wchar_t *fmt, char *args);
+        void Error(const wchar_t *fmt, char *args);
+        void Trace(const wchar_t *fmt, char *args);
 
-		bool m_bWriteToFile;
-		bool m_bWriteToConsole;
-		bool m_bLogFileCreated;
+        std::wstring GetLogFileName();
+        std::wstring GetLogDirectory();
+        LogLevel GetLogLevel();
 
-		LogLevel m_uLevel;
+    private:
 
-		std::wstring m_wOutputLogDir;
+        bool m_bWriteToFile;
+        bool m_bWriteToConsole;
+        bool m_bLogFileCreated;
 
-		const std::wstring m_kpszDebugSeverity		= L"[DEBUG]";
-		const std::wstring m_kpszErrorSeverity		= L"[ERROR]";
-		const std::wstring m_kpszWarningSeverity	= L"[WARN]";
-		const std::wstring m_kpszInfoSeverity		= L"[INFO]";
-		const std::wstring m_kpszTraceSeverity		= L"[TRACE]";
+        LogLevel m_uLevel;
 
-	};
+        std::wstring m_wOutputLogDir;
+
+        const std::wstring m_kpszDebugSeverity = L"[DEBUG]";
+        const std::wstring m_kpszErrorSeverity = L"[ERROR]";
+        const std::wstring m_kpszWarningSeverity = L"[WARN]";
+        const std::wstring m_kpszInfoSeverity = L"[INFO]";
+        const std::wstring m_kpszTraceSeverity = L"[TRACE]";
+
+    };
 
 
 } // Common

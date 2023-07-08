@@ -14,6 +14,15 @@
 #pragma endregion // DLL
 /* -------------------------------------------------------- */
 
+/* -------------------------------------------------------- */
+/*  CppDefines                                              */
+/* -------------------------------------------------------- */
+#pragma region CppDefines
+
+#define RXN_LOGGER Rxn::Common::Logger
+
+#pragma endregion // CppDefines
+/* -------------------------------------------------------- */
 
 /* -------------------------------------------------------- */
 /*  WindowsDefinitions                                      */
@@ -30,20 +39,33 @@
 #pragma endregion // WindowsDefinitions
 /* -------------------------------------------------------- */
 
+
+/* -------------------------------------------------------- */
+/*  RxnConstants/TypeDefs                                   */
+/* -------------------------------------------------------- */
+#pragma region RxnConstants/TypeDefs
+
+using String = std::string;
+using WString = std::wstring;
+
 namespace Rxn::Constants
 {
-	
-	const unsigned short kusMaxNameString	= 256;
-	const unsigned short knMaxDirLen		= 1024;
-	const unsigned short knMaxLogLine		= 4096;
 
-	
-	namespace Win32
-	{
-		const unsigned long kulDefaultWindowWidth	= 800;
-		const unsigned long kulDefaultWindowHeight	= 600;
-	}
+
+    const unsigned short kusMaxNameString = 256;
+    const unsigned short knMaxDirLen = 1024;
+    const unsigned short knMaxLogLine = 4096;
+
+
+    namespace Win32
+    {
+        const unsigned long kulDefaultWindowWidth = 800;
+        const unsigned long kulDefaultWindowHeight = 600;
+    }
 
 }
+
+#pragma endregion // RxnConstants/TypeDefs
+/* -------------------------------------------------------- */
 
 

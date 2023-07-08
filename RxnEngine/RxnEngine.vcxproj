@@ -109,7 +109,7 @@
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
-    <ClCompile Include="Source\Platform\WIN32\Win32Caption.cpp" />
+    <ClCompile Include="Source\Platform\WIN32\Caption.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Window.cpp" />
     <ClCompile Include="Source\Rxn.cpp" />
     <ClCompile Include="Source\Common\YAMLParser.cpp" />
@@ -130,7 +130,7 @@
     <ClInclude Include="Source\Engine\SplashScreen.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
-    <ClInclude Include="Source\Platform\WIN32\Win32Caption.h" />
+    <ClInclude Include="Source\Platform\WIN32\Caption.h" />
     <ClInclude Include="Source\Platform\WIN32\Window.h" />
     <ClInclude Include="Source\Platform\WIN32\WinEntry.h" />
     <ClInclude Include="Source\Rxn.h" />

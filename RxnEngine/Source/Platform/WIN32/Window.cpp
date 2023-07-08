@@ -3,13 +3,14 @@
 
 namespace Rxn::Platform::Win32
 {
-    Window::Window(std::wstring title, HICON icon)
+    Window::Window(RWString title, HICON icon)
         : SubComponent(title, title, icon)
         , m_iActive(0)
         , m_ulWindowStyle(WindowStyle::RESIZEABLE)
         , m_xySize(SIZE(Constants::Win32::kulDefaultWindowWidth, Constants::Win32::kulDefaultWindowHeight))
         , m_xyzulWindowBackgroundColour(RGB(36, 36, 36))
         , m_xyzulWindowBorderColour(RGB(46, 46, 46))
+        , m_WindowCaption()
     {
     }
 
@@ -39,7 +40,7 @@ namespace Rxn::Platform::Win32
 
     void Window::SetWindowStyle(const DWORD &style)
     {
-        Common::Logger::Trace(L"Setting window style to: %d", style);
+        RXN_LOGGER::Trace(L"Setting window style to: %d", std::to_string(style));
         this->m_ulWindowStyle = style;
     }
 
@@ -76,9 +77,9 @@ namespace Rxn::Platform::Win32
 
     void Window::RegisterComponentClass()
     {
-        Common::Logger::Trace(L"Registering new win32 component %s", this->GetClass());
+        RXN_LOGGER::Trace(L"Registering new win32 component %s", this->GetClass());
 
-        WNDCLASSEX wcex;
+        WNDCLASSEX wcex{};
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style = CS_HREDRAW | CS_VREDRAW;
         wcex.cbClsExtra = 0;
@@ -119,7 +120,7 @@ namespace Rxn::Platform::Win32
 
         if (!this->m_pHWnd)
         {
-            Common::Logger::Error(L"Failed to create window %s.", this->GetTitle().c_str());
+            RXN_LOGGER::Error(L"Failed to create window %s.", this->GetTitle().c_str());
             return;
         }
 
@@ -196,6 +197,8 @@ namespace Rxn::Platform::Win32
         this->PaintWindowBorder(hdc, adjustedRect);
         this->PaintWindowConditionalHighlight(hdc, adjustedRect);
 
+        this->PaintWindowCaption(hdc, rect, size);
+
         /* this was in the tutorial, but I don't think it does anything */
         //BitBlt(hdc, 0, 0, size.cx, size.cy, hdc, 0, 0, SRCCOPY);
         //SelectObject(hdc, hOld);
@@ -233,13 +236,21 @@ namespace Rxn::Platform::Win32
     {
         /* This is probably not correct, but this is what the tutorial did haha. */
         //SetTimer(GetHandle(), 1, 144, 0);
+        RXN_LOGGER::Trace(L"Setting window theme.");
         SetWindowTheme(GetHandle(), L"", L"");
-        //Win32::Utils::ModifyClassStyle(GetHandle(), 0, CS_DROPSHADOW);
+
+        RXN_LOGGER::Trace(L"Modyfying class style.");
+        this->ModifyClassStyle(GetHandle(), 0, CS_DROPSHADOW);
     }
 
     void Window::HandleNonClientActivate(const int &active)
     {
         SetActive(active);
+    }
+
+    void Window::SetCaption(const Caption &caption)
+    {
+        this->m_WindowCaption = caption;
     }
 
     void Window::SetActive(const int &active)
@@ -252,29 +263,55 @@ namespace Rxn::Platform::Win32
         return this->m_iActive;
     }
 
+    Caption &Window::GetCaption()
+    {
+        return this->m_WindowCaption;
+    }
+
     int Window::AddBitmap(const wchar_t *szFileName, const HDC &hWinDC, int x, int y)
     {
-        BITMAP qBitmap;
+        BITMAP qBitmap{};
         HDC hLocalDC = CreateCompatibleDC(hWinDC);
 
         HBITMAP hBitmap = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
         if (hBitmap == 0)
         {
-            Common::Logger::Error(L"Failed to load image from URL %s", szFileName);
-            return false;
+            RXN_LOGGER::Error(L"Failed to load image from URL %s", szFileName);
+            return 0;
         }
         GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP), reinterpret_cast<LPVOID>(&qBitmap));
 
         SelectObject(hLocalDC, hBitmap);
+
         if (!BitBlt(hWinDC, x, y, qBitmap.bmWidth, qBitmap.bmHeight, hLocalDC, 0, 0, SRCCOPY))
         {
-            Common::Logger::Error(L"Failed Blit for image URL %s.", szFileName);
-            return false;
+            RXN_LOGGER::Error(L"Failed Blit for image URL %s.", szFileName);
+            return 0;
         }
 
         ::DeleteDC(hLocalDC);
         ::DeleteObject(hBitmap);
-        return true;
+        return 1;
+    }
+
+    void Window::PaintWindowCaption(const HDC &hdc, const RECT &rect, const SIZE &size)
+    {
+        RXN_LOGGER::Trace(L"Setting window text with to %s", this->GetTitle().c_str());
+
+        if (this->GetCaption().ShowTitle())
+        {
+            RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
+            SetBkMode(hdc, TRANSPARENT);
+            SetTextColor(hdc, GetActive() ? RGB(255, 255, 255) : RGB(92, 92, 92));
+            DrawText(hdc, this->GetTitle().c_str(), wcslen(this->GetTitle().c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+        }
+
+        RWString closeText = L"X";
+        int buttonWidth = 50;
+        RECT buttonRect = RECT{ size.cx - buttonWidth, 0, size.cx, 30 };
+
+        DrawText(hdc, closeText.c_str(), wcslen(closeText.c_str()), &buttonRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
     }
 }
 

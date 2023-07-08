@@ -7,4 +7,10 @@ namespace Rxn::Platform::Win32
     {
 
     }
+
+    IApplication::~IApplication()
+    {
+
+    }
+
 } // Rxn::Platform::Win32

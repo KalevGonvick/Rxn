@@ -36,10 +36,10 @@ namespace Rxn::Common
         static void SetWriteToConsole(const bool &writeToConsole);
 
         static void Info(const wchar_t *fmt...);
-        static void Warn(const wchar_t *fmt, ...);
-        static void Error(const wchar_t *fmt, ...);
-        static void Debug(const wchar_t *fmt, ...);
-        static void Trace(const wchar_t *fmt, ...);
+        static void Warn(const wchar_t *fmt...);
+        static void Error(const wchar_t *fmt...);
+        static void Debug(const wchar_t *fmt...);
+        static void Trace(const wchar_t *fmt...);
 
         static void PrintLnSeperator();
         static void PrintLnHeader(const wchar_t *fmt);

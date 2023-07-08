@@ -115,7 +115,7 @@
     <ClCompile Include="Source\Engine\EngineContext.cpp">
       <Filter>Source\Engine\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Platform\WIN32\Win32Caption.cpp">
+    <ClCompile Include="Source\Platform\WIN32\Caption.cpp">
       <Filter>Source\Platform\Win32\Private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -177,7 +177,7 @@
     <ClInclude Include="Source\Engine\EngineContext.h">
       <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Platform\WIN32\Win32Caption.h">
+    <ClInclude Include="Source\Platform\WIN32\Caption.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
     </ClInclude>
   </ItemGroup>
