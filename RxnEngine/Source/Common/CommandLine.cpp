@@ -9,22 +9,22 @@ namespace Rxn::Common::Cmd
     {
         if (wcscmp(arg, L"debug") == 0)
         {
-            Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::DEBUG);
+            //Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::DEBUG);
         }
 
         if (wcscmp(arg, L"editor") == 0)
         {
-            Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::EDITOR);
+            //Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::EDITOR);
         }
 
         if (wcscmp(arg, L"headless") == 0)
         {
-            Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::HEADLESS);
+            //Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::HEADLESS);
         }
 
         if (wcscmp(arg, L"production") == 0)
         {
-            Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::PRODUCTION);
+            //Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::PRODUCTION);
         }
     }
 

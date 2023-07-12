@@ -3,40 +3,62 @@
 
 namespace Rxn::Platform::Win32
 {
-    SubComponent::SubComponent(WString className, WString classTitle, HICON icon)
-        : m_pszClass(className)
-        , m_pszTitle(classTitle)
-        , m_hIcon(icon)
+    SubComponent::SubComponent(WString className, HICON icon)
+        : m_ClassName(className)
+        , m_isInitialized(false)
+        , m_ChildComponents()
+        , m_Parent(nullptr)
+        , m_Icon(icon)
         , m_pHWnd(nullptr)
     {
     }
 
     SubComponent::~SubComponent() = default;
 
-    WString &SubComponent::GetClass()
+    WString const &SubComponent::GetClass()
     {
-        return this->m_pszClass;
+        return this->m_ClassName;
     }
 
-    WString &SubComponent::GetTitle()
+    void SubComponent::AddChildComponent(std::shared_ptr<SubComponent> child)
     {
-        return this->m_pszTitle;
+        if (child->m_Parent != nullptr && child->m_Parent->GetClass() == this->GetClass())
+        {
+            this->m_ChildComponents.push_back(child);
+        }
+        else if (child->m_Parent != nullptr && child->m_Parent->GetClass() != this->GetClass())
+        {
+            RXN_LOGGER::Error(L"Attempting to add child class that already has a different parent.");
+        }
+        else
+        {
+            child->m_Parent = std::shared_ptr<SubComponent>(this);
+            this->m_ChildComponents.push_back(child);
+        }
     }
 
     HICON SubComponent::GetIcon()
     {
-        return this->m_hIcon;
+        return this->m_Icon;
     }
 
-    HWND SubComponent::GetHandle()
+    const HWND &SubComponent::GetParentHandle()
     {
-        return this->m_pHWnd;
+        if (this->GetParent() != nullptr)
+        {
+            return this->GetParent()->m_pHWnd;
+        }
+        else
+        {
+            return nullptr;
+        }
     }
 
-    void SubComponent::SetHandle(HWND hWnd)
+    const std::shared_ptr<SubComponent> SubComponent::GetParent()
     {
-        this->m_pHWnd = hWnd;
+        return this->m_Parent;
     }
+
 
     LRESULT SubComponent::SetupMessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -48,10 +70,24 @@ namespace Rxn::Platform::Win32
 
             SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
             SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&AssignMessageHandler));
-            pWnd->SetHandle(hWnd);
+
+            pWnd->m_pHWnd = hWnd;
+            pWnd->m_isInitialized = true;
+            pWnd->InitializeChildren();
+
             return pWnd->MessageHandler(hWnd, msg, wParam, lParam);
         }
+
         return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+
+    void SubComponent::InitializeChildren()
+    {
+        for (auto &child : this->m_ChildComponents)
+        {
+            child->RegisterComponentClass();
+            child->Initialize();
+        }
     }
 
     LRESULT SubComponent::AssignMessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

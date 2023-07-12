@@ -13,15 +13,8 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
     auto entry = EntryApplication();
 
     entry->ConfigureEngine();
-    RXN_LOGGER::SetLogLevel(Rxn::Engine::EngineContext::GetEngineSettings().GetLogLevel());
-
-    Rxn::Common::Cmd::ReadCommandLineArguments();
-
-    //Core::RxnBinaryHandler rxnBinaryHandler;
     entry->PreInitialize();
     entry->Initialize();
-
-
 
     MSG msg = { 0 };
     while (msg.message != WM_QUIT)

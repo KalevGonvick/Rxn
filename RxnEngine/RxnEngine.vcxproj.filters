@@ -68,6 +68,12 @@
     <Filter Include="Source\Core\Public\Math">
       <UniqueIdentifier>{d2d9a438-f065-4b85-8c2c-85013568bfcd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Public\Graphics">
+      <UniqueIdentifier>{a662d1c5-558c-4f00-87ea-838392242768}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Private\Graphics">
+      <UniqueIdentifier>{f28cc8a8-3593-4ac0-ae9a-cab0c3ffaf2c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -79,7 +85,7 @@
     <ClCompile Include="Source\Core\CoreDefinitions.cpp">
       <Filter>Source\Core\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Simulation.cpp">
+    <ClCompile Include="Source\Engine\Runtime.cpp">
       <Filter>Source\Engine\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Common\Logger.cpp">
@@ -115,9 +121,6 @@
     <ClCompile Include="Source\Engine\EngineSettings.cpp">
       <Filter>Source\Engine\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Common\YAMLParser.cpp">
-      <Filter>Source\Common\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\EngineContext.cpp">
       <Filter>Source\Engine\Private</Filter>
     </ClCompile>
@@ -126,6 +129,15 @@
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Math.cpp">
       <Filter>Source\Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\ComPointer.cpp">
+      <Filter>Source\Engine\Private\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\WIN32\SimulationWindow.cpp">
+      <Filter>Source\Platform\Win32\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\WIN32\WindowManager.cpp">
+      <Filter>Source\Platform\Win32\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -138,7 +150,7 @@
     <ClInclude Include="Source\Core\CoreDefinitions.h">
       <Filter>Source\Core\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Simulation.h">
+    <ClInclude Include="Source\Engine\Runtime.h">
       <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Common\Time.h">
@@ -165,9 +177,6 @@
     <ClInclude Include="Source\Common\CommandLine.h">
       <Filter>Source\Common\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SplashScreen.h">
-      <Filter>Source\Engine\Public</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Platform\WIN32\Window.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
     </ClInclude>
@@ -180,9 +189,6 @@
     <ClInclude Include="Source\Common\LoggerImpl.h">
       <Filter>Source\Common\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Common\YAMLParser.h">
-      <Filter>Source\Common\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\EngineContext.h">
       <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
@@ -191,6 +197,18 @@
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Math.h">
       <Filter>Source\Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\ComPointer.h">
+      <Filter>Source\Engine\Public\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Platform\WIN32\SimulationWindow.h">
+      <Filter>Source\Platform\Win32\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Platform\WIN32\WindowManager.h">
+      <Filter>Source\Platform\Win32\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SplashScreen.h">
+      <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

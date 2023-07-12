@@ -20,6 +20,7 @@
 #pragma region CppDefines
 
 #define RXN_LOGGER Rxn::Common::Logger
+#define RXN_CONTEXT Rxn::Engine::EngineContext
 
 #pragma endregion // CppDefines
 /* -------------------------------------------------------- */
@@ -60,6 +61,9 @@ namespace Rxn::Constants
     {
         const unsigned short DEFAULTWINDOWWIDTH = 800;
         const unsigned short DEFAULTWINDOWHEIGHT = 600;
+
+        const WString RENDERVIEWWINDOWKEY = L"_SIMULATEDVIEW";
+        const WString SPLASHSCREENWINDOWKEY = L"_SPLASH";
     }
 
 }

@@ -105,15 +105,17 @@
     <ClCompile Include="Source\Core\RxnBinaryHandler.cpp" />
     <ClCompile Include="Source\Engine\EngineContext.cpp" />
     <ClCompile Include="Source\Engine\EngineSettings.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
-    <ClCompile Include="Source\Engine\Simulation.cpp" />
+    <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
+    <ClCompile Include="Source\Platform\WIN32\SimulationWindow.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Caption.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Window.cpp" />
+    <ClCompile Include="Source\Platform\WIN32\WindowManager.cpp" />
     <ClCompile Include="Source\Rxn.cpp" />
-    <ClCompile Include="Source\Common\YAMLParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Common\CommandLine.h" />
@@ -127,16 +129,18 @@
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
     <ClInclude Include="Source\Engine\EngineSettings.h" />
+    <ClInclude Include="Source\Engine\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Engine\RxnEngine.h" />
-    <ClInclude Include="Source\Engine\Simulation.h" />
+    <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Engine\SplashScreen.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
+    <ClInclude Include="Source\Platform\WIN32\SimulationWindow.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
     <ClInclude Include="Source\Platform\WIN32\Caption.h" />
     <ClInclude Include="Source\Platform\WIN32\Window.h" />
+    <ClInclude Include="Source\Platform\WIN32\WindowManager.h" />
     <ClInclude Include="Source\Platform\WIN32\WinEntry.h" />
     <ClInclude Include="Source\Rxn.h" />
-    <ClInclude Include="Source\Common\YAMLParser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

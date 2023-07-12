@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 #include "BlankProject.h"
-#include "Engine/Simulation.h"
+#include "Engine/Runtime.h"
 #include "Platform/WIN32/WinEntry.h"
 
-class BlankProject : public Rxn::Engine::Simulation
+class BlankProject : public Rxn::Engine::Runtime
 {
 public:
     BlankProject() {};
@@ -14,7 +14,7 @@ public:
 public:
     void ConfigureEngine();
 
-    void Initialize() {};
+    void Initialize();
 
     void Update() {};
 };
@@ -24,12 +24,22 @@ ENTRYAPP(BlankProject)
 
 void BlankProject::ConfigureEngine()
 {
-    Rxn::Engine::EngineContext::GetEngineSettings().SetGameName(L"Blank Project");
-    Rxn::Engine::EngineContext::GetEngineSettings().SetGameShortName(L"BP");
-    Rxn::Engine::EngineContext::GetEngineSettings().SetMainIcon(L"");
-    Rxn::Engine::EngineContext::GetEngineSettings().SetLogLevel(Rxn::Common::LogLevel::RXN_TRACE);
-    Rxn::Engine::EngineContext::GetEngineSettings().SetLogWriteToConsole(true);
-    Rxn::Engine::EngineContext::GetEngineSettings().SetLogWriteToFile(true);
-    Rxn::Engine::EngineContext::GetEngineSettings().SetSplashScreenURL(L"Content\\Images\\splashscreen.bmp");
-    Rxn::Engine::EngineContext::GetEngineSettings().SetBootTime(Rxn::Common::Time::GetTime(true).c_str());
+
+
+    RXN_CONTEXT::GetEngineSettings().SetGameName(L"Blank Project");
+    RXN_CONTEXT::GetEngineSettings().SetGameShortName(L"BP");
+    RXN_CONTEXT::GetEngineSettings().SetMainIcon(L"");
+    RXN_CONTEXT::GetEngineSettings().SetLogLevel(Rxn::Common::LogLevel::RXN_TRACE);
+    RXN_CONTEXT::GetEngineSettings().SetLogWriteToConsole(true);
+    RXN_CONTEXT::GetEngineSettings().SetLogWriteToFile(true);
+    RXN_CONTEXT::GetEngineSettings().SetSplashScreenURL(L"Content\\Images\\splashscreen.bmp");
+    RXN_CONTEXT::GetEngineSettings().SetBootTime(Rxn::Common::Time::GetTime(true).c_str());
+
+    RXN_LOGGER::SetLogLevel(RXN_CONTEXT::GetEngineSettings().GetLogLevel());
+    Rxn::Common::Cmd::ReadCommandLineArguments();
+
+}
+
+void BlankProject::Initialize()
+{
 }

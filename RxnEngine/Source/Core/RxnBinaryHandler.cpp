@@ -8,7 +8,7 @@
 
 namespace Rxn::Core
 {
-    RxnBinaryHandler * RxnBinaryHandler::INSTANCE;
+    RxnBinaryHandler *RxnBinaryHandler::INSTANCE;
 
     RxnBinaryHandler::RxnBinaryHandler()
     {
@@ -21,7 +21,7 @@ namespace Rxn::Core
         delete Instance();
     }
 
-    void RxnBinaryHandler::ReadRxnFile(const wchar_t * fileName, bool decrypt)
+    void RxnBinaryHandler::ReadRxnFile(const wchar_t *fileName, bool decrypt)
     {
         if (decrypt)
         {
@@ -29,7 +29,7 @@ namespace Rxn::Core
         }
     }
 
-    void RxnBinaryHandler::WriteRxnFile(const wchar_t* fileName, const std::list<RXN_BASE_FILE> content, bool encrypt)
+    void RxnBinaryHandler::WriteRxnFile(const wchar_t *fileName, const std::list<RXN_BASE_FILE> content, bool encrypt)
     {
 
     }
@@ -48,58 +48,58 @@ namespace Rxn::Core
         return rand;
     }
 
-    bool RxnBinaryHandler::WriteRxnBundle(const wchar_t* fileName, std::list<RXN_BASE_FILE> content)
+    bool RxnBinaryHandler::WriteRxnBundle(const wchar_t *fileName, std::list<RXN_BASE_FILE> content)
     {
         return false;
     }
 
-    bool RxnBinaryHandler::WriteRxnSingleFile(const wchar_t* fileName, const RXN_BASE_FILE& content)
+    bool RxnBinaryHandler::WriteRxnSingleFile(const wchar_t *fileName, const RXN_BASE_FILE &content)
     {
         return false;
     }
 
-    bool RxnBinaryHandler::EncryptRxnFile(const wchar_t * fileName)
+    bool RxnBinaryHandler::EncryptRxnFile(const wchar_t *fileName)
     {
         char ch;
         std::fstream sourceFile, tempFile;
-        
+
         sourceFile.open(fileName, std::fstream::in);
-        
+
         if (!sourceFile)
         {
-            Common::Logger::Error(L"Error Occurred, Opening the Source File (to Read)!");
+            RXN_LOGGER::Error(L"Error Occurred, Opening the Source File (to Read)!");
             return false;
         }
 
         tempFile.open("tmp.txt", std::fstream::out);
-        
+
         if (!tempFile)
         {
-            Common::Logger::Error(L"Error Occurred, Opening/Creating the tmp File!");
+            RXN_LOGGER::Error(L"Error Occurred, Opening/Creating the tmp File!");
             return false;
         }
-        
+
         while (sourceFile >> std::noskipws >> ch)
         {
-            ch = ch + INSTANCE->m_dRandomResult;
-            tempFile << ch;
+            //ch = ch + INSTANCE->m_dRandomResult;
+            //tempFile << ch;
         }
-        
+
         sourceFile.close();
         tempFile.close();
         sourceFile.open(fileName, std::fstream::out);
-        
+
         if (!sourceFile)
         {
-            Common::Logger::Error(L"Error Occurred, Opening the Source File (to write)!");
+            RXN_LOGGER::Error(L"Error Occurred, Opening the Source File (to write)!");
             return false;
         }
-        
+
         tempFile.open("tmp.txt", std::fstream::in);
-        
+
         if (!tempFile)
         {
-            Common::Logger::Error(L"Error Occurred, Opening the tmp File!");
+            RXN_LOGGER::Error(L"Error Occurred, Opening the tmp File!");
             return false;
         }
 
@@ -107,18 +107,18 @@ namespace Rxn::Core
         {
             sourceFile << ch;
         }
-            
+
         sourceFile.close();
         tempFile.close();
-        
-        Common::Logger::Trace(L"File '%s' was encrypted successfully.", fileName);
-        
+
+        RXN_LOGGER::Trace(L"File '%s' was encrypted successfully.", fileName);
+
         return true;
     }
 
-    bool RxnBinaryHandler::DecryptRxnFile(const wchar_t* fileName)
+    bool RxnBinaryHandler::DecryptRxnFile(const wchar_t *fileName)
     {
-        Common::Logger::Debug(L"Random Result: %d", INSTANCE->m_dRandomResult);
+        RXN_LOGGER::Debug(L"Random Result: %d", INSTANCE->m_dRandomResult);
         return true;
     }
 }

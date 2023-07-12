@@ -118,7 +118,7 @@ namespace Rxn::Common
         {
             s.append(L"-");
         }
-        s.append(L"\n");
+        //s.append(L"\n");
 
         std::wfstream outfile;
         outfile.open(std::wstring(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
@@ -139,10 +139,10 @@ namespace Rxn::Common
         const int knMaxHeaderLineLen = 100;
         const int knHeaderPadding = 4;
 
-        int titleLen = std::char_traits<wchar_t>::length(fmt);
+        size_t titleLen = std::char_traits<wchar_t>::length(fmt);
 
-        int remainingLength = knMaxHeaderLineLen - knHeaderPadding - titleLen - knHeaderPadding;
-        int oneSideLength = remainingLength / 2;
+        size_t remainingLength = knMaxHeaderLineLen - knHeaderPadding - titleLen - knHeaderPadding;
+        size_t oneSideLength = remainingLength / 2;
 
         std::wstring s = L"\n";
 

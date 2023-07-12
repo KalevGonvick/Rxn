@@ -17,28 +17,19 @@ namespace Rxn::Platform::Win32
     {
     public:
 
-        Window(WString title, HICON icon);
+        Window(WString className, WString title);
         ~Window();
 
     public:
 
-
-        DWORD GetWindowStyle();
-        COLORREF GetWindowBackgroundColour();
-        COLORREF GetWindowBorderColour();
-        SIZE GetSize();
-        int GetActive();
-        Caption &GetCaption();
-
-        void SetCaption(const Caption &caption);
-        void SetActive(const int &active);
-        void SetWindowStyle(const DWORD &style);
-        void SetSize(const SIZE &size);
-        void SetSize(const int &cx, const int &cy);
-        void SetVerticalSize(const int &cy);
-        void SetHorizontalSize(const int &cx);
-        void SetWindowBackgroundColour(const COLORREF &colour);
-        void SetWindowBorderColour(const COLORREF &colour);
+        WString m_TitleName;
+        Caption m_WindowCaption;
+        SIZE m_Size;
+        DWORD m_WindowStyle;
+        COLORREF m_WindowBackgroundColour;
+        COLORREF m_WindowBorderColour;
+        COLORREF m_WindowActiveBorderHighlightColour;
+        int m_Active;
 
         virtual void RegisterComponentClass() override;
         virtual void Initialize() override;
@@ -64,7 +55,7 @@ namespace Rxn::Platform::Win32
 
         void HandleNonClientLeftClickDown();
 
-        void HandleNonClientLeftClickUp();
+        void HandlePaint();
 
         /**
          * Paints the colour of the window border.
@@ -151,12 +142,7 @@ namespace Rxn::Platform::Win32
 
     private:
 
-        Caption m_WindowCaption;
-        SIZE m_xySize;
-        DWORD m_ulWindowStyle;
-        COLORREF m_xyzulWindowBackgroundColour;
-        COLORREF m_xyzulWindowBorderColour;
-        int m_iActive;
+
     };
 
 } // Rxn::Platform::Win32
