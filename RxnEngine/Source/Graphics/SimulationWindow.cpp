@@ -28,7 +28,8 @@ namespace Rxn::Graphics
         {
         case WM_PAINT:
         {
-            OnRender();
+            DX12_Render();
+            break;
         }
         default:
             break;
@@ -37,20 +38,22 @@ namespace Rxn::Graphics
         return Window::MessageHandler(hWnd, msg, wParam, lParam);
     }
 
-    void SimulationWindow::SetupWindowAppearance()
+    void SimulationWindow::SetupWindow()
     {
-        //auto childsim = std::make_shared<Platform::Win32::SimulationWindow>(L"TestChildWindow", L"TestChildWindow");
-        //childsim->m_WindowStyle = Platform::Win32::WindowStyle::STATIC;
-        //childsim->m_Size = SIZE(600, 600);
-        //AddChildComponent(childsim);
-
         m_Size = SIZE(1280, 720);
         m_AddCloseButton = true;
         m_AddMaximizeButton = true;
         m_AddMinimizeButton = true;
+
+        RegisterComponentClass();
+        InitializeWin32();
+
+        DX12_LoadPipeline();
+        DX12_LoadAssets();
+        m_IsRenderReady = true;
     }
 
-    void SimulationWindow::LoadPipeline()
+    void SimulationWindow::DX12_LoadPipeline()
     {
         UINT dxgiFactoryFlags = 0;
 
@@ -82,7 +85,7 @@ namespace Rxn::Graphics
         else
         {
             ComPointer<IDXGIAdapter1> hardwareAdapter;
-            GetHardwareAdapter(factory.Get(), &hardwareAdapter);
+            DX12_GetHardwareAdapter(factory.Get(), &hardwareAdapter);
 
             ThrowIfFailed(D3D12CreateDevice(
                 hardwareAdapter.Get(),
@@ -153,7 +156,7 @@ namespace Rxn::Graphics
 
     }
 
-    void SimulationWindow::LoadAssets()
+    void SimulationWindow::DX12_LoadAssets()
     {
         // Create an empty root signature.
         {
@@ -266,13 +269,13 @@ namespace Rxn::Graphics
             // Wait for the command list to execute; we are reusing the same command 
             // list in our main loop but for now, we just want to wait for setup to 
             // complete before continuing.
-            WaitForPreviousFrame();
+            DX12_WaitForPreviousFrame();
         }
     }
 
 
 
-    void SimulationWindow::GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter)
+    void SimulationWindow::DX12_GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter)
     {
         *ppAdapter = nullptr;
 
@@ -328,7 +331,7 @@ namespace Rxn::Graphics
         adapter.Release();
     }
 
-    void SimulationWindow::CheckTearingSupport()
+    void SimulationWindow::DX12_CheckTearingSupport()
     {
 #ifndef PIXSUPPORT
         ComPointer<IDXGIFactory7> factory;
@@ -346,7 +349,7 @@ namespace Rxn::Graphics
 
     }
 
-    void SimulationWindow::WaitForPreviousFrame()
+    void SimulationWindow::DX12_WaitForPreviousFrame()
     {
         // WAITING FOR THE FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
         // This is code implemented as such for simplicity. The D3D12HelloFrameBuffering
@@ -368,7 +371,7 @@ namespace Rxn::Graphics
         m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
     }
 
-    void SimulationWindow::PopulateCommandList()
+    void SimulationWindow::DX12_PopulateCommandList()
     {
         // Command list allocators can only be reset when the associated 
         // command lists have finished execution on the GPU; apps should use 
@@ -405,18 +408,18 @@ namespace Rxn::Graphics
         ThrowIfFailed(m_CommandList->Close());
     }
 
-    void SimulationWindow::OnDestroy()
+    void SimulationWindow::DX12_Destroy()
     {
-        WaitForPreviousFrame();
+        DX12_WaitForPreviousFrame();
         CloseHandle(m_FenceEvent);
     }
 
-    void SimulationWindow::OnRender()
+    void SimulationWindow::DX12_Render()
     {
         if (m_IsRenderReady)
         {
             // Record all the commands we need to render the scene into the command list.
-            PopulateCommandList();
+            DX12_PopulateCommandList();
 
             // Execute the command list.
             ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
@@ -425,15 +428,8 @@ namespace Rxn::Graphics
             // Present the frame.
             ThrowIfFailed(m_SwapChain->Present(1, 0));
 
-            WaitForPreviousFrame();
+            DX12_WaitForPreviousFrame();
         }
 
-    }
-
-    void SimulationWindow::OnInit()
-    {
-        LoadPipeline();
-        LoadAssets();
-        m_IsRenderReady = true;
     }
 }

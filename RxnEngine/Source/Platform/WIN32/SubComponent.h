@@ -14,7 +14,7 @@ namespace Rxn::Platform::Win32
     public:
 
         virtual void RegisterComponentClass() = 0;
-        virtual void Initialize() = 0;
+        virtual void InitializeWin32() = 0;
         const HWND GetParentHandle();
         const std::shared_ptr<SubComponent> GetParent();
         HICON GetIcon();

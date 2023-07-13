@@ -39,9 +39,9 @@ namespace Rxn::Platform::Win32
 
         int m_Active;
 
-        virtual void SetupWindowAppearance() {};
+        virtual void SetupWindow() {};
         virtual void RegisterComponentClass() override;
-        virtual void Initialize() override;
+        virtual void InitializeWin32() override;
         virtual LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
 
     protected:

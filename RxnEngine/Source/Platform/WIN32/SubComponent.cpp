@@ -86,7 +86,7 @@ namespace Rxn::Platform::Win32
         for (auto &child : m_ChildComponents)
         {
             child->RegisterComponentClass();
-            child->Initialize();
+            child->InitializeWin32();
         }
     }
 

@@ -43,7 +43,7 @@ namespace Rxn::Platform::Win32
         RegisterClassEx(&wcex);
     }
 
-    void Window::Initialize()
+    void Window::InitializeWin32()
     {
 
         RECT desktop;

@@ -145,9 +145,6 @@
     <ClCompile Include="Source\Graphics\RenderCore.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\RenderManager.cpp">
-      <Filter>Source\Graphics\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
@@ -218,9 +215,6 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\ComPointer.h">
       <Filter>Source\Graphics\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\RenderManager.h">
-      <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\d3dx12.h">
       <Filter>Source\Graphics\Public</Filter>

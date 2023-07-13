@@ -63,9 +63,12 @@ namespace Rxn::Engine
         }
         return Window::MessageHandler(hWnd, msg, wParam, lParam);
     }
-    void SplashWindow::SetupWindowAppearance()
+    void SplashWindow::SetupWindow()
     {
         m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
         m_Size = SIZE(500, 600);
+
+        RegisterComponentClass();
+        InitializeWin32();
     }
 }

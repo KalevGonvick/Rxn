@@ -19,23 +19,25 @@ namespace Rxn::Graphics
          */
         LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
 
-        virtual void SetupWindowAppearance() override;
 
-        void OnDestroy();
-        void OnRender();
-        void OnInit();
+        virtual void SetupWindow() override;
+
+        void DX12_Destroy();
+        void DX12_Render();
+
+        void DX12_LoadPipeline();
+        void DX12_LoadAssets();
 
     private:
 
-        void LoadPipeline();
-        void LoadAssets();
+
 
         _Use_decl_annotations_;
-        void GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
+        void DX12_GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
 
-        void CheckTearingSupport();
-        void WaitForPreviousFrame();
-        void PopulateCommandList();
+        void DX12_CheckTearingSupport();
+        void DX12_WaitForPreviousFrame();
+        void DX12_PopulateCommandList();
 
         struct Vertex
         {

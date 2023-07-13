@@ -108,5 +108,3 @@ inline void SetNameIndexed(ID3D12Object *pObject, LPCWSTR name, UINT index)
 inline void SetName(ID3D12Object *, LPCWSTR) {};
 inline void SetNameIndexed(ID3D12Object *, LPCWSTR, UINT) {};
 #endif
-
-#include "RenderManager.h"

@@ -16,7 +16,7 @@ namespace Rxn::Engine
         void AddMessage(const wchar_t *msg);
 
         virtual LRESULT MessageHandler(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM lParam) override;
-        virtual void SetupWindowAppearance() override;
+        virtual void SetupWindow() override;
 
     private:
 
