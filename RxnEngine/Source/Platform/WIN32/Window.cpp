@@ -8,10 +8,15 @@ namespace Rxn::Platform::Win32
         , m_TitleName(title)
         , m_Active(0)
         , m_WindowStyle(WindowStyle::RESIZEABLE)
-        , m_Size(SIZE(Constants::Win32::DEFAULTWINDOWWIDTH, Constants::Win32::DEFAULTWINDOWHEIGHT))
+        , m_Size(SIZE(Constants::Win32::DEFAULT_WINDOW_WIDTH, Constants::Win32::DEFAULT_WINDOW_HEIGHT))
         , m_WindowBackgroundColour(RGB(36, 36, 36))
         , m_WindowBorderColour(RGB(46, 46, 46))
         , m_WindowActiveBorderHighlightColour(RGB(155, 80, 255))
+        , m_WindowTitleActiveTextColour(RGB(255, 255, 255))
+        , m_WindowTitleInactiveTextColour(RGB(92, 92, 92))
+        , m_AddCloseButton(false)
+        , m_AddMaximizeButton(false)
+        , m_AddMinimizeButton(false)
         , m_WindowCaption()
     {}
 
@@ -19,7 +24,7 @@ namespace Rxn::Platform::Win32
 
     void Window::RegisterComponentClass()
     {
-        RXN_LOGGER::Trace(L"Registering new win32 component %s", GetClass().c_str());
+        RXN_LOGGER::Trace(L"Registering new win32 component %s", m_ClassName.c_str());
 
         WNDCLASSEX wcex{};
         wcex.cbSize = sizeof(WNDCLASSEX);
@@ -28,9 +33,9 @@ namespace Rxn::Platform::Win32
         wcex.cbWndExtra = 0;
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH)CreateSolidBrush(m_WindowBackgroundColour);
-        wcex.hIcon = this->GetIcon();
-        wcex.hIconSm = this->GetIcon();
-        wcex.lpszClassName = this->GetClass().c_str();
+        wcex.hIcon = GetIcon();
+        wcex.hIconSm = GetIcon();
+        wcex.lpszClassName = m_ClassName.c_str();
         wcex.lpszMenuName = nullptr;
         wcex.hInstance = HInstance();
         wcex.lpfnWndProc = SetupMessageHandler;
@@ -48,7 +53,7 @@ namespace Rxn::Platform::Win32
         HWND parent = GetParentHandle();
 
         m_pHWnd = CreateWindow(
-            GetClass().c_str(),
+            m_ClassName.c_str(),
             m_TitleName.c_str(),
             m_WindowStyle,
             ((desktop.right / 2) - (m_Size.cx / 2)),
@@ -253,9 +258,14 @@ namespace Rxn::Platform::Win32
         RXN_LOGGER::Trace(L"Adding dropshadow.");
         ModifyClassStyle(m_pHWnd, 0, CS_DROPSHADOW);
 
-        m_WindowCaption.AddButton(L"X", Command::CB_CLOSE);
-        m_WindowCaption.AddButton(L"🗖", Command::CB_MAXIMIZE);
-        m_WindowCaption.AddButton(L"🗕", Command::CB_MINIMIZE);
+        if (m_AddCloseButton)
+            m_WindowCaption.AddButton(L"X", Command::CB_CLOSE);
+
+        if (m_AddMaximizeButton)
+            m_WindowCaption.AddButton(L"🗖", Command::CB_MAXIMIZE);
+
+        if (m_AddMinimizeButton)
+            m_WindowCaption.AddButton(L"🗕", Command::CB_MINIMIZE);
     }
 
     void Window::HandleNonClientActivate(const int &active)
@@ -303,7 +313,7 @@ namespace Rxn::Platform::Win32
         {
             RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
             SetBkMode(hdc, TRANSPARENT);
-            SetTextColor(hdc, m_Active ? RGB(255, 255, 255) : RGB(92, 92, 92));
+            SetTextColor(hdc, m_Active ? m_WindowTitleActiveTextColour : m_WindowTitleInactiveTextColour);
             DrawText(hdc, m_TitleName.c_str(), wcslen(m_TitleName.c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
@@ -312,8 +322,8 @@ namespace Rxn::Platform::Win32
     {
         for (auto &button : m_WindowCaption.GetButtons())
         {
-            button.rect = RECT{ size.cx - button.width - button.offset, 0, size.cx, 30 };
-            DrawText(hdc, button.txt.c_str(), wcslen(button.txt.c_str()), &button.rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+            button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx, 30 };
+            DrawText(hdc, button->txt.c_str(), wcslen(button->txt.c_str()), &button->rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
 

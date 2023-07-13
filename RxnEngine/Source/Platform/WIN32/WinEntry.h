@@ -30,5 +30,7 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
         }
     }
 
-    return 0;
+    entry->OnDestroy();
+
+    return static_cast<char>(msg.wParam);
 }

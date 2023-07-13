@@ -68,11 +68,17 @@
     <Filter Include="Source\Core\Public\Math">
       <UniqueIdentifier>{d2d9a438-f065-4b85-8c2c-85013568bfcd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Public\Graphics">
-      <UniqueIdentifier>{a662d1c5-558c-4f00-87ea-838392242768}</UniqueIdentifier>
+    <Filter Include="Source\Graphics">
+      <UniqueIdentifier>{d655bad8-7079-4d6b-9e70-cfbd00504d84}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Private\Graphics">
-      <UniqueIdentifier>{f28cc8a8-3593-4ac0-ae9a-cab0c3ffaf2c}</UniqueIdentifier>
+    <Filter Include="Source\Graphics\Classes">
+      <UniqueIdentifier>{33aed58c-46bb-4a52-802b-1e98e2249caf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Public">
+      <UniqueIdentifier>{dd63adb2-260a-4fb4-a982-c47e099fac58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private">
+      <UniqueIdentifier>{992335a4-dce5-4289-9812-564d93f2dd8a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -130,14 +136,20 @@
     <ClCompile Include="Source\Core\Math\Math.cpp">
       <Filter>Source\Core\Private\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\ComPointer.cpp">
-      <Filter>Source\Engine\Private\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Platform\WIN32\SimulationWindow.cpp">
-      <Filter>Source\Platform\Win32\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Platform\WIN32\WindowManager.cpp">
       <Filter>Source\Platform\Win32\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\ComPointer.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\RenderCore.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\RenderManager.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
+      <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -198,17 +210,26 @@
     <ClInclude Include="Source\Core\Math\Math.h">
       <Filter>Source\Core\Public\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\ComPointer.h">
-      <Filter>Source\Engine\Public\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Platform\WIN32\SimulationWindow.h">
-      <Filter>Source\Platform\Win32\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Platform\WIN32\WindowManager.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\SplashScreen.h">
       <Filter>Source\Engine\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\ComPointer.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\RenderManager.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\d3dx12.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\RenderCore.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SimulationWindow.h">
+      <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

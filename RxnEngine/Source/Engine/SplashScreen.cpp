@@ -12,8 +12,7 @@ namespace Rxn::Engine
     SplashWindow::SplashWindow(WString windowTitle, WString windowClass)
         : Platform::Win32::Window(windowTitle, windowClass)
         , m_pwOutputMessage(L"...")
-    {
-    }
+    {}
 
     SplashWindow::~SplashWindow() = default;
 
@@ -42,7 +41,7 @@ namespace Rxn::Engine
             {
                 WString engineModeText = Engine::Runtime::GetEngineModeString() + L"Mode";
                 SetTextAlign(hdc, TA_RIGHT);
-                TextOut(hdc, this->GetSize().cx - 15, 15, engineModeText.c_str(), wcslen(engineModeText.c_str()));
+                TextOut(hdc, m_Size.cx - 15, 15, engineModeText.c_str(), wcslen(engineModeText.c_str()));
             }*/
 
             SetTextAlign(hdc, TA_CENTER);
@@ -63,5 +62,10 @@ namespace Rxn::Engine
 
         }
         return Window::MessageHandler(hWnd, msg, wParam, lParam);
+    }
+    void SplashWindow::SetupWindowAppearance()
+    {
+        m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
+        m_Size = SIZE(500, 600);
     }
 }

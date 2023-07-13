@@ -38,7 +38,7 @@
 /// </summary>
 /// <typeparam name="T">Com pointer Type</typeparam>
 template<typename CT, typename = std::enable_if_t<std::is_base_of_v<IUnknown, CT>>>
-class ComPointer
+class RXN_ENGINE_API ComPointer
 {
 public:
     // Default empty constructor
@@ -54,6 +54,7 @@ public:
     {
         SetPointerAndAddRef(other.m_pointer);
     }
+
     ComPointer(ComPointer<CT> &&other) noexcept
     {
         m_pointer = other.m_pointer;

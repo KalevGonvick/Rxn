@@ -69,7 +69,7 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -81,7 +81,7 @@
       <PreprocessorDefinitions>NDEBUG;WIN32;BUILD_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\RxnEngine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Rxn.h</PrecompiledHeaderFile>
@@ -91,7 +91,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -105,12 +105,14 @@
     <ClCompile Include="Source\Core\RxnBinaryHandler.cpp" />
     <ClCompile Include="Source\Engine\EngineContext.cpp" />
     <ClCompile Include="Source\Engine\EngineSettings.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
+    <ClCompile Include="Source\Graphics\ComPointer.cpp" />
+    <ClCompile Include="Source\Graphics\RenderCore.cpp" />
+    <ClCompile Include="Source\Graphics\RenderManager.cpp" />
+    <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
-    <ClCompile Include="Source\Platform\WIN32\SimulationWindow.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Caption.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Window.cpp" />
@@ -129,12 +131,15 @@
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
     <ClInclude Include="Source\Engine\EngineSettings.h" />
-    <ClInclude Include="Source\Engine\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Engine\SplashScreen.h" />
+    <ClInclude Include="Source\Graphics\ComPointer.h" />
+    <ClInclude Include="Source\Graphics\d3dx12.h" />
+    <ClInclude Include="Source\Graphics\RenderCore.h" />
+    <ClInclude Include="Source\Graphics\RenderManager.h" />
+    <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
-    <ClInclude Include="Source\Platform\WIN32\SimulationWindow.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
     <ClInclude Include="Source\Platform\WIN32\Caption.h" />
     <ClInclude Include="Source\Platform\WIN32\Window.h" />

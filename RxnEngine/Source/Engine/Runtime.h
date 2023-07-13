@@ -25,11 +25,12 @@ namespace Rxn::Engine
 
         const void SetupLogger();
         const void SetupPlatformGUI();
+        const void InitGraphics();
 
     protected:
 
-        RxnEngine m_Engine;
-        Platform::Win32::WindowManager m_WindowManager;
+        std::shared_ptr<RxnEngine> m_Engine;
+        std::shared_ptr<Platform::Win32::WindowManager> m_WindowManager;
 
     };
 

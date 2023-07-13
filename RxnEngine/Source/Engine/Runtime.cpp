@@ -2,7 +2,7 @@
 #include "Engine/Runtime.h"
 
 #include "Engine/SplashScreen.h"
-#include "Platform/WIN32/SimulationWindow.h"
+#include "Graphics/SimulationWindow.h"
 
 
 namespace Rxn::Engine
@@ -15,23 +15,26 @@ namespace Rxn::Engine
 
     void Runtime::PreInitialize()
     {
+        this->m_Engine = std::make_shared<RxnEngine>();
+        this->m_WindowManager = std::make_shared<Platform::Win32::WindowManager>();
         SetupLogger();
         SetupPlatformGUI();
+        InitGraphics();
     }
 
     void Runtime::SetMode(EngineRuntimeMode mode)
     {
-        return m_Engine.SetMode(mode);
+        return m_Engine->SetMode(mode);
     }
 
     const EngineRuntimeMode Runtime::GetEngineMode()
     {
-        return m_Engine.GetMode();
+        return m_Engine->GetMode();
     }
 
     const WString Runtime::GetEngineModeString()
     {
-        switch (m_Engine.GetMode())
+        switch (m_Engine->GetMode())
         {
         case EngineRuntimeMode::DEBUG:
             return L"Debug";
@@ -69,25 +72,33 @@ namespace Rxn::Engine
     {
         RXN_LOGGER::Info(L"Creating window classes");
 
-        auto splash = std::make_shared<SplashWindow>(Constants::Win32::SPLASHSCREENWINDOWKEY, Constants::Win32::SPLASHSCREENWINDOWKEY);
-        splash->m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
-        splash->m_Size = SIZE(500, 600);
-        m_WindowManager.AddWindow(splash);
+        auto splash = std::make_shared<SplashWindow>(Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, Constants::Win32::SPLASH_SCREEN_WINDOW_KEY);
+        splash->SetupWindowAppearance();
+        m_WindowManager->AddWindow(splash);
 
-        auto childsim = std::make_shared<Platform::Win32::SimulationWindow>(L"TestChildWindow", L"TestChildWindow");
-        childsim->m_Size = SIZE(200, 100);
+        auto mainsim = std::make_shared<Graphics::SimulationWindow>(Constants::Win32::RENDER_VIEW_WINDOW_KEY, Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1280, 720);
+        mainsim->SetupWindowAppearance();
+        mainsim->RegisterComponentClass();
+        mainsim->Initialize();
+        mainsim->OnInit();
+        m_WindowManager->AddWindow(mainsim);
 
-        auto mainsim = std::make_shared<Platform::Win32::SimulationWindow>(Constants::Win32::RENDERVIEWWINDOWKEY, Constants::Win32::RENDERVIEWWINDOWKEY);
-        mainsim->m_Size = SIZE(1280, 720);
-        mainsim->AddChildComponent(childsim);
+        //for (auto &window : m_WindowManager->m_ManagedWindows)
+        //{
+        //    window.second->RegisterComponentClass();
+        //    window.second->Initialize();
+        //}
 
-        m_WindowManager.AddWindow(mainsim);
 
-        for (auto &window : m_WindowManager.GetManagedWindows())
-        {
-            window.second->RegisterComponentClass();
-            window.second->Initialize();
-        }
+    }
+
+    const void Runtime::InitGraphics()
+    {
+        //std::shared_ptr<Platform::Win32::Window> registeredSim = m_WindowManager->m_ManagedWindows.at(Constants::Win32::RENDER_VIEW_WINDOW_KEY);
+
+        //m_RenderManager = std::make_shared<Graphics::RenderManager>(registeredSim->m_Size.cx, registeredSim->m_Size.cy, registeredSim->m_pHWnd);
+        //m_RenderManager->OnInit();
+
     }
 
 

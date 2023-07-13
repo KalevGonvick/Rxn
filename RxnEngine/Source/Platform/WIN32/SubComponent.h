@@ -15,14 +15,15 @@ namespace Rxn::Platform::Win32
 
         virtual void RegisterComponentClass() = 0;
         virtual void Initialize() = 0;
+        const HWND GetParentHandle();
+        const std::shared_ptr<SubComponent> GetParent();
+        HICON GetIcon();
 
-        WString const &GetClass();
+        const WString GetClass();
+
         void AddChildComponent(std::shared_ptr<SubComponent> child);
 
-        HICON GetIcon();
-        const HWND &GetParentHandle();
-
-        const std::shared_ptr<SubComponent> GetParent();
+        HWND m_pHWnd;
 
     protected:
 
@@ -33,16 +34,16 @@ namespace Rxn::Platform::Win32
 
         virtual LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-        HWND m_pHWnd;
+
 
         std::list<std::shared_ptr<SubComponent>> m_ChildComponents;
         std::shared_ptr<SubComponent> m_Parent;
 
-    private:
-
         bool m_isInitialized;
         WString m_ClassName;
         HICON m_Icon;
+
+
 
     };
 

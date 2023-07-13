@@ -65,6 +65,7 @@ namespace Rxn::Common::Cmd
                 // TODO handle parameter argument instead of flag
             }
         }
+        LocalFree(argv);
     }
 
     void ReadArgument(const wchar_t *argKey, const wchar_t *argValue, boolean argumentIsFlag)

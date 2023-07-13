@@ -264,7 +264,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAXLOGLINE];
+        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
         //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_INFO, b);
         this->PrintLn(LogLevel::RXN_INFO, b);
@@ -278,7 +278,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAXLOGLINE];
+        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
         //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_DEBUG, b);
         this->PrintLn(LogLevel::RXN_DEBUG, b);
@@ -291,7 +291,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAXLOGLINE];
+        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
         //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_WARN, b);
         this->PrintLn(LogLevel::RXN_WARN, b);
@@ -304,7 +304,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAXLOGLINE];
+        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
         //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_ERROR, b);
         this->PrintLn(LogLevel::RXN_ERROR, b);
@@ -317,7 +317,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAXLOGLINE];
+        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
         //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_TRACE, b);
         this->PrintLn(LogLevel::RXN_TRACE, b);

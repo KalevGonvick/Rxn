@@ -26,11 +26,20 @@ namespace Rxn::Platform::Win32
         Caption m_WindowCaption;
         SIZE m_Size;
         DWORD m_WindowStyle;
+
         COLORREF m_WindowBackgroundColour;
         COLORREF m_WindowBorderColour;
         COLORREF m_WindowActiveBorderHighlightColour;
+        COLORREF m_WindowTitleActiveTextColour;
+        COLORREF m_WindowTitleInactiveTextColour;
+
+        bool m_AddCloseButton;
+        bool m_AddMinimizeButton;
+        bool m_AddMaximizeButton;
+
         int m_Active;
 
+        virtual void SetupWindowAppearance() {};
         virtual void RegisterComponentClass() override;
         virtual void Initialize() override;
         virtual LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
@@ -137,10 +146,6 @@ namespace Rxn::Platform::Win32
          * \param hwnd              - window handle
          */
         void MaximizeWindow(const HWND &hwnd);
-
-
-
-    private:
 
 
     };

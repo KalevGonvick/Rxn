@@ -15,38 +15,38 @@ namespace Rxn::Platform::Win32
 
     SubComponent::~SubComponent() = default;
 
-    WString const &SubComponent::GetClass()
+    const WString SubComponent::GetClass()
     {
-        return this->m_ClassName;
+        return m_ClassName;
     }
 
     void SubComponent::AddChildComponent(std::shared_ptr<SubComponent> child)
     {
-        if (child->m_Parent != nullptr && child->m_Parent->GetClass() == this->GetClass())
+        if (child->m_Parent != nullptr && child->m_Parent->GetClass() == GetClass())
         {
-            this->m_ChildComponents.push_back(child);
+            m_ChildComponents.push_back(child);
         }
-        else if (child->m_Parent != nullptr && child->m_Parent->GetClass() != this->GetClass())
+        else if (child->m_Parent != nullptr && child->m_Parent->GetClass() != GetClass())
         {
             RXN_LOGGER::Error(L"Attempting to add child class that already has a different parent.");
         }
         else
         {
             child->m_Parent = std::shared_ptr<SubComponent>(this);
-            this->m_ChildComponents.push_back(child);
+            m_ChildComponents.push_back(child);
         }
     }
 
     HICON SubComponent::GetIcon()
     {
-        return this->m_Icon;
+        return m_Icon;
     }
 
-    const HWND &SubComponent::GetParentHandle()
+    const HWND SubComponent::GetParentHandle()
     {
-        if (this->GetParent() != nullptr)
+        if (GetParent() != nullptr)
         {
-            return this->GetParent()->m_pHWnd;
+            return GetParent()->m_pHWnd;
         }
         else
         {
@@ -56,7 +56,7 @@ namespace Rxn::Platform::Win32
 
     const std::shared_ptr<SubComponent> SubComponent::GetParent()
     {
-        return this->m_Parent;
+        return m_Parent;
     }
 
 
@@ -83,7 +83,7 @@ namespace Rxn::Platform::Win32
 
     void SubComponent::InitializeChildren()
     {
-        for (auto &child : this->m_ChildComponents)
+        for (auto &child : m_ChildComponents)
         {
             child->RegisterComponentClass();
             child->Initialize();

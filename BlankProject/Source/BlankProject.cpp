@@ -15,8 +15,8 @@ public:
     void ConfigureEngine();
 
     void Initialize();
-
-    void Update() {};
+    void OnDestroy();
+    void Update();
 };
 
 ENTRYAPP(BlankProject)
@@ -24,8 +24,6 @@ ENTRYAPP(BlankProject)
 
 void BlankProject::ConfigureEngine()
 {
-
-
     RXN_CONTEXT::GetEngineSettings().SetGameName(L"Blank Project");
     RXN_CONTEXT::GetEngineSettings().SetGameShortName(L"BP");
     RXN_CONTEXT::GetEngineSettings().SetMainIcon(L"");
@@ -41,5 +39,13 @@ void BlankProject::ConfigureEngine()
 }
 
 void BlankProject::Initialize()
+{
+}
+
+void BlankProject::OnDestroy()
+{
+}
+
+void BlankProject::Update()
 {
 }

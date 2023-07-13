@@ -28,7 +28,6 @@
 /* -------------------------------------------------------- */
 #pragma region Engine
 
-
 #include "Engine/RxnEngine.h"
 #include "Engine/EngineSettings.h"
 #include "Engine/EngineContext.h"
@@ -36,6 +35,11 @@
 #pragma endregion
 /* -------------------------------------------------------- */
 
+#pragma region Graphics
+
+#include "Graphics/RenderCore.h"
+
+#pragma endregion
 
 /* -------------------------------------------------------- */
 /*  Windows Platform                                        */
@@ -44,19 +48,16 @@
 
 #ifdef WIN32
 
-#define NOMINMAX
-
-#include <d3d12.h>
-#include <dxgi1_6.h>
-
-#ifdef _DEBUG
-#include <d3d12sdklayers.h>
-#include <dxgidebug.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
+#include <windows.h>
 
 #include "Platform/WIN32/SubComponent.h"
 #include "Platform/WIN32/Window.h"
 #include "Platform/WIN32/IApplication.h"
+
+#include <wrl.h>
 
 #endif
 

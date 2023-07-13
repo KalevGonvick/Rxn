@@ -18,6 +18,7 @@ namespace Rxn::Platform::Win32
         virtual void PreInitialize() = 0;
         virtual void Initialize() = 0;
         virtual void Update() = 0;
+        virtual void OnDestroy() = 0;
     };
 
 } // Rxn::Platform::Win32
