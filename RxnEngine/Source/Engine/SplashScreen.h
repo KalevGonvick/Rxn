@@ -11,6 +11,8 @@ namespace Rxn::Engine
         SplashWindow(WString windowClass, WString windowTitle);
         ~SplashWindow();
 
+        virtual void Render() override {};
+
     public:
 
         void AddMessage(const wchar_t *msg);

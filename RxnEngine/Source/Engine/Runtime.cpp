@@ -17,9 +17,9 @@ namespace Rxn::Engine
     {
         this->m_Engine = std::make_shared<RxnEngine>();
         this->m_WindowManager = std::make_shared<Platform::Win32::WindowManager>();
+
         SetupLogger();
-        SetupPlatformGUI();
-        InitGraphics();
+        //SetupPlatformGUI();
     }
 
     void Runtime::SetMode(EngineRuntimeMode mode)
@@ -80,21 +80,6 @@ namespace Rxn::Engine
         mainsim->SetupWindow();
         m_WindowManager->AddWindow(mainsim);
 
-        //for (auto &window : m_WindowManager->m_ManagedWindows)
-        //{
-        //    window.second->RegisterComponentClass();
-        //    window.second->Initialize();
-        //}
-
-
-    }
-
-    const void Runtime::InitGraphics()
-    {
-        //std::shared_ptr<Platform::Win32::Window> registeredSim = m_WindowManager->m_ManagedWindows.at(Constants::Win32::RENDER_VIEW_WINDOW_KEY);
-
-        //m_RenderManager = std::make_shared<Graphics::RenderManager>(registeredSim->m_Size.cx, registeredSim->m_Size.cy, registeredSim->m_pHWnd);
-        //m_RenderManager->OnInit();
 
     }
 

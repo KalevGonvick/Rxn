@@ -110,6 +110,7 @@
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
     <ClCompile Include="Source\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Graphics\RenderCore.cpp" />
+    <ClCompile Include="Source\Graphics\RenderFramework.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="Source\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Graphics\d3dx12.h" />
     <ClInclude Include="Source\Graphics\RenderCore.h" />
+    <ClInclude Include="Source\Graphics\RenderFramework.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
