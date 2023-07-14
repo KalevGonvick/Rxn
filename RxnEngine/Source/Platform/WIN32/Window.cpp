@@ -71,9 +71,6 @@ namespace Rxn::Platform::Win32
             RXN_LOGGER::Error(L"Failed to create window %s.", m_TitleName.c_str());
             return;
         }
-
-        ShowWindow(m_pHWnd, SW_SHOW);
-        UpdateWindow(m_pHWnd);
     }
 
     LRESULT Window::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -95,27 +92,27 @@ namespace Rxn::Platform::Win32
             this->HandleNonClientPaint((HRGN)wParam);
             return 0;
         }
-        case WM_PAINT:
-        {
-            this->HandlePaint();
-            break;
-        }
-        case WM_NCMBUTTONDBLCLK:
-        {
-            this->HandleNonClientAreaDoubleClick();
-            return 0;
-        }
+        //case WM_PAINT:
+        //{
+        //    //this->HandlePaint();
+        //    break;
+        //}
+        //case WM_NCMBUTTONDBLCLK:
+        //{
+        //    //this->HandleNonClientAreaDoubleClick();
+        //    return 0;
+        //}
         case WM_NCLBUTTONDOWN:
         {
             this->HandleNonClientLeftClickDown();
             break;
         }
-        case WM_SIZING:
-        case WM_MOVING:
-        {
-            this->Redraw();
-            return 1;
-        }
+        //case WM_SIZING:
+        //case WM_MOVING:
+        //{
+        //    this->Redraw();
+        //    return 1;
+        //}
         case WM_ENTERSIZEMOVE:
         case WM_MOVE:
         case WM_SIZE:
@@ -123,11 +120,11 @@ namespace Rxn::Platform::Win32
             this->Redraw();
             return 0;
         }
-        case WM_TIMER:
-        {
-            this->Redraw();
-            return 0;
-        }
+        //case WM_TIMER:
+        //{
+        //    this->Redraw();
+        //    return 0;
+        //}
         }
 
         return SubComponent::MessageHandler(hWnd, msg, wParam, lParam);
@@ -184,17 +181,20 @@ namespace Rxn::Platform::Win32
         {
         case Command::CB_CLOSE:
         {
-            SendMessage(m_pHWnd, WM_CLOSE, 0, 0);
+            RXN_LOGGER::Info(L"Clicked max button...");
+            //SendMessage(m_pHWnd, WM_CLOSE, 0, 0);
             break;
         }
         case Command::CB_MAXIMIZE:
         {
-            MaximizeWindow(m_pHWnd);
+            RXN_LOGGER::Info(L"Clicked max button...");
+            //MaximizeWindow(m_pHWnd);
             break;
         }
         case Command::CB_MINIMIZE:
         {
-            ShowWindow(m_pHWnd, SW_MINIMIZE);
+            RXN_LOGGER::Info(L"Clicked min button...");
+            //ShowWindow(m_pHWnd, SW_MINIMIZE);
             break;
         }
         case Command::CB_NOP:
@@ -250,7 +250,7 @@ namespace Rxn::Platform::Win32
 
     void Window::HandleNonClientCreate()
     {
-        SetTimer(m_pHWnd, 1, 15, 0);
+        //SetTimer(m_pHWnd, 1, 15, 0);
 
         RXN_LOGGER::Trace(L"Removing default windows theme.");
         SetWindowTheme(m_pHWnd, L"", L"");

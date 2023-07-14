@@ -17,6 +17,8 @@
 #include <wrl.h>
 #include <shellapi.h>
 
+#include "RenderFramework.h"
+
 template<class T>
 void ResetComPtrArray(T *comPtrArray)
 {
@@ -51,6 +53,17 @@ private:
     const HRESULT m_hr;
 };
 
+template<typename T>
+inline void SafeRelease(T *&rpInterface)
+{
+    T *pInterface = rpInterface;
+
+    if (pInterface)
+    {
+        pInterface->Release();
+        rpInterface = nullptr;
+    }
+}
 
 inline void ThrowIfFailed(HRESULT result)
 {

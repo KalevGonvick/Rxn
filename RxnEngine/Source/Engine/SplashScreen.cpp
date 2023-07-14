@@ -70,5 +70,8 @@ namespace Rxn::Engine
 
         RegisterComponentClass();
         InitializeWin32();
+
+        ShowWindow(m_pHWnd, SW_SHOW);
+        UpdateWindow(m_pHWnd);
     }
 }

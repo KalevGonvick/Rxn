@@ -148,6 +148,9 @@
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\RenderFramework.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Core\Core.h">
@@ -223,6 +226,9 @@
       <Filter>Source\Graphics\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\SimulationWindow.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\RenderFramework.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,6 +20,8 @@ namespace Rxn::Platform::Win32
         Window(WString className, WString title);
         ~Window();
 
+        virtual void Render() {};
+
     public:
 
         WString m_TitleName;

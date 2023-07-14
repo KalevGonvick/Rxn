@@ -25,7 +25,6 @@ namespace Rxn::Engine
 
         const void SetupLogger();
         const void SetupPlatformGUI();
-        const void InitGraphics();
 
     protected:
 
