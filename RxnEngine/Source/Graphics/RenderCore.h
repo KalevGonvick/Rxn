@@ -65,6 +65,11 @@ inline void SafeRelease(T *&rpInterface)
     }
 }
 
+inline UINT Align(UINT location, UINT align = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
+{
+    return (location + (align - 1)) & ~(align - 1);
+}
+
 inline void ThrowIfFailed(HRESULT result)
 {
     if (FAILED(result))
@@ -121,3 +126,6 @@ inline void SetNameIndexed(ID3D12Object *pObject, LPCWSTR name, UINT index)
 inline void SetName(ID3D12Object *, LPCWSTR) {};
 inline void SetNameIndexed(ID3D12Object *, LPCWSTR, UINT) {};
 #endif
+
+#define NAME_D3D12_OBJECT(x) SetName((x).Get(), L#x)
+#define NAME_D3D12_OBJECT_INDEXED(x, n) SetNameIndexed((x)[n].Get(), L#x, n)

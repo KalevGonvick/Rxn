@@ -11,13 +11,21 @@ namespace Rxn::Graphics
         , m_ScissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
         , m_Height(height)
         , m_RTVDescriptorSize(0)
+        , m_SRVDescriptorSize(0)
         , m_IsRenderReady(false)
+        , m_DrawIndex(0)
         , m_FenceValues{}
+        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, Constants::Graphics::SLIDE_COUNT)
+        , m_PipelineLibrary(Constants::Graphics::SLIDE_COUNT, RootParameterCB)
     {
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
         m_AssetsPath = assetsPath;
         m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
+
+        memset(m_EnabledEffects, true, sizeof(m_EnabledEffects));
+
+        ThrowIfFailed(DXGIDeclareAdapterRemovalSupport());
     }
 
     RenderFramework::~RenderFramework()
@@ -79,7 +87,7 @@ namespace Rxn::Graphics
         HRESULT result;
         // Describe and create a render target view (RTV) descriptor heap.
         D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-        rtvHeapDesc.NumDescriptors = Constants::Graphics::SLIDE_COUNT;
+        rtvHeapDesc.NumDescriptors = Constants::Graphics::SLIDE_COUNT + 1;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
         result = m_Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_RTVHeap));
@@ -104,6 +112,7 @@ namespace Rxn::Graphics
 
 
         m_RTVDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        m_SRVDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         return S_OK;
     }
@@ -124,9 +133,9 @@ namespace Rxn::Graphics
                 RXN_LOGGER::Error(L"Failed to create RTV for buffer %d", n);
                 return result;
             }
-
             m_Device->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
+            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
 
             result = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
             if (FAILED(result))
@@ -134,7 +143,38 @@ namespace Rxn::Graphics
                 RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
                 return result;
             }
+            NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
         }
+
+        D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[0]->GetDesc();
+        D3D12_CLEAR_VALUE clearValue = {};
+        memcpy(clearValue.Color, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, sizeof(Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR));
+        clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        // Create an intermediate render target that is the same dimensions as the swap chain.
+        const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        ThrowIfFailed(m_Device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &renderTargetDesc,
+            D3D12_RESOURCE_STATE_RENDER_TARGET,
+            &clearValue,
+            IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+
+        NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+
+        m_Device->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
+        rtvHandle.Offset(1, m_RTVDescriptorSize);
+
+        // Create a SRV of the intermediate render target.
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Format = renderTargetDesc.Format;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
+        m_Device->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
 
         return S_OK;
     }
@@ -152,11 +192,16 @@ namespace Rxn::Graphics
             featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
         }
 
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        // We don't modify the SRV in the command list after SetGraphicsRootDescriptorTable
+        // is executed on the GPU so we can use the default range behavior:
+        // D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[RootParametersCount];
+        ranges[RootParameterSRV].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
-        CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-        rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+        rootParameters[RootParameterUberShaderCB].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameters[RootParameterCB].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameters[RootParameterSRV].InitAsDescriptorTable(1, &ranges[RootParameterSRV], D3D12_SHADER_VISIBILITY_PIXEL);
 
         D3D12_STATIC_SAMPLER_DESC sampler = {};
         sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -193,6 +238,7 @@ namespace Rxn::Graphics
             RXN_LOGGER::Error(L"Failed to declare root signature.");
             return result;
         }
+        NAME_D3D12_OBJECT(m_RootSignature);
 
         return S_OK;
     }
@@ -201,12 +247,12 @@ namespace Rxn::Graphics
     {
         HRESULT result;
 
-        result = DX12_CreateNewPSO();
+        /*result = DX12_CreateNewPSO();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create new pipeline state object.");
             return result;
-        }
+        }*/
 
         result = DX12_CreateCommandList();
         if (FAILED(result))
@@ -215,21 +261,23 @@ namespace Rxn::Graphics
             return result;
         }
 
-        result = DX12_CreateVertexBufferResource();
+        ComPointer<ID3D12Resource> vertexIndexUpload;
+        result = DX12_CreateVertexBufferResource(vertexIndexUpload);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create vertex buffer resource.");
             return result;
         }
 
-        ComPointer<ID3D12Resource> textureUploadHeap;
+        m_DynamicConstantBuffer.Init(m_Device.Get());
 
-        result = DX12_CreateTextureUploadHeap(textureUploadHeap);
+        /*ComPointer<ID3D12Resource> textureUpload;
+        result = DX12_CreateTextureUploadHeap(textureUpload);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload texture.");
             return result;
-        }
+        }*/
 
         // Close the command list and execute it to begin the initial GPU setup.
         ThrowIfFailed(m_CommandList->Close());
@@ -256,8 +304,10 @@ namespace Rxn::Graphics
 
         m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
 
+        m_PipelineLibrary.Build(m_Device.Get(), m_RootSignature.Get());
+
         return S_OK;
-    }
+        }
 
     HRESULT RenderFramework::DX12_CreateNewPSO()
     {
@@ -327,51 +377,105 @@ namespace Rxn::Graphics
         return result;
     }
 
-    HRESULT RenderFramework::DX12_CreateVertexBufferResource()
+    HRESULT RenderFramework::DX12_CreateVertexBufferResource(ComPointer<ID3D12Resource> &vertexIndexBufferUpload)
     {
         // Define the geometry for a triangle.
-        Vertex triangleVertices[] =
-        {
-            { { 0.0f, 0.25f * m_AspectRatio, 0.0f }, { 0.5f, 0.0f } },
-            { { 0.25f, -0.25f * m_AspectRatio, 0.0f }, { 1.0f, 1.0f } },
-            { { -0.25f, -0.25f * m_AspectRatio, 0.0f }, { 0.0f, 1.0f } }
+        const VertexPositionColour cubeVertices[] = {
+            { { -1.0f, 1.0f, -1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour()  } },  // Back Top Left
+            { {  1.0f, 1.0f, -1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Back Top Right
+            { {  1.0f, 1.0f,  1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Front Top Right
+            { { -1.0f, 1.0f,  1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Front Top Left
+
+            { { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Back Bottom Left
+            { {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Back Bottom Right
+            { {  1.0f, -1.0f,  1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Front Bottom Right
+            { { -1.0f, -1.0f,  1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Front Bottom Left
         };
 
-        const UINT vertexBufferSize = sizeof(triangleVertices);
-        const CD3DX12_HEAP_PROPERTIES heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-        const auto buf = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+        const UINT cubeIndices[] =
+        {
+            0, 1, 3,
+            1, 2, 3,
+
+            3, 2, 7,
+            6, 7, 2,
+
+            2, 1, 6,
+            5, 6, 1,
+
+            1, 0, 5,
+            4, 5, 0,
+
+            0, 3, 4,
+            7, 4, 3,
+
+            7, 6, 4,
+            5, 4, 6,
+        };
+
+        static const VertexPositionUV quadVertices[] =
+        {
+            { { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },    // Bottom Left
+            { { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },    // Top Left
+            { { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },    // Bottom Right
+            { { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },        // Top Right
+        };
+
+        const UINT vertexIndexBufferSize = sizeof(cubeIndices) + sizeof(cubeVertices) + sizeof(quadVertices);
 
         HRESULT result;
 
-        // Note: using upload heaps to transfer static data like vert buffers is not 
-        // recommended. Every time the GPU needs it, the upload heap will be marshalled 
-        // over. Please read up on Default Heap usage. An upload heap is used here for 
-        // code simplicity and because there are very few verts to actually transfer.
-        result = m_Device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &buf, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_VertexBuffer));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to upload buffer data.");
-            return result;
-        }
+        const auto defaultBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
+        const CD3DX12_HEAP_PROPERTIES defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        ThrowIfFailed(m_Device->CreateCommittedResource(
+            &defaultHeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &defaultBuf,
+            D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr,
+            IID_PPV_ARGS(&m_VertexIndexBuffer)));
 
-        // Copy the triangle data to the vertex buffer.
-        UINT8 *pVertexDataBegin = nullptr;
+        const CD3DX12_HEAP_PROPERTIES uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        const auto uploadBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
+        ThrowIfFailed(m_Device->CreateCommittedResource(
+            &uploadHeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &uploadBuf,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&vertexIndexBufferUpload)));
+
+        NAME_D3D12_OBJECT(m_VertexIndexBuffer);
+
+        UINT8 *mappedUploadHeap = nullptr;
         CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+        ThrowIfFailed(vertexIndexBufferUpload->Map(0, &readRange, reinterpret_cast<void **>(&mappedUploadHeap)));
 
-        result = m_VertexBuffer->Map(0, &readRange, reinterpret_cast<void **>(&pVertexDataBegin));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to map vertex buffer");
-            return result;
-        }
+        // Fill in part of the upload heap with our index and vertex data.
+        UINT8 *heapLocation = static_cast<UINT8 *>(mappedUploadHeap);
+        memcpy(heapLocation, cubeVertices, sizeof(cubeVertices));
+        heapLocation += sizeof(cubeVertices);
+        memcpy(heapLocation, cubeIndices, sizeof(cubeIndices));
+        heapLocation += sizeof(cubeIndices);
+        memcpy(heapLocation, quadVertices, sizeof(quadVertices));
 
-        memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-        m_VertexBuffer->Unmap(0, nullptr);
+        // Pack the vertices and indices into their destination by copying from the upload heap.
+        m_CommandList->CopyBufferRegion(m_VertexIndexBuffer.Get(), 0, vertexIndexBufferUpload.Get(), 0, vertexIndexBufferSize);
+        const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_VertexIndexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER | D3D12_RESOURCE_STATE_INDEX_BUFFER);
+        m_CommandList->ResourceBarrier(1, &transition);
 
-        // Initialize the vertex buffer view.
-        m_VertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
-        m_VertexBufferView.StrideInBytes = sizeof(Vertex);
-        m_VertexBufferView.SizeInBytes = vertexBufferSize;
+        // Create the index and vertex buffer views.
+        m_CubeVbv.BufferLocation = m_VertexIndexBuffer.Get()->GetGPUVirtualAddress();
+        m_CubeVbv.SizeInBytes = sizeof(cubeVertices);
+        m_CubeVbv.StrideInBytes = sizeof(VertexPositionColour);
+
+        m_CubeIbv.BufferLocation = m_CubeVbv.BufferLocation + sizeof(cubeVertices);
+        m_CubeIbv.SizeInBytes = sizeof(cubeIndices);
+        m_CubeIbv.Format = DXGI_FORMAT_R32_UINT;
+
+        m_QuadVbv.BufferLocation = m_CubeIbv.BufferLocation + sizeof(cubeIndices);
+        m_QuadVbv.SizeInBytes = sizeof(quadVertices);
+        m_QuadVbv.StrideInBytes = sizeof(VertexPositionUV);
 
         return S_OK;
     }
@@ -419,7 +523,7 @@ namespace Rxn::Graphics
 
         D3D12_SUBRESOURCE_DATA textureData = {};
         textureData.pData = &texture[0];
-        textureData.RowPitch = TextureWidth * TexturePixelSize;
+        textureData.RowPitch = TextureWidth * TextureBytesPerPixel;
         textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
         UpdateSubresources(m_CommandList.Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
@@ -440,7 +544,7 @@ namespace Rxn::Graphics
     // Generate a simple black and white checkerboard texture.
     std::vector<UINT8> RenderFramework::GenerateTextureData()
     {
-        const UINT rowPitch = TextureWidth * TexturePixelSize;
+        const UINT rowPitch = TextureWidth * TextureBytesPerPixel;
         const UINT cellPitch = rowPitch >> 3;        // The width of a cell in the checkboard texture.
         const UINT cellHeight = TextureWidth >> 3;    // The height of a cell in the checkerboard texture.
         const UINT textureSize = rowPitch * TextureHeight;
@@ -448,7 +552,7 @@ namespace Rxn::Graphics
         std::vector<UINT8> data(textureSize);
         UINT8 *pData = &data[0];
 
-        for (UINT n = 0; n < textureSize; n += TexturePixelSize)
+        for (UINT n = 0; n < textureSize; n += TextureBytesPerPixel)
         {
             UINT x = n % rowPitch;
             UINT y = n / rowPitch;
@@ -544,30 +648,111 @@ namespace Rxn::Graphics
         ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
         m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        m_CommandList->SetGraphicsRootDescriptorTable(0, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+        //m_CommandList->SetGraphicsRootDescriptorTable(0, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_CommandList->RSSetViewports(1, &m_Viewport);
         m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
-        // Indicate that the back buffer will be used as a render target.
-        const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        m_CommandList->ResourceBarrier(1, &transition);
-
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::SLIDE_COUNT, m_RTVDescriptorSize);
+        CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+        m_CommandList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
 
         // Record commands.
-        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        m_CommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
-        m_CommandList->DrawInstanced(3, 1, 0, 0);
+        m_CommandList->ClearRenderTargetView(intermediateRtvHandle, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
 
+        {
+            static float rot = 0.0f;
+            DrawConstantBuffer *drawCB = (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, m_FrameIndex);
+            drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Camera.GetViewMatrix() * m_ProjectionMatrix);
 
-        // Indicate that the back buffer will now be used to present.
-        const auto finaltransition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-        m_CommandList->ResourceBarrier(1, &finaltransition);
+            rot += 0.01f;
+
+            m_CommandList->IASetVertexBuffers(0, 1, &m_CubeVbv);
+            m_CommandList->IASetIndexBuffer(&m_CubeIbv);
+            m_PipelineLibrary.SetPipelineState(m_Device.Get(), m_RootSignature.Get(), m_CommandList.Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+
+            m_CommandList->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            m_CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+            m_DrawIndex++;
+        }
+
+        // Set up the state for a fullscreen quad.
+        m_CommandList->IASetVertexBuffers(0, 1, &m_QuadVbv);
+        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+        // Indicate that the back buffer will be used as a render target and the
+        // intermediate render target will be used as a SRV.
+        D3D12_RESOURCE_BARRIER barriers[] = {
+            CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET),
+            CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+        };
+
+        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandList->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+        const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        m_CommandList->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
+        m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+        {
+            UINT quadCount = 0;
+            static const UINT quadsX = 3;
+            static const UINT quadsY = 3;
+
+            // Cycle through all of the effects.
+            for (UINT i = Mapped::PostBlit; i < Mapped::EffectPipelineTypeCount; i++)
+            {
+                if (m_EnabledEffects[i])
+                {
+                    CD3DX12_VIEWPORT viewport(
+                        (quadCount % quadsX) * (m_Viewport.Width / quadsX),
+                        (quadCount / quadsY) * (m_Viewport.Height / quadsY),
+                        m_Viewport.Width / quadsX,
+                        m_Viewport.Height / quadsY);
+
+                    //PIXBeginEvent(m_commandList.Get(), 0, g_cEffectNames[i]);
+                    m_CommandList->RSSetViewports(1, &viewport);
+                    m_PipelineLibrary.SetPipelineState(m_Device.Get(), m_RootSignature.Get(), m_CommandList.Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
+                    m_CommandList->DrawInstanced(4, 1, 0, 0);
+                    //PIXEndEvent(m_commandList.Get());
+                }
+
+                quadCount++;
+            }
+        }
+
+        // Revert resource states back to original values.
+        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+        barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
 
         ThrowIfFailed(m_CommandList->Close());
+
+        //// Indicate that the back buffer will be used as a render target.
+        //const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        //m_CommandList->ResourceBarrier(1, &transition);
+
+        //CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
+        //m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+        //// Record commands.
+        //const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+        //m_CommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        //m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        //m_CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
+        //m_CommandList->DrawInstanced(3, 1, 0, 0);
+
+
+        //// Indicate that the back buffer will now be used to present.
+        //const auto finaltransition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+        //m_CommandList->ResourceBarrier(1, &finaltransition);
+
+        //ThrowIfFailed(m_CommandList->Close());
     }
 
     void RenderFramework::DX12_Destroy()
@@ -589,6 +774,9 @@ namespace Rxn::Graphics
 
             // Present the frame.
             ThrowIfFailed(m_SwapChain->Present(1, 0));
+
+            m_DrawIndex = 0;
+            m_PipelineLibrary.EndFrame();
 
             DX12_MoveToNextFrame();
         }
@@ -634,7 +822,7 @@ namespace Rxn::Graphics
                 {
                     RXN_LOGGER::Info(L"Using software adaptor, no need to setup physical device...");
                     continue;
-                }
+            }
 
                 // Check to see whether the adapter supports Direct3D 12, but don't create the
                 // actual device yet.
@@ -643,8 +831,8 @@ namespace Rxn::Graphics
                     RXN_LOGGER::Info(L"Created device successfully!");
                     break;
                 }
-            }
         }
+    }
 
         adapter.Release();
     }

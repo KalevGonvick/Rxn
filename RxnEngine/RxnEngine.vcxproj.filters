@@ -80,6 +80,18 @@
     <Filter Include="Source\Graphics\Private">
       <UniqueIdentifier>{992335a4-dce5-4289-9812-564d93f2dd8a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Graphics\Private\Mapped">
+      <UniqueIdentifier>{738bb568-cdb9-484a-8287-74c630f6af4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Mapped">
+      <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders">
+      <UniqueIdentifier>{448acccd-a781-459a-b883-6731afb82ed1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\ShaderHeaders">
+      <UniqueIdentifier>{b161cf97-b88d-4984-8107-c19b37ee78b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -150,6 +162,24 @@
     </ClCompile>
     <ClCompile Include="Source\Graphics\RenderFramework.cpp">
       <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedPipelineLibrary.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\PipelineLibrary.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Camera.cpp">
+      <Filter>Source\Engine\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -231,5 +261,106 @@
     <ClInclude Include="Source\Graphics\RenderFramework.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\PipelineLibrary.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\BlurPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\DistortPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\EdgeDetectPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\GrayScalePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\InvertPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\PixelatePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\QuadVertexShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\SimplePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\SimpleVertexShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\UberPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\WarpPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\WavePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\StepTimer.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Camera.h">
+      <Filter>Source\Engine\Classes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\BlurPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\DistortPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\EdgeDetectPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\GrayScalePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\InvertPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\PixelatePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\QuadVertexShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\SimplePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\SimpleVertexShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\UberPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\WarpPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\WavePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

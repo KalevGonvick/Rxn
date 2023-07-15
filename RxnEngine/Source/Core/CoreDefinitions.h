@@ -69,6 +69,7 @@ namespace Rxn::Constants
     namespace Graphics
     {
         const unsigned short SLIDE_COUNT = 2;
+        const float INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
     }
 
 }

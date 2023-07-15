@@ -75,6 +75,11 @@ namespace Rxn::Graphics
             throw std::exception("Failed to load assets...");
         }
 
+        m_Camera.Init({ 0.0f, 0.0f, 5.0f });
+        m_Camera.SetMoveSpeed(1.0f);
+
+        m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
+
         // Wait for the command list to execute; we are reusing the same command 
         // list in our main loop but for now, we just want to wait for setup to 
         // complete before continuing.
@@ -123,6 +128,7 @@ namespace Rxn::Graphics
         }
 
         m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+        m_SwapChainEvent = m_SwapChain->GetFrameLatencyWaitableObject();
 
         return result;
     }
