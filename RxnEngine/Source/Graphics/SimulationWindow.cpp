@@ -22,7 +22,9 @@ namespace Rxn::Graphics
         {
         case WM_SIZE:
         {
-            OnSizeChange();
+            if (m_IsRenderReady)
+                OnSizeChange();
+
             return 0;
         }
         default:
@@ -73,7 +75,10 @@ namespace Rxn::Graphics
             throw std::exception("Failed to load assets...");
         }
 
-        DX12_WaitForPreviousFrame();
+        // Wait for the command list to execute; we are reusing the same command 
+        // list in our main loop but for now, we just want to wait for setup to 
+        // complete before continuing.
+        DX12_WaitForGPUFence();
 
         m_IsRenderReady = true;
 
@@ -116,6 +121,9 @@ namespace Rxn::Graphics
         {
             RXN_LOGGER::Error(L"Failed to cast swapchain.");
         }
+
+        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+
         return result;
     }
 
@@ -126,7 +134,7 @@ namespace Rxn::Graphics
             m_RenderTargets[i].Release();
         }
 
-        DX12_WaitForPreviousFrame();
+        DX12_WaitForGPUFence();
     }
 
     HRESULT SimulationWindow::OnSizeChange()
