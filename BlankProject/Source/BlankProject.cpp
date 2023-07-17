@@ -58,7 +58,8 @@ void BlankProject::Initialize()
 void BlankProject::Update()
 {
     auto win = std::dynamic_pointer_cast<Rxn::Graphics::SimulationWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY));
-    win->Render();
+    win->DX12_Update();
+    win->DX12_Render();
 
 }
 

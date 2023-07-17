@@ -15,8 +15,8 @@ namespace Rxn::Graphics
         , m_IsRenderReady(false)
         , m_DrawIndex(0)
         , m_FenceValues{}
-        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, Constants::Graphics::SLIDE_COUNT)
-        , m_PipelineLibrary(Constants::Graphics::SLIDE_COUNT, RootParameterCB)
+        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, Constants::Graphics::BUFFER_COUNT)
+        , m_PipelineLibrary(Constants::Graphics::BUFFER_COUNT, RootParameterCB)
     {
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
@@ -28,9 +28,7 @@ namespace Rxn::Graphics
         ThrowIfFailed(DXGIDeclareAdapterRemovalSupport());
     }
 
-    RenderFramework::~RenderFramework()
-    {
-    }
+    RenderFramework::~RenderFramework() = default;
 
     HRESULT RenderFramework::DX12_LoadPipeline()
     {
@@ -87,7 +85,7 @@ namespace Rxn::Graphics
         HRESULT result;
         // Describe and create a render target view (RTV) descriptor heap.
         D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-        rtvHeapDesc.NumDescriptors = Constants::Graphics::SLIDE_COUNT + 1;
+        rtvHeapDesc.NumDescriptors = Constants::Graphics::BUFFER_COUNT + 1;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
         result = m_Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_RTVHeap));
@@ -124,7 +122,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
         // Create a RTV for each frame.
-        for (UINT n = 0; n < Constants::Graphics::SLIDE_COUNT; n++)
+        for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
         {
 
             result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
@@ -195,10 +193,10 @@ namespace Rxn::Graphics
         // We don't modify the SRV in the command list after SetGraphicsRootDescriptorTable
         // is executed on the GPU so we can use the default range behavior:
         // D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[RootParametersCount];
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[RootParametersCount]{};
         ranges[RootParameterSRV].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
-        CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+        CD3DX12_ROOT_PARAMETER1 rootParameters[3]{};
         rootParameters[RootParameterUberShaderCB].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
         rootParameters[RootParameterCB].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
         rootParameters[RootParameterSRV].InitAsDescriptorTable(1, &ranges[RootParameterSRV], D3D12_SHADER_VISIBILITY_PIXEL);
@@ -218,7 +216,7 @@ namespace Rxn::Graphics
         sampler.RegisterSpace = 0;
         sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
         rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
         ComPointer<ID3DBlob> signature;
@@ -261,8 +259,7 @@ namespace Rxn::Graphics
             return result;
         }
 
-        ComPointer<ID3D12Resource> vertexIndexUpload;
-        result = DX12_CreateVertexBufferResource(vertexIndexUpload);
+        result = DX12_CreateVertexBufferResource();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create vertex buffer resource.");
@@ -307,67 +304,12 @@ namespace Rxn::Graphics
         m_PipelineLibrary.Build(m_Device.Get(), m_RootSignature.Get());
 
         return S_OK;
-        }
-
-    HRESULT RenderFramework::DX12_CreateNewPSO()
-    {
-        HRESULT result;
-
-        ComPointer<ID3DBlob> vertexShader;
-        ComPointer<ID3DBlob> pixelShader;
-
-#if defined(_DEBUG)
-        // Enable better shader debugging with the graphics debugging tools.
-        UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-        UINT compileFlags = 0;
-#endif
-
-        result = D3DCompileFromFile(GetAssetFullPath(L"shaders.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to compile vertex shader.");
-            return result;
-        }
-
-        result = D3DCompileFromFile(GetAssetFullPath(L"shaders.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to compile pixel shader");
-            return result;
-        }
-
-        // Define the vertex input layout.
-        D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-        {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-        };
-
-        // Describe and create the graphics pipeline state object (PSO).
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-        psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-        psoDesc.pRootSignature = m_RootSignature.Get();
-        psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-        psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-        psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        psoDesc.DepthStencilState.DepthEnable = FALSE;
-        psoDesc.DepthStencilState.StencilEnable = FALSE;
-        psoDesc.SampleMask = UINT_MAX;
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psoDesc.SampleDesc.Count = 1;
-
-        return m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_PipelineState));
-
     }
 
     HRESULT RenderFramework::DX12_CreateCommandList()
     {
         HRESULT result;
-        result = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[m_FrameIndex].Get(), m_PipelineState.Get(), IID_PPV_ARGS(&m_CommandList));
+        result = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to initialize new command list.");
@@ -377,107 +319,155 @@ namespace Rxn::Graphics
         return result;
     }
 
-    HRESULT RenderFramework::DX12_CreateVertexBufferResource(ComPointer<ID3D12Resource> &vertexIndexBufferUpload)
+    HRESULT RenderFramework::DX12_CreateVertexBufferResource()
     {
-        // Define the geometry for a triangle.
-        const VertexPositionColour cubeVertices[] = {
-            { { -1.0f, 1.0f, -1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour()  } },  // Back Top Left
-            { {  1.0f, 1.0f, -1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Back Top Right
-            { {  1.0f, 1.0f,  1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Front Top Right
-            { { -1.0f, 1.0f,  1.0f, 1.0f },  { GetRandomColour(), GetRandomColour(), GetRandomColour() } },   // Front Top Left
 
-            { { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Back Bottom Left
-            { {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Back Bottom Right
-            { {  1.0f, -1.0f,  1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Front Bottom Right
-            { { -1.0f, -1.0f,  1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } },    // Front Bottom Left
-        };
+        // Define the geometry for a cube.
+        std::vector<Basic::VertexPositionColour> cubeVertices;
+        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
 
-        const UINT cubeIndices[] =
-        {
-            0, 1, 3,
-            1, 2, 3,
+        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
 
-            3, 2, 7,
-            6, 7, 2,
+        std::vector<UINT> cubeIndices;
+        cubeIndices.push_back(0);
+        cubeIndices.push_back(1);
+        cubeIndices.push_back(3);
 
-            2, 1, 6,
-            5, 6, 1,
+        cubeIndices.push_back(1);
+        cubeIndices.push_back(2);
+        cubeIndices.push_back(3);
 
-            1, 0, 5,
-            4, 5, 0,
 
-            0, 3, 4,
-            7, 4, 3,
+        cubeIndices.push_back(3);
+        cubeIndices.push_back(2);
+        cubeIndices.push_back(7);
 
-            7, 6, 4,
-            5, 4, 6,
-        };
+        cubeIndices.push_back(6);
+        cubeIndices.push_back(7);
+        cubeIndices.push_back(2);
 
-        static const VertexPositionUV quadVertices[] =
-        {
-            { { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },    // Bottom Left
-            { { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },    // Top Left
-            { { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },    // Bottom Right
-            { { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },        // Top Right
-        };
 
-        const UINT vertexIndexBufferSize = sizeof(cubeIndices) + sizeof(cubeVertices) + sizeof(quadVertices);
+        cubeIndices.push_back(2);
+        cubeIndices.push_back(1);
+        cubeIndices.push_back(6);
+
+        cubeIndices.push_back(5);
+        cubeIndices.push_back(6);
+        cubeIndices.push_back(1);
+
+
+        cubeIndices.push_back(1);
+        cubeIndices.push_back(0);
+        cubeIndices.push_back(5);
+
+        cubeIndices.push_back(4);
+        cubeIndices.push_back(5);
+        cubeIndices.push_back(0);
+
+
+        cubeIndices.push_back(0);
+        cubeIndices.push_back(3);
+        cubeIndices.push_back(4);
+
+        cubeIndices.push_back(7);
+        cubeIndices.push_back(4);
+        cubeIndices.push_back(3);
+
+
+        cubeIndices.push_back(7);
+        cubeIndices.push_back(6);
+        cubeIndices.push_back(4);
+
+        cubeIndices.push_back(5);
+        cubeIndices.push_back(4);
+        cubeIndices.push_back(6);
+
+        m_Shape.ReadDataFromRaw(cubeVertices, cubeIndices);
 
         HRESULT result;
 
-        const auto defaultBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
-        const CD3DX12_HEAP_PROPERTIES defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-        ThrowIfFailed(m_Device->CreateCommittedResource(
-            &defaultHeapProps,
-            D3D12_HEAP_FLAG_NONE,
-            &defaultBuf,
-            D3D12_RESOURCE_STATE_COPY_DEST,
-            nullptr,
-            IID_PPV_ARGS(&m_VertexIndexBuffer)));
+        result = m_Shape.UploadGpuResources(m_Device.Get(), m_CommandQueue.Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
+            return result;
+        }
 
-        const CD3DX12_HEAP_PROPERTIES uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-        const auto uploadBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
-        ThrowIfFailed(m_Device->CreateCommittedResource(
-            &uploadHeapProps,
-            D3D12_HEAP_FLAG_NONE,
-            &uploadBuf,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&vertexIndexBufferUpload)));
+        std::vector<Basic::VertexPositionUV> quadVertices;
+        quadVertices.push_back(Basic::VertexPositionUV{ { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } });
+        quadVertices.push_back(Basic::VertexPositionUV{ { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } });
+        quadVertices.push_back(Basic::VertexPositionUV{ { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } });
+        quadVertices.push_back(Basic::VertexPositionUV{ { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } });
 
-        NAME_D3D12_OBJECT(m_VertexIndexBuffer);
+        m_Quad.ReadDataFromRaw(quadVertices);
 
-        UINT8 *mappedUploadHeap = nullptr;
-        CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-        ThrowIfFailed(vertexIndexBufferUpload->Map(0, &readRange, reinterpret_cast<void **>(&mappedUploadHeap)));
-
-        // Fill in part of the upload heap with our index and vertex data.
-        UINT8 *heapLocation = static_cast<UINT8 *>(mappedUploadHeap);
-        memcpy(heapLocation, cubeVertices, sizeof(cubeVertices));
-        heapLocation += sizeof(cubeVertices);
-        memcpy(heapLocation, cubeIndices, sizeof(cubeIndices));
-        heapLocation += sizeof(cubeIndices);
-        memcpy(heapLocation, quadVertices, sizeof(quadVertices));
-
-        // Pack the vertices and indices into their destination by copying from the upload heap.
-        m_CommandList->CopyBufferRegion(m_VertexIndexBuffer.Get(), 0, vertexIndexBufferUpload.Get(), 0, vertexIndexBufferSize);
-        const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_VertexIndexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER | D3D12_RESOURCE_STATE_INDEX_BUFFER);
-        m_CommandList->ResourceBarrier(1, &transition);
-
-        // Create the index and vertex buffer views.
-        m_CubeVbv.BufferLocation = m_VertexIndexBuffer.Get()->GetGPUVirtualAddress();
-        m_CubeVbv.SizeInBytes = sizeof(cubeVertices);
-        m_CubeVbv.StrideInBytes = sizeof(VertexPositionColour);
-
-        m_CubeIbv.BufferLocation = m_CubeVbv.BufferLocation + sizeof(cubeVertices);
-        m_CubeIbv.SizeInBytes = sizeof(cubeIndices);
-        m_CubeIbv.Format = DXGI_FORMAT_R32_UINT;
-
-        m_QuadVbv.BufferLocation = m_CubeIbv.BufferLocation + sizeof(cubeIndices);
-        m_QuadVbv.SizeInBytes = sizeof(quadVertices);
-        m_QuadVbv.StrideInBytes = sizeof(VertexPositionUV);
+        result = m_Quad.UploadGpuResources(m_Device.Get(), m_CommandQueue.Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
+            return result;
+        }
 
         return S_OK;
+
+
+        //const UINT vertexIndexBufferSize = sizeof(cubeIndices) + sizeof(cubeVertices) + sizeof(quadVertices);
+
+        //HRESULT result;
+
+        //const auto defaultBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
+        //const CD3DX12_HEAP_PROPERTIES defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        //ThrowIfFailed(m_Device->CreateCommittedResource(&defaultHeapProps, D3D12_HEAP_FLAG_NONE, &defaultBuf, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_VertexIndexBuffer)));
+
+        //const CD3DX12_HEAP_PROPERTIES uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        //const auto uploadBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
+        //ThrowIfFailed(m_Device->CreateCommittedResource(
+        //    &uploadHeapProps,
+        //    D3D12_HEAP_FLAG_NONE,
+        //    &uploadBuf,
+        //    D3D12_RESOURCE_STATE_GENERIC_READ,
+        //    nullptr,
+        //    IID_PPV_ARGS(&vertexIndexBufferUpload)));
+
+        //NAME_D3D12_OBJECT(m_VertexIndexBuffer);
+
+        //UINT8 *mappedUploadHeap = nullptr;
+        //CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+        //ThrowIfFailed(vertexIndexBufferUpload->Map(0, &readRange, reinterpret_cast<void **>(&mappedUploadHeap)));
+
+        //// Fill in part of the upload heap with our index and vertex data.
+        //UINT8 *heapLocation = static_cast<UINT8 *>(mappedUploadHeap);
+        //memcpy(heapLocation, cubeVertices, sizeof(cubeVertices));
+        //heapLocation += sizeof(cubeVertices);
+        //memcpy(heapLocation, cubeIndices, sizeof(cubeIndices));
+        //heapLocation += sizeof(cubeIndices);
+        //memcpy(heapLocation, quadVertices, sizeof(quadVertices));
+
+        //// Pack the vertices and indices into their destination by copying from the upload heap.
+        //m_CommandList->CopyBufferRegion(m_VertexIndexBuffer.Get(), 0, vertexIndexBufferUpload.Get(), 0, vertexIndexBufferSize);
+        //const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_VertexIndexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER | D3D12_RESOURCE_STATE_INDEX_BUFFER);
+        //m_CommandList->ResourceBarrier(1, &transition);
+
+        //// Create the index and vertex buffer views.
+        //m_CubeVbv.BufferLocation = m_VertexIndexBuffer.Get()->GetGPUVirtualAddress();
+        //m_CubeVbv.SizeInBytes = sizeof(cubeVertices);
+        //m_CubeVbv.StrideInBytes = sizeof(VertexPositionColour);
+
+        //m_CubeIbv.BufferLocation = m_CubeVbv.BufferLocation + sizeof(cubeVertices);
+        //m_CubeIbv.SizeInBytes = sizeof(cubeIndices);
+        //m_CubeIbv.Format = DXGI_FORMAT_R32_UINT;
+
+        //m_QuadVbv.BufferLocation = m_CubeIbv.BufferLocation + sizeof(cubeIndices);
+        //m_QuadVbv.SizeInBytes = sizeof(quadVertices);
+        //m_QuadVbv.StrideInBytes = sizeof(VertexPositionUV);
+
+        //return S_OK;
     }
 
     HRESULT RenderFramework::DX12_CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap)
@@ -523,7 +513,7 @@ namespace Rxn::Graphics
 
         D3D12_SUBRESOURCE_DATA textureData = {};
         textureData.pData = &texture[0];
-        textureData.RowPitch = TextureWidth * TextureBytesPerPixel;
+        textureData.RowPitch = static_cast<LONG_PTR>(TextureWidth) * TextureBytesPerPixel;
         textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
         UpdateSubresources(m_CommandList.Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
@@ -630,6 +620,39 @@ namespace Rxn::Graphics
         m_FenceValues[m_FrameIndex]++;
     }
 
+    void RenderFramework::DX12_ReleaseD3DResources()
+    {
+        m_Fence.Release();
+        ResetComPointerArray(&m_RenderTargets);
+        m_CommandQueue.Release();
+        m_SwapChain.Release();
+        m_Device.Release();
+    }
+
+    void RenderFramework::DX12_RestoreD3DResources()
+    {
+        try
+        {
+            DX12_WaitForGPUFence();
+        }
+        catch (HrException &)
+        {
+
+        }
+        DX12_ReleaseD3DResources();
+    }
+
+    void RenderFramework::DX12_ToggleEffect(Mapped::EffectPipelineType type)
+    {
+        if (m_EnabledEffects[type])
+        {
+            DX12_WaitForGPUFence();
+            m_PipelineLibrary.DestroyShader(type);
+        }
+
+        m_EnabledEffects[type] = !m_EnabledEffects[type];
+    }
+
     void RenderFramework::DX12_PopulateCommandList()
     {
         // Command list allocators can only be reset when the associated 
@@ -640,7 +663,7 @@ namespace Rxn::Graphics
         // However, when ExecuteCommandList() is called on a particular command 
         // list, that command list can then be reset at any time and must be before 
         // re-recording.
-        ThrowIfFailed(m_CommandList->Reset(m_CommandAllocators[m_FrameIndex].Get(), m_PipelineState.Get()));
+        ThrowIfFailed(m_CommandList->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
 
         // Set necessary state.
         m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
@@ -654,7 +677,7 @@ namespace Rxn::Graphics
         m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::SLIDE_COUNT, m_RTVDescriptorSize);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::BUFFER_COUNT, m_RTVDescriptorSize);
         CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
 
         m_CommandList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
@@ -669,8 +692,8 @@ namespace Rxn::Graphics
 
             rot += 0.01f;
 
-            m_CommandList->IASetVertexBuffers(0, 1, &m_CubeVbv);
-            m_CommandList->IASetIndexBuffer(&m_CubeIbv);
+            m_CommandList->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
+            m_CommandList->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
             m_PipelineLibrary.SetPipelineState(m_Device.Get(), m_RootSignature.Get(), m_CommandList.Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
 
             m_CommandList->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
@@ -679,7 +702,7 @@ namespace Rxn::Graphics
         }
 
         // Set up the state for a fullscreen quad.
-        m_CommandList->IASetVertexBuffers(0, 1, &m_QuadVbv);
+        m_CommandList->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
         m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
         // Indicate that the back buffer will be used as a render target and the
@@ -698,8 +721,8 @@ namespace Rxn::Graphics
 
         {
             UINT quadCount = 0;
-            static const UINT quadsX = 3;
-            static const UINT quadsY = 3;
+            static const UINT quadsX = 4;
+            static const UINT quadsY = 4;
 
             // Cycle through all of the effects.
             for (UINT i = Mapped::PostBlit; i < Mapped::EffectPipelineTypeCount; i++)
@@ -712,11 +735,9 @@ namespace Rxn::Graphics
                         m_Viewport.Width / quadsX,
                         m_Viewport.Height / quadsY);
 
-                    //PIXBeginEvent(m_commandList.Get(), 0, g_cEffectNames[i]);
                     m_CommandList->RSSetViewports(1, &viewport);
                     m_PipelineLibrary.SetPipelineState(m_Device.Get(), m_RootSignature.Get(), m_CommandList.Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
                     m_CommandList->DrawInstanced(4, 1, 0, 0);
-                    //PIXEndEvent(m_commandList.Get());
                 }
 
                 quadCount++;
@@ -732,27 +753,6 @@ namespace Rxn::Graphics
         m_CommandList->ResourceBarrier(_countof(barriers), barriers);
 
         ThrowIfFailed(m_CommandList->Close());
-
-        //// Indicate that the back buffer will be used as a render target.
-        //const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        //m_CommandList->ResourceBarrier(1, &transition);
-
-        //CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        //m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-        //// Record commands.
-        //const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        //m_CommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        //m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        //m_CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
-        //m_CommandList->DrawInstanced(3, 1, 0, 0);
-
-
-        //// Indicate that the back buffer will now be used to present.
-        //const auto finaltransition = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-        //m_CommandList->ResourceBarrier(1, &finaltransition);
-
-        //ThrowIfFailed(m_CommandList->Close());
     }
 
     void RenderFramework::DX12_Destroy()
@@ -781,6 +781,15 @@ namespace Rxn::Graphics
             DX12_MoveToNextFrame();
         }
 
+    }
+
+    void RenderFramework::DX12_Update()
+    {
+        // Wait for the previous Present to complete.
+        //WaitForSingleObjectEx(m_SwapChainEvent, 100, FALSE);
+
+        m_Timer.Tick(NULL);
+        m_Camera.Update(static_cast<float>(m_Timer.GetElapsedSeconds()));
     }
 
     void RenderFramework::DX12_GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter)
@@ -822,7 +831,7 @@ namespace Rxn::Graphics
                 {
                     RXN_LOGGER::Info(L"Using software adaptor, no need to setup physical device...");
                     continue;
-            }
+                }
 
                 // Check to see whether the adapter supports Direct3D 12, but don't create the
                 // actual device yet.
@@ -831,10 +840,10 @@ namespace Rxn::Graphics
                     RXN_LOGGER::Info(L"Created device successfully!");
                     break;
                 }
+            }
         }
-    }
 
-        adapter.Release();
+        *ppAdapter = adapter.Detatch();
     }
 
     void RenderFramework::DX12_CheckTearingSupport()
@@ -869,7 +878,7 @@ namespace Rxn::Graphics
 #endif
 
         return CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_Factory));
-    }
+}
 
     HRESULT RenderFramework::DX12_CreateIndependantDevice()
     {

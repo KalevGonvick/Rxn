@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   SimulationWindow.h
+ * \brief
+ *
+ * \author kalev
+ * \date   July 2023
+ *********************************************************************/
 #pragma once
 
 namespace Rxn::Graphics
@@ -7,10 +14,11 @@ namespace Rxn::Graphics
         , public Platform::Win32::Window
     {
     public:
+
         SimulationWindow(WString windowTitle, WString windowClass, int width, int height);
         ~SimulationWindow();
 
-        virtual void Render() override;
+    public:
 
         /**
          * MessageHandler - Handles WIN32 messages.
@@ -23,16 +31,19 @@ namespace Rxn::Graphics
          */
         LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
 
-
         virtual void SetupWindow() override;
 
+    protected:
+
+        virtual void HandleKeyDown(uint8 key) override;
+        virtual void HandleKeyUp(uint8 key) override;
+
+    private:
 
         HRESULT CreatePipelineSwapChain();
-        HRESULT CreateSwapChainResource();
-        void DestroySwapChainResources();
-
-
         HRESULT OnSizeChange();
+
+        void DestroySwapChainResources();
 
 
     };

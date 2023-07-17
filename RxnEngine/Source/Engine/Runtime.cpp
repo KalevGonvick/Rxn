@@ -70,17 +70,6 @@ namespace Rxn::Engine
 
     const void Runtime::SetupPlatformGUI()
     {
-        RXN_LOGGER::Info(L"Creating window classes");
-
-        auto splash = std::make_shared<SplashWindow>(Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, Constants::Win32::SPLASH_SCREEN_WINDOW_KEY);
-        splash->SetupWindow();
-        m_WindowManager->AddWindow(splash);
-
-        auto mainsim = std::make_shared<Graphics::SimulationWindow>(Constants::Win32::RENDER_VIEW_WINDOW_KEY, Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1280, 720);
-        mainsim->SetupWindow();
-        m_WindowManager->AddWindow(mainsim);
-
-
     }
 
 

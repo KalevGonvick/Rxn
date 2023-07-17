@@ -79,52 +79,47 @@ namespace Rxn::Platform::Win32
         {
         case WM_NCCREATE:
         {
-            this->HandleNonClientCreate();
+            HandleNonClientCreate();
             return 1;
         }
         case WM_NCACTIVATE:
         {
-            this->HandleNonClientActivate(LOWORD(wParam) != WA_INACTIVE);
+            HandleNonClientActivate(LOWORD(wParam) != WA_INACTIVE);
             return 1;
         }
         case WM_NCPAINT:
         {
-            this->HandleNonClientPaint((HRGN)wParam);
+            HandleNonClientPaint((HRGN)wParam);
             return 0;
         }
-        //case WM_PAINT:
-        //{
-        //    //this->HandlePaint();
-        //    break;
-        //}
-        //case WM_NCMBUTTONDBLCLK:
-        //{
-        //    //this->HandleNonClientAreaDoubleClick();
-        //    return 0;
-        //}
+        case WM_NCMBUTTONDBLCLK:
+        {
+            HandleNonClientAreaDoubleClick();
+            return 0;
+        }
         case WM_NCLBUTTONDOWN:
         {
-            this->HandleNonClientLeftClickDown();
+            HandleNonClientLeftClickDown();
             break;
         }
-        //case WM_SIZING:
-        //case WM_MOVING:
-        //{
-        //    this->Redraw();
-        //    return 1;
-        //}
+        case WM_SIZING:
+        case WM_MOVING:
+        {
+            Redraw();
+            return 1;
+        }
         case WM_ENTERSIZEMOVE:
         case WM_MOVE:
         case WM_SIZE:
         {
-            this->Redraw();
+            Redraw();
             return 0;
         }
-        //case WM_TIMER:
-        //{
-        //    this->Redraw();
-        //    return 0;
-        //}
+        case WM_TIMER:
+        {
+            Redraw();
+            break;
+        }
         }
 
         return SubComponent::MessageHandler(hWnd, msg, wParam, lParam);
@@ -181,20 +176,17 @@ namespace Rxn::Platform::Win32
         {
         case Command::CB_CLOSE:
         {
-            RXN_LOGGER::Info(L"Clicked max button...");
-            //SendMessage(m_pHWnd, WM_CLOSE, 0, 0);
+            SendMessage(m_pHWnd, WM_CLOSE, 0, 0);
             break;
         }
         case Command::CB_MAXIMIZE:
         {
-            RXN_LOGGER::Info(L"Clicked max button...");
-            //MaximizeWindow(m_pHWnd);
+            MaximizeWindow(m_pHWnd);
             break;
         }
         case Command::CB_MINIMIZE:
         {
-            RXN_LOGGER::Info(L"Clicked min button...");
-            //ShowWindow(m_pHWnd, SW_MINIMIZE);
+            ShowWindow(m_pHWnd, SW_MINIMIZE);
             break;
         }
         case Command::CB_NOP:
@@ -240,7 +232,7 @@ namespace Rxn::Platform::Win32
     {
         /* reset window */
         SetWindowPos(m_pHWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        SendMessage(m_pHWnd, WM_PAINT, 0, 0);
+        InvalidateRect(m_pHWnd, nullptr, false);
     }
 
     void Window::HandleNonClientAreaDoubleClick()
@@ -250,22 +242,39 @@ namespace Rxn::Platform::Win32
 
     void Window::HandleNonClientCreate()
     {
-        //SetTimer(m_pHWnd, 1, 15, 0);
+        if (m_IsInteractive)
+        {
+            RXN_LOGGER::Trace(L"Window %s is interactive, setting invalidate timer", m_ClassName.c_str());
+            SetTimer(m_pHWnd, 1, 250, 0);
+        }
 
-        RXN_LOGGER::Trace(L"Removing default windows theme.");
+
+        RXN_LOGGER::Trace(L"Removing default theme from window %s.", m_ClassName.c_str());
         SetWindowTheme(m_pHWnd, L"", L"");
 
-        RXN_LOGGER::Trace(L"Adding dropshadow.");
+        RXN_LOGGER::Trace(L"Adding dropshadow to window '%s'.", m_ClassName.c_str());
         ModifyClassStyle(m_pHWnd, 0, CS_DROPSHADOW);
 
         if (m_AddCloseButton)
+        {
+            RXN_LOGGER::Trace(L"Window %s has a close button, pushing caption", m_ClassName.c_str());
             m_WindowCaption.AddButton(L"X", Command::CB_CLOSE);
+        }
+
 
         if (m_AddMaximizeButton)
+        {
+            RXN_LOGGER::Trace(L"Window %s has a maximize button, pushing caption", m_ClassName.c_str());
             m_WindowCaption.AddButton(L"🗖", Command::CB_MAXIMIZE);
+        }
+
 
         if (m_AddMinimizeButton)
+        {
+            RXN_LOGGER::Trace(L"Window %s has a minimize button, pushing caption", m_ClassName.c_str());
             m_WindowCaption.AddButton(L"🗕", Command::CB_MINIMIZE);
+        }
+
     }
 
     void Window::HandleNonClientActivate(const int &active)
@@ -309,7 +318,7 @@ namespace Rxn::Platform::Win32
 
     void Window::PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size)
     {
-        if (m_WindowCaption.ShowTitle())
+        if (m_WindowCaption.m_ShowTitle)
         {
             RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
             SetBkMode(hdc, TRANSPARENT);
@@ -322,7 +331,7 @@ namespace Rxn::Platform::Win32
     {
         for (auto &button : m_WindowCaption.GetButtons())
         {
-            button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx, 30 };
+            button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
             DrawText(hdc, button->txt.c_str(), wcslen(button->txt.c_str()), &button->rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }

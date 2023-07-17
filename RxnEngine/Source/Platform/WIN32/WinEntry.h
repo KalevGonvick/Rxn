@@ -12,7 +12,7 @@ FILE *CreateConsole()
 {
     AllocConsole();
     FILE *pStreamOut = nullptr;
-    freopen_s(&pStreamOut, "CONOUT$", "w", stdout);
+    _wfreopen_s(&pStreamOut, L"CONOUT$", L"w", stdout);
     return pStreamOut;
 }
 

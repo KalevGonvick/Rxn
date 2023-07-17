@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   Window.h
+ * \brief
+ *
+ * \author kalev
+ * \date   July 2023
+ *********************************************************************/
 #pragma once
 #include "SubComponent.h"
 #include "Caption.h"
@@ -20,8 +27,6 @@ namespace Rxn::Platform::Win32
         Window(WString className, WString title);
         ~Window();
 
-        virtual void Render() {};
-
     public:
 
         WString m_TitleName;
@@ -41,20 +46,60 @@ namespace Rxn::Platform::Win32
 
         int m_Active;
 
+        /**
+         * .
+         */
         virtual void SetupWindow() {};
+
+        /**
+         * .
+         *
+         */
         virtual void RegisterComponentClass() override;
+
+        /**
+         * .
+         *
+         */
         virtual void InitializeWin32() override;
+
+        /**
+         * .
+         *
+         * \param hWnd
+         * \param msg
+         * \param wParam
+         * \param lParam
+         * \return
+         */
         virtual LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
 
     protected:
 
         /**
-         * Redraw The window.
+         * .
+         *
+         * \param key
+         */
+        virtual void HandleKeyDown(uint8 key) {};
+
+        /**
+         * .
+         *
+         * \param key
+         */
+        virtual void HandleKeyUp(uint8 key) {};
+
+        /**
+         * .
          *
          */
         void Redraw();
 
-
+        /**
+         * Handles double click event in the non-client area.
+         *
+         */
         void HandleNonClientAreaDoubleClick();
 
         /**
@@ -64,8 +109,16 @@ namespace Rxn::Platform::Win32
          */
         void HandleNonClientPaint(const HRGN &region);
 
+        /**
+         * .
+         *
+         */
         void HandleNonClientLeftClickDown();
 
+        /**
+         * .
+         *
+         */
         void HandlePaint();
 
         /**
@@ -96,7 +149,6 @@ namespace Rxn::Platform::Win32
          * \param active            - boolean if the window goes into active state or not.
          */
         void HandleNonClientActivate(const int &active);
-
 
         /**
          * Add bitmap image to the window.

@@ -67,6 +67,7 @@ namespace Rxn::Engine
     {
         m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
         m_Size = SIZE(500, 600);
+        m_IsInteractive = false;
 
         RegisterComponentClass();
         InitializeWin32();

@@ -36,7 +36,7 @@ namespace Rxn::Platform::Win32
     }
 
 
-    void WindowManager::AddWindow(std::shared_ptr<Window> &window)
+    void WindowManager::AddWindow(std::shared_ptr<Window> window)
     {
         if (m_ManagedWindows.find(window->GetClass()) != m_ManagedWindows.end())
         {

@@ -3,6 +3,16 @@
 
 namespace Rxn::Graphics::Mapped
 {
+    void MemoryMappedPipelineStateObjectCache::Init(std::wstring filename)
+    {
+        MemoryMappedFile::Init(filename);
+    }
+
+    void MemoryMappedPipelineStateObjectCache::Destroy(bool deleteFile)
+    {
+        MemoryMappedFile::Destroy(deleteFile);
+    }
+
     void MemoryMappedPipelineStateObjectCache::Update(ID3DBlob *pBlob)
     {
         if (pBlob)
@@ -24,5 +34,15 @@ namespace Rxn::Graphics::Mapped
                 memcpy(GetCachedBlob(), pBlob->GetBufferPointer(), pBlob->GetBufferSize());
             }
         }
+    }
+
+    size_t MemoryMappedPipelineStateObjectCache::GetCachedBlobSize() const
+    {
+        return GetSize();
+    }
+
+    void *MemoryMappedPipelineStateObjectCache::GetCachedBlob()
+    {
+        return GetData();
     }
 }

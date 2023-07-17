@@ -106,6 +106,13 @@ public:
         return m_pointer;
     }
 
+    CT *Detatch() throw()
+    {
+        CT *ptr = m_pointer;
+        m_pointer = nullptr;
+        return ptr;
+    }
+
     template<typename T>
     bool QueryInterface(ComPointer<T> &other, HRESULT *errorCode = nullptr)
     {

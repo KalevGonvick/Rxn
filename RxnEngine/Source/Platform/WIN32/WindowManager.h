@@ -61,7 +61,7 @@ namespace Rxn::Platform::Win32
          *
          * \param window
          */
-        void AddWindow(std::shared_ptr<Window> &window);
+        void AddWindow(std::shared_ptr<Window> window);
 
         ManagedWindows m_ManagedWindows;
 

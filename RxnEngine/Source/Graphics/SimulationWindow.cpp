@@ -11,15 +11,20 @@ namespace Rxn::Graphics
 
     SimulationWindow::~SimulationWindow() = default;
 
-    void SimulationWindow::Render()
-    {
-        DX12_Render();
-    }
-
     LRESULT SimulationWindow::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
         {
+        case WM_KEYUP:
+        {
+            HandleKeyDown(static_cast<UINT8>(wParam));
+            return 0;
+        }
+        case WM_KEYDOWN:
+        {
+            HandleKeyUp(static_cast<UINT8>(wParam));
+            return 0;
+        }
         case WM_SIZE:
         {
             if (m_IsRenderReady)
@@ -36,7 +41,7 @@ namespace Rxn::Graphics
 
     void SimulationWindow::SetupWindow()
     {
-        m_Size = SIZE(1280, 720);
+        m_Size = SIZE(1920, 1080);
         m_AddCloseButton = true;
         m_AddMaximizeButton = true;
         m_AddMinimizeButton = true;
@@ -91,12 +96,82 @@ namespace Rxn::Graphics
         UpdateWindow(m_pHWnd);
     }
 
+    void SimulationWindow::HandleKeyDown(uint8 key)
+    {
+        m_Camera.OnKeyDown(key);
+    }
+
+    void SimulationWindow::HandleKeyUp(uint8 key)
+    {
+        m_Camera.OnKeyUp(key);
+
+        switch (key)
+        {
+        case 'C':
+            DX12_WaitForGPUFence();
+            m_PipelineLibrary.ClearPSOCache();
+            m_PipelineLibrary.Build(m_Device.Get(), m_RootSignature.Get());
+            break;
+
+        case 'U':
+            m_PipelineLibrary.ToggleUberShader();
+            break;
+
+        case 'L':
+            m_PipelineLibrary.ToggleDiskLibrary();
+            break;
+
+        case 'M':
+            m_PipelineLibrary.SwitchPSOCachingMechanism();
+            break;
+
+        case '1':
+            DX12_ToggleEffect(Mapped::PostBlit);
+            break;
+
+        case '2':
+            DX12_ToggleEffect(Mapped::PostInvert);
+            break;
+
+        case '3':
+            DX12_ToggleEffect(Mapped::PostGrayScale);
+            break;
+
+        case '4':
+            DX12_ToggleEffect(Mapped::PostEdgeDetect);
+            break;
+
+        case '5':
+            DX12_ToggleEffect(Mapped::PostBlur);
+            break;
+
+        case '6':
+            DX12_ToggleEffect(Mapped::PostWarp);
+            break;
+
+        case '7':
+            DX12_ToggleEffect(Mapped::PostPixelate);
+            break;
+
+        case '8':
+            DX12_ToggleEffect(Mapped::PostDistort);
+            break;
+
+        case '9':
+            DX12_ToggleEffect(Mapped::PostWave);
+            break;
+
+        default:
+            break;
+        }
+    }
+
     HRESULT SimulationWindow::CreatePipelineSwapChain()
     {
         HRESULT result;
 
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.BufferCount = Constants::Graphics::SLIDE_COUNT;
+        swapChainDesc.BufferCount = Constants::Graphics::BUFFER_COUNT;
         swapChainDesc.Width = m_Width;
         swapChainDesc.Height = m_Height;
         swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -135,7 +210,7 @@ namespace Rxn::Graphics
 
     void SimulationWindow::DestroySwapChainResources()
     {
-        for (int i = 0; i < Constants::Graphics::SLIDE_COUNT; ++i)
+        for (int i = 0; i < Constants::Graphics::BUFFER_COUNT; ++i)
         {
             m_RenderTargets[i].Release();
         }
@@ -160,7 +235,7 @@ namespace Rxn::Graphics
 
             DestroySwapChainResources();
 
-            HRESULT result = m_SwapChain->ResizeBuffers(Constants::Graphics::SLIDE_COUNT, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+            HRESULT result = m_SwapChain->ResizeBuffers(Constants::Graphics::BUFFER_COUNT, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
             if (FAILED(result))
             {
                 RXN_LOGGER::Error(L"Failed to resize back buffer, hr=0x.8x", result);
@@ -171,9 +246,8 @@ namespace Rxn::Graphics
             m_RTVDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
-            result;
             // Create a RTV for each frame.
-            for (UINT n = 0; n < Constants::Graphics::SLIDE_COUNT; n++)
+            for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
             {
 
                 result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
@@ -185,12 +259,6 @@ namespace Rxn::Graphics
 
                 m_Device->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
                 rtvHandle.Offset(1, m_RTVDescriptorSize);
-            }
-
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Failed to recreate swap chain resources! hr=0x.8x", result);
-                return result;
             }
         }
 

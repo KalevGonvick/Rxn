@@ -5,41 +5,42 @@ namespace Rxn::Graphics::Mapped
 {
     bool MemoryMappedPipelineLibrary::Init(ID3D12Device *pDevice, std::wstring filename)
     {
-        // ID3D12PipelineLibrary usage requires OS and driver support.
-        //        - Pipeline Libraries require the ID3D12Device1 interface (OS support).
-        //        - All WDDM 2.1+ drivers are required to support Pipeline Libraries (driver support).
-
-
-        // Note: Checking for Pipeline Library support is intended to be temporary during the transition period
-        // as customers update to the latest version of Windows 10 and drivers are updated to the latest driver model.
-        // All future versions of the OS and drivers will support Pipeline Libraries.
         if (pDevice)
         {
+            RXN_LOGGER::Debug(L"Device exists... creating pipeline library device.");
+
+
             // Create the Pipeline Library.
             ComPointer<ID3D12Device1> device1;
             if (SUCCEEDED(pDevice->QueryInterface(IID_PPV_ARGS(&device1))))
             {
-                // Init the memory mapped file.
+
+                RXN_LOGGER::Debug(L"Initializing memory mapped file: %s", filename.c_str());
                 MemoryMappedFile::Init(filename);
 
-                // Create a Pipeline Library from the serialized blob.
-                // Note: The provided Library Blob must remain valid for the lifetime of the object returned - for efficiency, the data is not copied.
+                RXN_LOGGER::Debug(L"Create a Pipeline Library from the serialized blob.");
+                RXN_LOGGER::Debug(L"Note: The provided Library Blob must remain valid for the lifetime of the object returned - for efficiency, the data is not copied.");
                 const HRESULT hr = device1->CreatePipelineLibrary(GetData(), GetSize(), IID_PPV_ARGS(&m_pipelineLibrary));
                 switch (hr)
                 {
-                case DXGI_ERROR_UNSUPPORTED: // The driver doesn't support Pipeline libraries. WDDM2.1 drivers must support it.
+                case DXGI_ERROR_UNSUPPORTED:
+                {
                     break;
-
-                case E_INVALIDARG: // The provided Library is corrupted or unrecognized.
-                case D3D12_ERROR_ADAPTER_NOT_FOUND: // The provided Library contains data for different hardware (Don't really need to clear the cache, could have a cache per adapter).
-                case D3D12_ERROR_DRIVER_VERSION_MISMATCH: // The provided Library contains data from an old driver or runtime. We need to re-create it.
+                }
+                case E_INVALIDARG:                          // The provided Library is corrupted or unrecognized.
+                case D3D12_ERROR_ADAPTER_NOT_FOUND:         // The provided Library contains data for different hardware (Don't really need to clear the cache, could have a cache per adapter).
+                case D3D12_ERROR_DRIVER_VERSION_MISMATCH:   // The provided Library contains data from an old driver or runtime. We need to re-create it.
+                {
                     MemoryMappedFile::Destroy(true);
                     MemoryMappedFile::Init(filename);
                     ThrowIfFailed(device1->CreatePipelineLibrary(GetData(), GetSize(), IID_PPV_ARGS(&m_pipelineLibrary)));
                     break;
+                }
 
                 default:
+                {
                     ThrowIfFailed(hr);
+                }
                 }
 
                 if (m_pipelineLibrary)
@@ -101,5 +102,10 @@ namespace Rxn::Graphics::Mapped
 
         MemoryMappedFile::Destroy(deleteFile);
         m_pipelineLibrary = nullptr;
+    }
+
+    ID3D12PipelineLibrary *MemoryMappedPipelineLibrary::GetPipelineLibrary()
+    {
+        return m_pipelineLibrary.Get();
     }
 }

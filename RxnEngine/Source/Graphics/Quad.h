@@ -1,0 +1,22 @@
+#pragma once
+#include "Renderable.h"
+
+namespace Rxn::Graphics::Basic
+{
+    class RXN_ENGINE_API Quad : public Renderable
+    {
+    public:
+
+        Quad();
+        ~Quad();
+
+    public:
+
+        void ReadDataFromRaw(std::vector<VertexPositionUV> &quads);
+
+        virtual HRESULT LoadFromFile(const wchar_t *filename) override;
+        virtual HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) override;
+
+        std::vector<VertexPositionUV> m_Quads;
+    };
+}

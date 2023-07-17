@@ -39,25 +39,25 @@ namespace Rxn::Common
         void Error(const wchar_t *fmt, char *args);
         void Trace(const wchar_t *fmt, char *args);
 
-        std::wstring GetLogFileName();
-        std::wstring GetLogDirectory();
+        WString GetLogFileName();
+        WString GetLogDirectory();
         LogLevel GetLogLevel();
 
     private:
 
-        bool m_bWriteToFile;
-        bool m_bWriteToConsole;
-        bool m_bLogFileCreated;
+        bool m_WriteToFile;
+        bool m_WriteToConsole;
+        bool m_LogFileCreated;
 
-        LogLevel m_uLevel;
+        LogLevel m_Level;
 
-        std::wstring m_wOutputLogDir;
+        WString m_OutputLogDir;
 
-        const std::wstring m_kpszDebugSeverity = L"[DEBUG]";
-        const std::wstring m_kpszErrorSeverity = L"[ERROR]";
-        const std::wstring m_kpszWarningSeverity = L"[WARN]";
-        const std::wstring m_kpszInfoSeverity = L"[INFO]";
-        const std::wstring m_kpszTraceSeverity = L"[TRACE]";
+        const WString m_DebugSeverity = L"[DEBUG]";
+        const WString m_ErrorSeverity = L"[ERROR]";
+        const WString m_WarningSeverity = L"[WARN]";
+        const WString m_InfoSeverity = L"[INFO]";
+        const WString m_TraceSeverity = L"[TRACE]";
 
     };
 

@@ -20,11 +20,11 @@
 #include "RenderFramework.h"
 
 template<class T>
-void ResetComPtrArray(T *comPtrArray)
+void ResetComPointerArray(T *comPtrArray)
 {
     for (auto &i : *comPtrArray)
     {
-        i.Reset();
+        i.Release();
     }
 }
 

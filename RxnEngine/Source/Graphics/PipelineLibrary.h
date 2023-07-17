@@ -15,6 +15,7 @@
 #include "../Content/Shaders/DistortPixelShader.hlsl.h"
 #include "../Content/Shaders/WavePixelShader.hlsl.h"
 #include "../Content/Shaders/UberPixelShader.hlsl.h"
+#include "../Content/Shaders/AdditionalPixelShader.hlsl.h"
 
 namespace Rxn::Graphics::Mapped
 {
@@ -44,6 +45,7 @@ namespace Rxn::Graphics::Mapped
         PostPixelate,
         PostDistort,
         PostWave,
+        PostAdditional,
         EffectPipelineTypeCount
     };
 
@@ -162,6 +164,14 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_AdditionalPixelShader, sizeof(g_AdditionalPixelShader)),
+            {},
+            {},
+            {},
+        },
     };
 
     static const wchar_t *g_cPipelineLibraryFileName = L"pipelineLibrary.cache";
@@ -179,6 +189,7 @@ namespace Rxn::Graphics::Mapped
         L"pixelateEffectPSO.cache",
         L"distortEffectPSO.cache",
         L"waveEffectPSO.cache",
+        L"additionalPixelShaderPSO.cache"
     };
 
     static const wchar_t *g_cEffectNames[EffectPipelineTypeCount] =
@@ -194,6 +205,7 @@ namespace Rxn::Graphics::Mapped
         L"Pixelate",
         L"Distort",
         L"Wave",
+        L"Additional"
     };
 
     class RXN_ENGINE_API PipelineLibrary
@@ -205,15 +217,8 @@ namespace Rxn::Graphics::Mapped
 
     public:
 
-
         void Build(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature);
-
-        void SetPipelineState(
-            ID3D12Device *pDevice,
-            ID3D12RootSignature *pRootSignature,
-            ID3D12GraphicsCommandList *pCommandList,
-            _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type,
-            UINT frameIndex);
+        void SetPipelineState(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex);
 
         void EndFrame();
         void ClearPSOCache();
@@ -222,15 +227,13 @@ namespace Rxn::Graphics::Mapped
         void SwitchPSOCachingMechanism();
         void DestroyShader(EffectPipelineType type);
 
-        bool UberShadersEnabled() { return m_useUberShaders; }
-        bool DiskCacheEnabled() { return m_useDiskLibraries; }
-        PSOCachingMechanism GetPSOCachingMechanism() { return m_psoCachingMechanism; }
+        bool UberShadersEnabled();
+        bool DiskCacheEnabled();
+        PSOCachingMechanism GetPSOCachingMechanism();
 
     private:
 
-        static const UINT BaseEffectCount = 2;
-
-        struct CompilePSOThreadData
+        struct CompilePipelineStateObjectThreadData
         {
             PipelineLibrary *pLibrary;
             ID3D12Device *pDevice;
@@ -246,28 +249,39 @@ namespace Rxn::Graphics::Mapped
             UINT32 effectIndex;
         };
 
-        static void CompilePSO(CompilePSOThreadData *pDataPackage);
+    private:
+
+        static void CompilePipelineStateObject(CompilePipelineStateObjectThreadData *pDataPackage);
         void WaitForThreads();
 
-        ComPointer<ID3D12PipelineState> m_pipelineStates[EffectPipelineTypeCount];
-        bool m_compiledPSOFlags[EffectPipelineTypeCount];
-        bool m_inflightPSOFlags[EffectPipelineTypeCount];
-        MemoryMappedPipelineStateObjectCache m_diskCaches[EffectPipelineTypeCount];    // Cached blobs.
-        MemoryMappedPipelineLibrary m_pipelineLibrary; // Pipeline Library.
-        HANDLE m_flagsMutex;
-        CompilePSOThreadData m_workerThreads[EffectPipelineTypeCount];
+    private:
 
-        bool m_useUberShaders;
-        bool m_useDiskLibraries;
-        bool m_pipelineLibrariesSupported;
-        PSOCachingMechanism m_psoCachingMechanism;
-        std::wstring m_cachePath;
+        static const UINT BaseEffectCount = 2;
 
-        UINT m_cbvRootSignatureIndex;
-        UINT m_maxDrawsPerFrame;
-        UINT m_drawIndex;
+        ComPointer<ID3D12PipelineState> m_PipelineStates[EffectPipelineTypeCount];
 
-        Buffer::DynamicConstantBuffer m_dynamicCB;
+        MemoryMappedPipelineStateObjectCache m_DiskCaches[EffectPipelineTypeCount];     // Cached blobs.
+        MemoryMappedPipelineLibrary m_PipelineLibrary;                                  // Pipeline Library.
+
+        HANDLE m_FlagsMutex;
+
+        CompilePipelineStateObjectThreadData m_WorkerThreads[EffectPipelineTypeCount];
+
+        bool m_UseUberShaders;
+        bool m_UseDiskLibraries;
+        bool m_PipelineLibrariesSupported;
+        bool m_CompiledPipelineStateObjectFlags[EffectPipelineTypeCount];
+        bool m_InflightPipelineStateObjectFlags[EffectPipelineTypeCount];
+
+        PSOCachingMechanism m_PipelineStateObjectCachingMechanism;
+
+        WString m_CachePath;
+
+        UINT m_CBVRootSignatureIndex;
+        UINT m_MaxDrawsPerFrame;
+        UINT m_DrawIndex;
+
+        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
     };
 }
 

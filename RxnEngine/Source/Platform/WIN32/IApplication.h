@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   IApplication.h
+ * \brief
+ *
+ * \author kalev
+ * \date   July 2023
+ *********************************************************************/
 #pragma once
 
 #define ENTRYAPP(x) std::unique_ptr<Rxn::Platform::Win32::IApplication> EntryApplication() { return std::make_unique<x>(); }

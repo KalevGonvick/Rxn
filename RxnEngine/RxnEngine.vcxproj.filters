@@ -83,14 +83,20 @@
     <Filter Include="Source\Graphics\Private\Mapped">
       <UniqueIdentifier>{738bb568-cdb9-484a-8287-74c630f6af4e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Graphics\Classes\Mapped">
-      <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resources\Shaders">
       <UniqueIdentifier>{448acccd-a781-459a-b883-6731afb82ed1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\ShaderHeaders">
       <UniqueIdentifier>{b161cf97-b88d-4984-8107-c19b37ee78b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Buffer">
+      <UniqueIdentifier>{6cf07c61-eb32-4762-a9ee-ae3099594696}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Public\Buffer">
+      <UniqueIdentifier>{2153841d-5f3a-42e8-b782-008a489810da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Public\Mapped">
+      <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -163,9 +169,6 @@
     <ClCompile Include="Source\Graphics\RenderFramework.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
-      <Filter>Source\Graphics\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp">
       <Filter>Source\Graphics\Private\Mapped</Filter>
     </ClCompile>
@@ -180,6 +183,24 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera.cpp">
       <Filter>Source\Engine\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
+      <Filter>Source\Graphics\Private\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\VertexBuffer.cpp">
+      <Filter>Source\Graphics\Private\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Model.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Shape.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Renderable.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Quad.cpp">
+      <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -261,20 +282,17 @@
     <ClInclude Include="Source\Graphics\RenderFramework.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
-      <Filter>Source\Graphics\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
-      <Filter>Source\Graphics\Classes\Mapped</Filter>
+      <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h">
-      <Filter>Source\Graphics\Classes\Mapped</Filter>
+      <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
-      <Filter>Source\Graphics\Classes\Mapped</Filter>
+      <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\PipelineLibrary.h">
-      <Filter>Source\Graphics\Classes\Mapped</Filter>
+      <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h">
       <Filter>Resources\ShaderHeaders</Filter>
@@ -321,6 +339,30 @@
     <ClInclude Include="Source\Engine\Camera.h">
       <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
+      <Filter>Source\Graphics\Public\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\VertexBuffer.h">
+      <Filter>Source\Graphics\Public\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Span.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Shape.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Renderable.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Model.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\AdditionalPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Quad.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
@@ -360,6 +402,9 @@
       <Filter>Resources\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\WavePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\AdditionalPixelShader.hlsl">
       <Filter>Resources\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

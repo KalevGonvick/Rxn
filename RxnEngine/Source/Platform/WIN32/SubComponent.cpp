@@ -6,6 +6,7 @@ namespace Rxn::Platform::Win32
     SubComponent::SubComponent(WString className, HICON icon)
         : m_ClassName(className)
         , m_isInitialized(false)
+        , m_IsInteractive(true)
         , m_ChildComponents()
         , m_Parent(nullptr)
         , m_Icon(icon)

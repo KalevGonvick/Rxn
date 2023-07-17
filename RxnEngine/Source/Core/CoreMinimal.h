@@ -48,16 +48,14 @@
 
 #ifdef WIN32
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+#include <windowsx.h>
 #include <windows.h>
+#include <wrl.h>
 
 #include "Platform/WIN32/SubComponent.h"
 #include "Platform/WIN32/Window.h"
 #include "Platform/WIN32/IApplication.h"
 
-#include <wrl.h>
 
 #endif
 

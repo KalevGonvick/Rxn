@@ -114,10 +114,15 @@
     <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp" />
     <ClCompile Include="Source\Graphics\MemoryMappedPipelineLibrary.cpp" />
     <ClCompile Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.cpp" />
+    <ClCompile Include="Source\Graphics\Model.cpp" />
     <ClCompile Include="Source\Graphics\PipelineLibrary.cpp" />
+    <ClCompile Include="Source\Graphics\Quad.cpp" />
+    <ClCompile Include="Source\Graphics\Renderable.cpp" />
     <ClCompile Include="Source\Graphics\RenderCore.cpp" />
     <ClCompile Include="Source\Graphics\RenderFramework.cpp" />
+    <ClCompile Include="Source\Graphics\Shape.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
+    <ClCompile Include="Source\Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Caption.cpp" />
@@ -126,6 +131,7 @@
     <ClCompile Include="Source\Rxn.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Content\Shaders\AdditionalPixelShader.hlsl.h" />
     <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h" />
     <ClInclude Include="Content\Shaders\BlurPixelShader.hlsl.h" />
     <ClInclude Include="Content\Shaders\DistortPixelShader.hlsl.h" />
@@ -148,6 +154,7 @@
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\Math\Math.h" />
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
+    <ClInclude Include="Source\Core\Span.h" />
     <ClInclude Include="Source\Core\StepTimer.h" />
     <ClInclude Include="Source\Engine\Camera.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
@@ -161,10 +168,15 @@
     <ClInclude Include="Source\Graphics\MemoryMappedFile.h" />
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h" />
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h" />
+    <ClInclude Include="Source\Graphics\Model.h" />
     <ClInclude Include="Source\Graphics\PipelineLibrary.h" />
+    <ClInclude Include="Source\Graphics\Quad.h" />
+    <ClInclude Include="Source\Graphics\Renderable.h" />
     <ClInclude Include="Source\Graphics\RenderCore.h" />
     <ClInclude Include="Source\Graphics\RenderFramework.h" />
+    <ClInclude Include="Source\Graphics\Shape.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
+    <ClInclude Include="Source\Graphics\VertexBuffer.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
     <ClInclude Include="Source\Platform\WIN32\Caption.h" />
@@ -174,6 +186,22 @@
     <ClInclude Include="Source\Rxn.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Content\Shaders\AdditionalPixelShader.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath).h</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainAdditional</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainAdditional</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainBlit</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
