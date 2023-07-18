@@ -15,7 +15,7 @@
 #include <fstream>
 #include <unordered_set>
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::Basic
 {
     const D3D12_INPUT_ELEMENT_DESC c_elementDescs[Attribute::Count] =
     {

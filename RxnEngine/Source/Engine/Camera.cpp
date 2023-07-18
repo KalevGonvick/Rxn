@@ -74,8 +74,8 @@ namespace Rxn::Engine
             m_pitch -= rotateInterval;
 
         // Prevent looking too far up or down.
-        m_pitch = min(m_pitch, DirectX::XM_PIDIV4);
-        m_pitch = max(-DirectX::XM_PIDIV4, m_pitch);
+        m_pitch = std::min(m_pitch, DirectX::XM_PIDIV4);
+        m_pitch = std::max(-DirectX::XM_PIDIV4, m_pitch);
 
         // Move the camera in model space.
         float x = move.x * -cosf(m_yaw) - move.z * sinf(m_yaw);

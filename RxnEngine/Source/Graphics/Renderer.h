@@ -8,15 +8,14 @@
 #pragma once
 #include "DynamicConstantBuffer.h"
 #include "PipelineLibrary.h"
-#include "Core/StepTimer.h"
 #include "Engine/Camera.h"
 #include "Renderable.h"
 #include "Shape.h"
 #include "Quad.h"
+#include "SamplerDesc.h"
 
 namespace Rxn::Graphics
 {
-
     enum RootParameters : UINT32
     {
         RootParameterUberShaderCB = 0,
@@ -30,14 +29,18 @@ namespace Rxn::Graphics
         DirectX::XMMATRIX worldViewProjection;
     };
 
+    struct Resolution
+    {
+        uint32 Width;
+        uint32 Height;
+    };
 
-
-    class RXN_ENGINE_API RenderFramework
+    class RXN_ENGINE_API Renderer
     {
     public:
 
-        RenderFramework(int width, int height);
-        ~RenderFramework();
+        Renderer(int width, int height);
+        ~Renderer();
 
         void DX12_Destroy();
         void DX12_Render();
@@ -55,12 +58,13 @@ namespace Rxn::Graphics
             return m_AssetsPath + assetName;
         }
 
-        HRESULT DX12_LoadPipeline();
-        HRESULT DX12_CreateFactory();
+        void Initialize();
+        void Shutdown();
 
+        HRESULT DX12_LoadPipeline();
         HRESULT DX12_CreateCommantQueue();
         HRESULT DX12_CreateDescriptorHeaps();
-        HRESULT DX12_CreateFrameResources();
+        HRESULT DX12_CreateCommandAllocators();
         HRESULT DX12_CreateRootSignature();
         HRESULT DX12_LoadAssets();
         HRESULT DX12_CreateCommandList();
@@ -72,10 +76,8 @@ namespace Rxn::Graphics
 
         HRESULT DX12_CreateFrameSyncObjects();
 
-        void DX12_MoveToNextFrame();
+        HRESULT DX12_MoveToNextFrame();
         void DX12_WaitForGPUFence();
-        void DX12_ReleaseD3DResources();
-        void DX12_RestoreD3DResources();
 
         void DX12_ToggleEffect(Mapped::EffectPipelineType type);
 
@@ -86,25 +88,15 @@ namespace Rxn::Graphics
         bool m_HasTearingSupport;
 
         UINT m_DrawIndex;
-        ComPointer<ID3D12Device> m_Device;
-        ComPointer<IDXGIFactory4> m_Factory;
+
         ComPointer<ID3D12CommandQueue> m_CommandQueue;
         ComPointer<ID3D12GraphicsCommandList> m_CommandList;
         ComPointer<IDXGISwapChain4> m_SwapChain;
-
-
-        // app resources
-        //ComPointer<ID3D12Resource> m_VertexIndexBuffer;
-        //D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
 
         ComPointer<ID3D12Resource> m_Texture;
         //std::list<std::shared_ptr<Basic::Renderable>> m_Renderables;
         Basic::Shape m_Shape;
         Basic::Quad m_Quad;
-
-        /*D3D12_VERTEX_BUFFER_VIEW m_CubeVbv;
-        D3D12_VERTEX_BUFFER_VIEW m_QuadVbv;
-        D3D12_INDEX_BUFFER_VIEW m_CubeIbv;*/
 
         WString m_AssetsPath;
 
@@ -112,7 +104,6 @@ namespace Rxn::Graphics
         CD3DX12_RECT m_ScissorRect;
         DirectX::XMMATRIX m_ProjectionMatrix;
 
-        Core::StepTimer m_Timer;
         Engine::Camera m_Camera;
 
         UINT m_Width;
@@ -129,31 +120,28 @@ namespace Rxn::Graphics
         HANDLE m_SwapChainEvent;
         ComPointer<ID3D12Fence> m_Fence;
         UINT64 m_FenceValues[Constants::Graphics::BUFFER_COUNT];
-        bool m_IsRenderReady;
+
+        bool m_Initialized;
 
 
         ComPointer<ID3D12Resource> m_RenderTargets[Constants::Graphics::BUFFER_COUNT];
         ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
         UINT m_RTVDescriptorSize;
         ComPointer<ID3D12RootSignature> m_RootSignature;
+        ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
+        ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
+
+        std::array<Resolution, 2> const m_Resolutions = { { { 1280, 720 }, { 1920, 1080 } } };
 
     private:
-
-        ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
         ComPointer<ID3D12CommandAllocator> m_CommandAllocators[Constants::Graphics::BUFFER_COUNT];
 
-        ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
         UINT m_SRVDescriptorSize;
 
         static const UINT MaxDrawsPerFrame = 256;
         static const UINT TextureWidth = 256;
         static const UINT TextureHeight = 256;
         static const UINT TextureBytesPerPixel = 4;
-
-        _Use_decl_annotations_;
-        void DX12_GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
-        void DX12_CheckTearingSupport();
-        HRESULT DX12_CreateIndependantDevice();
 
     };
 }

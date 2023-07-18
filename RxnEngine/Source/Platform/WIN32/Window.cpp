@@ -323,7 +323,7 @@ namespace Rxn::Platform::Win32
             RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, m_Active ? m_WindowTitleActiveTextColour : m_WindowTitleInactiveTextColour);
-            DrawText(hdc, m_TitleName.c_str(), wcslen(m_TitleName.c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+            //DrawText(hdc, m_TitleName.c_str(), wcslen(m_TitleName.c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
 
@@ -332,7 +332,7 @@ namespace Rxn::Platform::Win32
         for (auto &button : m_WindowCaption.GetButtons())
         {
             button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
-            DrawText(hdc, button->txt.c_str(), wcslen(button->txt.c_str()), &button->rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+            //DrawText(hdc, button->txt.c_str(), wcslen(button->txt.c_str()), &button->rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
 

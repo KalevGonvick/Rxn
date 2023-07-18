@@ -98,6 +98,15 @@
     <Filter Include="Source\Graphics\Public\Mapped">
       <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Graphics\Classes\Mapped">
+      <UniqueIdentifier>{38eafad3-ca64-4d3c-b413-a1cd60f67c3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Basic">
+      <UniqueIdentifier>{89977db9-edd0-45fd-b6a0-7f29667e1080}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Basic">
+      <UniqueIdentifier>{2b0fb3d6-4c6e-4156-bc1a-122d63c6236d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -166,7 +175,7 @@
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\RenderFramework.cpp">
+    <ClCompile Include="Source\Graphics\Renderer.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp">
@@ -190,17 +199,26 @@
     <ClCompile Include="Source\Graphics\VertexBuffer.cpp">
       <Filter>Source\Graphics\Private\Buffer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\Model.cpp">
+    <ClCompile Include="Source\Graphics\RenderContext.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\Shape.cpp">
-      <Filter>Source\Graphics\Private</Filter>
+    <ClCompile Include="Source\Core\Context.cpp">
+      <Filter>Source\Core\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\Renderable.cpp">
+    <ClCompile Include="Source\Graphics\SamplerDesc.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Quad.cpp">
-      <Filter>Source\Graphics\Private</Filter>
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Model.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Renderable.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Shape.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -279,7 +297,7 @@
     <ClInclude Include="Source\Graphics\SimulationWindow.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\RenderFramework.h">
+    <ClInclude Include="Source\Graphics\Renderer.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
@@ -289,9 +307,6 @@
       <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
-      <Filter>Source\Graphics\Public\Mapped</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\PipelineLibrary.h">
       <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h">
@@ -348,20 +363,32 @@
     <ClInclude Include="Source\Core\Span.h">
       <Filter>Source\Core\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\Shape.h">
-      <Filter>Source\Graphics\Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\Renderable.h">
-      <Filter>Source\Graphics\Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\Model.h">
-      <Filter>Source\Graphics\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Shaders\AdditionalPixelShader.hlsl.h">
       <Filter>Resources\ShaderHeaders</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\Quad.h">
+    <ClInclude Include="Source\Graphics\RenderContext.h">
       <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Context.h">
+      <Filter>Source\Core\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SamplerDesc.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\PipelineLibrary.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Quad.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Renderable.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Shape.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Model.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,12 +1,7 @@
 #include "Rxn.h"
-
 #include "IApplication.h"
-#include "Common/Logger.h"
-#include "Common/CommandLine.h"
-
 
 extern std::unique_ptr<Rxn::Platform::Win32::IApplication> EntryApplication();
-
 
 FILE *CreateConsole()
 {
@@ -28,6 +23,9 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
     auto entry = EntryApplication();
 
     entry->ConfigureEngine();
+
+    Rxn::Graphics::RenderContext::InitRenderContext();
+
     entry->PreInitialize();
     entry->Initialize();
     FILE *fStreamOut = CreateConsole();

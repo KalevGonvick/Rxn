@@ -14,7 +14,7 @@
 #include "Core/Span.h"
 #include <DirectXCollision.h>
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::Basic
 {
     struct Attribute
     {
@@ -111,7 +111,7 @@ namespace Rxn::Graphics
             auto &subset = MeshletSubsets[subsetIndex];
             auto &meshlet = Meshlets[subset.Offset + subset.Count - 1];
 
-            return min(maxGroupVerts / meshlet.VertCount, maxGroupPrims / meshlet.PrimCount);
+            return std::min(maxGroupVerts / meshlet.VertCount, maxGroupPrims / meshlet.PrimCount);
         }
 
         void GetPrimitive(unsigned int index, unsigned int &i0, unsigned int &i1, unsigned int &i2) const

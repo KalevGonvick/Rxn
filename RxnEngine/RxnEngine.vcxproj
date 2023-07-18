@@ -98,6 +98,7 @@
     <ClCompile Include="Source\Common\CommandLine.cpp" />
     <ClCompile Include="Source\Common\Logger.cpp" />
     <ClCompile Include="Source\Common\Time.cpp" />
+    <ClCompile Include="Source\Core\Context.cpp" />
     <ClCompile Include="Source\Core\Core.cpp" />
     <ClCompile Include="Source\Core\CoreDefinitions.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
@@ -109,6 +110,7 @@
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
+    <ClCompile Include="Source\Graphics\RenderContext.cpp" />
     <ClCompile Include="Source\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp" />
     <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp" />
@@ -119,7 +121,8 @@
     <ClCompile Include="Source\Graphics\Quad.cpp" />
     <ClCompile Include="Source\Graphics\Renderable.cpp" />
     <ClCompile Include="Source\Graphics\RenderCore.cpp" />
-    <ClCompile Include="Source\Graphics\RenderFramework.cpp" />
+    <ClCompile Include="Source\Graphics\Renderer.cpp" />
+    <ClCompile Include="Source\Graphics\SamplerDesc.cpp" />
     <ClCompile Include="Source\Graphics\Shape.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
     <ClCompile Include="Source\Graphics\VertexBuffer.cpp" />
@@ -149,6 +152,7 @@
     <ClInclude Include="Source\Common\Logger.h" />
     <ClInclude Include="Source\Common\LoggerImpl.h" />
     <ClInclude Include="Source\Common\Time.h" />
+    <ClInclude Include="Source\Core\Context.h" />
     <ClInclude Include="Source\Core\Core.h" />
     <ClInclude Include="Source\Core\CoreDefinitions.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
@@ -162,6 +166,7 @@
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Engine\SplashScreen.h" />
+    <ClInclude Include="Source\Graphics\RenderContext.h" />
     <ClInclude Include="Source\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Graphics\d3dx12.h" />
     <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h" />
@@ -173,7 +178,8 @@
     <ClInclude Include="Source\Graphics\Quad.h" />
     <ClInclude Include="Source\Graphics\Renderable.h" />
     <ClInclude Include="Source\Graphics\RenderCore.h" />
-    <ClInclude Include="Source\Graphics\RenderFramework.h" />
+    <ClInclude Include="Source\Graphics\Renderer.h" />
+    <ClInclude Include="Source\Graphics\SamplerDesc.h" />
     <ClInclude Include="Source\Graphics\Shape.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Graphics\VertexBuffer.h" />

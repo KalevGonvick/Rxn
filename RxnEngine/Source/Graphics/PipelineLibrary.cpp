@@ -57,7 +57,7 @@ namespace Rxn::Graphics::Mapped
         m_PipelineLibrariesSupported = m_PipelineLibrary.Init(pDevice, m_CachePath + g_cPipelineLibraryFileName);
         for (UINT i = 0; i < EffectPipelineTypeCount; i++)
         {
-            RXN_LOGGER::Debug(L"Initializeing cache file mapping: [%d]", i);
+            RXN_LOGGER::Debug(L"Initializeing cache file mapping for shader: [%d]", i);
             m_DiskCaches[i].Init(m_CachePath + g_cCacheFileNames[i]);
         }
 
@@ -82,12 +82,7 @@ namespace Rxn::Graphics::Mapped
     }
 
 
-    void PipelineLibrary::SetPipelineState(
-        ID3D12Device *pDevice,
-        ID3D12RootSignature *pRootSignature,
-        ID3D12GraphicsCommandList *pCommandList,
-        _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type,
-        UINT frameIndex)
+    void PipelineLibrary::SetPipelineState(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex)
     {
         assert(m_DrawIndex < m_MaxDrawsPerFrame);
 

@@ -6,6 +6,7 @@
 #include "Platform/WIN32/WinEntry.h"
 #include "Platform/WIN32/Window.h"
 #include "Graphics/SimulationWindow.h"
+#include "Common/CommandLine.h"
 
 class BlankProject : public Rxn::Engine::Runtime
 {

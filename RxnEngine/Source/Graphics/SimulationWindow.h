@@ -10,7 +10,7 @@
 namespace Rxn::Graphics
 {
     class RXN_ENGINE_API SimulationWindow
-        : public RenderFramework
+        : public Renderer
         , public Platform::Win32::Window
     {
     public:

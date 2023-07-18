@@ -5,7 +5,7 @@ namespace Rxn::Graphics
 {
     SimulationWindow::SimulationWindow(WString windowTitle, WString windowClass, int width, int height)
         : Platform::Win32::Window(windowTitle, windowClass)
-        , RenderFramework(width, height)
+        , Renderer(width, height)
     {
     }
 
@@ -27,7 +27,7 @@ namespace Rxn::Graphics
         }
         case WM_SIZE:
         {
-            if (m_IsRenderReady)
+            if (m_Initialized)
                 OnSizeChange();
 
             return 0;
@@ -66,7 +66,7 @@ namespace Rxn::Graphics
             throw std::exception("Error creating swapchain...");
         }
 
-        result = DX12_CreateFrameResources();
+        result = DX12_CreateCommandAllocators();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Error creating frame resources...");
@@ -90,7 +90,7 @@ namespace Rxn::Graphics
         // complete before continuing.
         DX12_WaitForGPUFence();
 
-        m_IsRenderReady = true;
+        m_Initialized = true;
 
         ShowWindow(m_pHWnd, SW_SHOW);
         UpdateWindow(m_pHWnd);
@@ -110,7 +110,7 @@ namespace Rxn::Graphics
         case 'C':
             DX12_WaitForGPUFence();
             m_PipelineLibrary.ClearPSOCache();
-            m_PipelineLibrary.Build(m_Device.Get(), m_RootSignature.Get());
+            m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
             break;
 
         case 'U':
@@ -180,20 +180,24 @@ namespace Rxn::Graphics
         swapChainDesc.SampleDesc.Count = 1;
 
         ComPointer<IDXGISwapChain1> swapChain;
-        result = m_Factory->CreateSwapChainForHwnd(m_CommandQueue.Get(), m_pHWnd, &swapChainDesc, nullptr, nullptr, &swapChain);
+        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueue.Get(), m_pHWnd, &swapChainDesc, nullptr, nullptr, &swapChain);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create a swap chain for window.");
             return result;
         }
 
-        // This sample does not support fullscreen transitions.
-        result = m_Factory->MakeWindowAssociation(m_pHWnd, DXGI_MWA_NO_ALT_ENTER);
-        if (FAILED(result))
+        if (m_HasTearingSupport)
         {
-            RXN_LOGGER::Error(L"Factory failed to set window option.");
-            return result;
+            // This sample does not support fullscreen transitions.
+            result = RenderContext::GetFactory()->MakeWindowAssociation(m_pHWnd, DXGI_MWA_NO_ALT_ENTER);
+            if (FAILED(result))
+            {
+                RXN_LOGGER::Error(L"Factory failed to set window option.");
+                return result;
+            }
         }
+
 
         /* Cast */
         result = swapChain->QueryInterface(&m_SwapChain);
@@ -213,6 +217,7 @@ namespace Rxn::Graphics
         for (int i = 0; i < Constants::Graphics::BUFFER_COUNT; ++i)
         {
             m_RenderTargets[i].Release();
+            m_IntermediateRenderTarget.Release();
         }
 
         DX12_WaitForGPUFence();
@@ -235,6 +240,33 @@ namespace Rxn::Graphics
 
             DestroySwapChainResources();
 
+            float viewWidthRatio = static_cast<float>(m_Resolutions[1].Width) / m_Width;
+            float viewHeightRatio = static_cast<float>(m_Resolutions[1].Height) / m_Height;
+
+            float x = 1.0f;
+            float y = 1.0f;
+
+            if (viewWidthRatio < viewHeightRatio)
+            {
+                // The scaled image's height will fit to the viewport's height and 
+                // its width will be smaller than the viewport's width.
+                x = viewWidthRatio / viewHeightRatio;
+            }
+            else
+            {
+                // The scaled image's width will fit to the viewport's width and 
+                // its height may be smaller than the viewport's height.
+                y = viewHeightRatio / viewWidthRatio;
+            }
+
+            m_Viewport.TopLeftX = m_Width * (1.0f - x) / 2.0f;
+            m_Viewport.TopLeftY = m_Height * (1.0f - y) / 2.0f;
+            m_Viewport.Width = x * m_Width;
+            m_Viewport.Height = y * m_Height;
+
+            m_ScissorRect.right = m_Width;
+            m_ScissorRect.bottom = m_Height;
+
             HRESULT result = m_SwapChain->ResizeBuffers(Constants::Graphics::BUFFER_COUNT, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
             if (FAILED(result))
             {
@@ -243,7 +275,7 @@ namespace Rxn::Graphics
             }
 
             m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-            m_RTVDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame.
@@ -256,10 +288,40 @@ namespace Rxn::Graphics
                     RXN_LOGGER::Error(L"Failed to create RTV for buffer %d", n);
                     return result;
                 }
-
-                m_Device->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
+                RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
                 rtvHandle.Offset(1, m_RTVDescriptorSize);
+                NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
             }
+
+            D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[m_FrameIndex]->GetDesc();
+            D3D12_CLEAR_VALUE clearValue = {};
+            memcpy(clearValue.Color, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, sizeof(Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR));
+            clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+            // Create an intermediate render target that is the same dimensions as the swap chain.
+            const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(
+                &heapProps,
+                D3D12_HEAP_FLAG_NONE,
+                &renderTargetDesc,
+                D3D12_RESOURCE_STATE_RENDER_TARGET,
+                &clearValue,
+                IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+
+            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
+            rtvHandle.Offset(1, m_RTVDescriptorSize);
+
+            // Create a SRV of the intermediate render target.
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.Format = renderTargetDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = 1;
+
+            CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
+            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
         }
 
         return S_OK;

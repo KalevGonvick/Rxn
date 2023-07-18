@@ -1,5 +1,10 @@
 #pragma once
 
+#pragma warning(disable:4201) // nonstandard extension used : nameless struct/union
+#pragma warning(disable:4238) // nonstandard extension used : class rvalue used as lvalue
+#pragma warning(disable:4239) // A non-const reference may only be bound to an lvalue; assignment operator takes a reference to non-const
+#pragma warning(disable:4324) // structure was padded due to __declspec(align())
+
 /* -------------------------------------------------------- */
 /*  DLL                                                     */
 /* -------------------------------------------------------- */
@@ -19,29 +24,65 @@
 /* -------------------------------------------------------- */
 #pragma region WindowsDefinitions
 
+// Use the C++ standard templated min/max
+#define NOMINMAX
+
+// DirectX apps don't need GDI
+#define NODRAWTEXT
+#define NOBITMAP
+
+// Include <mcx.h> if you need this
+#define NOMCX
+
+// Include <winsvc.h> if you need this
+#define NOSERVICE
+
+// WinHelp is deprecated
+#define NOHELP
+
 #ifndef WIN32_LEAN_AND_MEAN
+
 #define WIN32_LEAN_AND_MEAN
-#endif
+
+#endif // WIN32_LEAN_AND_MEAN
 
 #define HInstance() GetModuleHandle(NULL)
 #define WM_OUTPUTMESSAGE (WM_USER + 0x0001)
 
 #ifndef DCX_USESTYLE
+
 #define DCX_USESTYLE 0x00010000
+
 #endif
 
 #pragma endregion // WindowsDefinitions
 /* -------------------------------------------------------- */
 
 /* -------------------------------------------------------- */
-/*  RxnConstants/TypeDefs                                   */
+/*  ExternalLibs                                            */
 /* -------------------------------------------------------- */
-#pragma region RxnConstants/TypeDefs
+#pragma region ExternalLibs
 
+#include <windowsx.h>
+#include <windows.h>
 #include <string>
 #include <memory>
 #include <unordered_map>
 #include <list>
+#include <queue>
+#include <array>
+#include <vector>
+#include <wrl.h>
+#include <shellapi.h>
+#include <mcx.h>
+
+#pragma endregion // ExternalLibs
+/* -------------------------------------------------------- */
+
+/* -------------------------------------------------------- */
+/*  RxnConstants/TypeDefs                                   */
+/* -------------------------------------------------------- */
+#pragma region RxnConstants/TypeDefs
 
 /* Singleton Accessors */
 #define RXN_LOGGER Rxn::Common::Logger
