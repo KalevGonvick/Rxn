@@ -13,10 +13,21 @@
 #include "Shape.h"
 #include "Quad.h"
 #include "CommandQueueManager.h"
+#include "CommandListManager.h"
 
 namespace Rxn::Graphics
 {
-    enum RootParameters : UINT32
+
+    enum SwapChainBuffers : uint32
+    {
+        BUFFER_ONE = 0,
+        BUFFER_TWO,
+        TOTAL_BUFFERS
+    };
+
+    const float INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
+
+    enum RootParameters : uint32
     {
         RootParameterUberShaderCB = 0,
         RootParameterCB,
@@ -39,7 +50,7 @@ namespace Rxn::Graphics
     {
     public:
 
-        Renderer(int width, int height);
+        Renderer(int32 width, int32 height);
         ~Renderer();
 
     protected:
@@ -49,7 +60,7 @@ namespace Rxn::Graphics
             return (rand() % 100) / 100.0f;
         }
 
-        inline std::wstring GetAssetFullPath(LPCWSTR assetName)
+        inline WString GetAssetFullPath(LPCWSTR assetName)
         {
             return m_AssetsPath + assetName;
         }
@@ -82,10 +93,11 @@ namespace Rxn::Graphics
         bool m_UseWarpDevice;
         bool m_HasTearingSupport;
 
-        UINT m_DrawIndex;
+        uint32 m_DrawIndex;
 
-        CommandQueueManager m_CommandQueueManager;
-        ComPointer<ID3D12GraphicsCommandList> m_CommandList;
+        Manager::CommandQueueManager m_CommandQueueManager;
+        Manager::CommandListManager m_CommandListManager;
+        //ComPointer<ID3D12GraphicsCommandList> m_CommandList;
         ComPointer<IDXGISwapChain4> m_SwapChain;
 
         ComPointer<ID3D12Resource> m_Texture;
@@ -114,12 +126,12 @@ namespace Rxn::Graphics
         HANDLE m_FenceEvent;
         HANDLE m_SwapChainEvent;
         ComPointer<ID3D12Fence> m_Fence;
-        UINT64 m_FenceValues[Constants::Graphics::BUFFER_COUNT];
+        UINT64 m_FenceValues[SwapChainBuffers::TOTAL_BUFFERS];
 
         bool m_Initialized;
 
 
-        ComPointer<ID3D12Resource> m_RenderTargets[Constants::Graphics::BUFFER_COUNT];
+        ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
         ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
         UINT m_RTVDescriptorSize;
         ComPointer<ID3D12RootSignature> m_RootSignature;
@@ -127,8 +139,10 @@ namespace Rxn::Graphics
         ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
 
         std::array<Resolution, 2> const m_Resolutions = { { { 1280, 720 }, { 1920, 1080 } } };
-        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[Constants::Graphics::BUFFER_COUNT];
+
+        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
         UINT m_SRVDescriptorSize;
+
     private:
 
         static const UINT MaxDrawsPerFrame = 256;

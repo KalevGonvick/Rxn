@@ -16,9 +16,10 @@ namespace Rxn::Graphics
         , m_Initialized(false)
         , m_DrawIndex(0)
         , m_FenceValues{}
-        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, Constants::Graphics::BUFFER_COUNT)
-        , m_PipelineLibrary(Constants::Graphics::BUFFER_COUNT, RootParameterCB)
-        , m_CommandQueueManager(1)
+        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, SwapChainBuffers::TOTAL_BUFFERS)
+        , m_PipelineLibrary(SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB)
+        , m_CommandQueueManager(RenderContext::GetGraphicsDevice())
+        , m_CommandListManager(RenderContext::GetGraphicsDevice())
     {
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
@@ -33,7 +34,7 @@ namespace Rxn::Graphics
 
     HRESULT Renderer::CreateDescriptorHeaps()
     {
-        DescriptorHeapDesc rtvDesc(Constants::Graphics::BUFFER_COUNT + 1);
+        DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
         rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
 
         DescriptorHeapDesc srvDesc(1);
@@ -52,7 +53,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
         // Create a RTV for each frame.
-        for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
+        for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
         {
 
             result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
@@ -128,15 +129,20 @@ namespace Rxn::Graphics
 
     HRESULT Renderer::CreateCommandList()
     {
-        HRESULT result;
+        /*HRESULT result;
         result = RenderContext::GetGraphicsDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to initialize new command list.");
             return result;
-        }
+        }*/
 
-        return result;
+        m_CommandListManager.CreateCommandList("Main", m_CommandAllocators[m_FrameIndex]);
+        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Close());
+        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Main").Get() };
+
+        m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+        return S_OK;
     }
 
     HRESULT Renderer::CreateVertexBufferResource()
@@ -155,6 +161,7 @@ namespace Rxn::Graphics
         cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
 
         std::vector<UINT> cubeIndices;
+
         cubeIndices.push_back(0);
         cubeIndices.push_back(1);
         cubeIndices.push_back(3);
@@ -212,7 +219,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue().Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList("Setup").Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
@@ -227,7 +234,7 @@ namespace Rxn::Graphics
 
         m_Quad.ReadDataFromRaw(quadVertices);
 
-        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue().Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList("Setup").Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
@@ -242,7 +249,7 @@ namespace Rxn::Graphics
         HRESULT result;
 
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.BufferCount = Constants::Graphics::BUFFER_COUNT;
+        swapChainDesc.BufferCount = SwapChainBuffers::TOTAL_BUFFERS;
         swapChainDesc.Width = m_Width;
         swapChainDesc.Height = m_Height;
         swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -255,7 +262,7 @@ namespace Rxn::Graphics
 
 
         ComPointer<IDXGISwapChain1> swapChain;
-        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue().Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain);
+        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue("Basic").Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create a swap chain for window.");
@@ -333,9 +340,9 @@ namespace Rxn::Graphics
         textureData.RowPitch = static_cast<LONG_PTR>(TextureWidth) * TextureBytesPerPixel;
         textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
-        UpdateSubresources(m_CommandList.Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
+        UpdateSubresources(m_CommandListManager.GetCommandList("Setup").Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
         const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_Texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        m_CommandList->ResourceBarrier(1, &transition);
+        m_CommandListManager.GetCommandList("Setup")->ResourceBarrier(1, &transition);
 
         // Describe and create a SRV for the texture.
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -415,7 +422,7 @@ namespace Rxn::Graphics
 
         const UINT64 fenceValue = m_FenceValues[m_FrameIndex];
 
-        result = m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fenceValue);
+        result = m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fenceValue);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
@@ -443,7 +450,7 @@ namespace Rxn::Graphics
     void Renderer::WaitForBufferedFence()
     {
         // Schedule a Signal command in the queue.
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), m_FenceValues[m_FrameIndex]));
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), m_FenceValues[m_FrameIndex]));
 
         ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[m_FrameIndex], m_FenceEvent));
         WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
@@ -454,7 +461,7 @@ namespace Rxn::Graphics
     void Renderer::WaitForSingleFrame()
     {
         const UINT64 fence = m_FenceValues[m_FrameIndex];
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fence));
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fence));
         m_FenceValues[m_FrameIndex]++;
 
         if (m_Fence->GetCompletedValue() < fence)

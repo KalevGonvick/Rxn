@@ -109,6 +109,7 @@
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
+    <ClCompile Include="Source\Graphics\CommandListManager.cpp" />
     <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
     <ClCompile Include="Source\Graphics\RenderContext.cpp" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Engine\SplashScreen.h" />
+    <ClInclude Include="Source\Graphics\CommandListManager.h" />
     <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />
     <ClInclude Include="Source\Graphics\RenderContext.h" />

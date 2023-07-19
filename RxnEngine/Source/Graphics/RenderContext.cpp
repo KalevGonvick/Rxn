@@ -10,6 +10,7 @@ namespace Rxn::Graphics
     }
 
     RenderContext::RenderContext()
+        : m_Seed(89348)
     {
     }
 
@@ -36,6 +37,11 @@ namespace Rxn::Graphics
         GetContext().SetHighestRootSignatureVersion();
 
         GetContext().m_IsInitialized = true;
+    }
+
+    const uint32 &RenderContext::GetEngineSeed()
+    {
+        return GetContext().m_Seed;
     }
 
     void RenderContext::SetHWND(const HWND &hwnd)

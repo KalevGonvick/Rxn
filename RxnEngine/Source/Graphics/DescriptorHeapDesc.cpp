@@ -9,8 +9,11 @@ namespace Rxn::Graphics
         NodeMask = 0;
     }
 
-    DescriptorHeapDesc::~DescriptorHeapDesc()
+    DescriptorHeapDesc::~DescriptorHeapDesc() = default;
+
+    void DescriptorHeapDesc::SetMask(uint32 mask)
     {
+        NodeMask = mask;
     }
 
     void DescriptorHeapDesc::CreateRTVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &rtvDescriptorHeap)
@@ -25,6 +28,16 @@ namespace Rxn::Graphics
         Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(&srvDescriptorHeap));
+    }
+
+    void DescriptorHeapDesc::CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &dsvDescriptorHeap)
+    {
+        // TODO
+    }
+
+    void DescriptorHeapDesc::CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &samplerDescriptorHeap)
+    {
+        // TODO
     }
 
 

@@ -21,11 +21,9 @@ namespace Rxn::Graphics
 
     void SimulationWindow::DestroySwapChainResources()
     {
-        for (int i = 0; i < Constants::Graphics::BUFFER_COUNT; ++i)
-        {
-            m_RenderTargets[i].Release();
-            m_IntermediateRenderTarget.Release();
-        }
+        m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Release();
+        m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Release();
+        m_IntermediateRenderTarget.Release();
 
         WaitForBufferedFence();
     }
@@ -55,10 +53,10 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        m_CommandQueueManager.CreateCommantQueues();
+        m_CommandQueueManager.CreateCommandQueue("Basic");
 
         {
-            DescriptorHeapDesc rtvDesc(Constants::Graphics::BUFFER_COUNT + 1);
+            DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
             rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
 
             DescriptorHeapDesc srvDesc(1);
@@ -84,91 +82,65 @@ namespace Rxn::Graphics
             throw std::exception("Error creating swapchain...");
         }
 
-        result = Renderer::CreateCommandAllocators();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Error creating frame resources...");
-            throw std::exception("Error creating frame resources...");
-        }
+        ThrowIfFailed(Renderer::CreateCommandAllocators());
+
 
         {
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
-            // Create a RTV for each frame.
-            for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
-            {
+            // Create a RTV for each frame swap chain buffer
+            ThrowIfFailed(m_SwapChain->GetBuffer(SwapChainBuffers::BUFFER_ONE, IID_PPV_ARGS(&m_RenderTargets[SwapChainBuffers::BUFFER_ONE])));
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Get(), nullptr, rtvHandle);
+            rtvHandle.Offset(1, m_RTVDescriptorSize);
+            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_ONE);
 
-                result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
-                if (FAILED(result))
-                {
-                    RXN_LOGGER::Error(L"Failed to create RTV for buffer %d", n);
-                }
-                RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
-                rtvHandle.Offset(1, m_RTVDescriptorSize);
-                NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
+            ThrowIfFailed(m_SwapChain->GetBuffer(SwapChainBuffers::BUFFER_TWO, IID_PPV_ARGS(&m_RenderTargets[SwapChainBuffers::BUFFER_TWO])));
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Get(), nullptr, rtvHandle);
+            rtvHandle.Offset(1, m_RTVDescriptorSize);
+            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_TWO);
 
-                result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
-                if (FAILED(result))
-                {
-                    RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
-                }
-                NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
-            }
 
-            D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[m_FrameIndex]->GetDesc();
             D3D12_CLEAR_VALUE clearValue = {};
-            memcpy(clearValue.Color, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, sizeof(Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR));
+            memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
             // Create an intermediate render target that is the same dimensions as the swap chain.
+            auto renderTargetDescCopy = m_RenderTargets[m_FrameIndex]->GetDesc();
             const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-            ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(
-                &heapProps,
-                D3D12_HEAP_FLAG_NONE,
-                &renderTargetDesc,
-                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                &clearValue,
-                IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+            ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &renderTargetDescCopy, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&m_IntermediateRenderTarget)));
 
-            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
 
             RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
+            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
 
             // Create a SRV of the intermediate render target.
             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Format = renderTargetDesc.Format;
+            srvDesc.Format = renderTargetDescCopy.Format;
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = 1;
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
             RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
+            ThrowIfFailed(Renderer::CreateCommandList());
         }
 
-
-
-
-        result = Renderer::CreateCommandList();
-        if (FAILED(result))
         {
-            RXN_LOGGER::Error(L"Failed to create new commandlist");
-            throw std::exception("Failed to create new commandlist, exiting...");
+            m_CommandListManager.CreateCommandList("Setup", m_CommandAllocators[m_FrameIndex]);
+
+
+            ThrowIfFailed(Renderer::CreateVertexBufferResource());
+
+            m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
+
+            // Close the command list and execute it to begin the initial GPU setup.
+            ThrowIfFailed(m_CommandListManager.GetCommandList("Setup")->Close());
+            ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Setup").Get() };
+            m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+
         }
-
-        result = Renderer::CreateVertexBufferResource();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create vertex buffer resource.");
-            throw std::exception("Failed to create vertex buffer resource, exiting...");
-        }
-
-        m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
-
-        // Close the command list and execute it to begin the initial GPU setup.
-        ThrowIfFailed(m_CommandList->Close());
-        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
-        m_CommandQueueManager.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
         result = CreateFrameSyncObjects();
         if (FAILED(result))
@@ -178,7 +150,7 @@ namespace Rxn::Graphics
         }
 
         const UINT64 fence = m_FenceValues[m_FrameIndex];
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fence));
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fence));
         m_FenceValues[m_FrameIndex]++;
 
         // Wait until the previous frame is finished.
@@ -347,7 +319,7 @@ namespace Rxn::Graphics
             m_ScissorRect.right = m_Width;
             m_ScissorRect.bottom = m_Height;
 
-            HRESULT result = m_SwapChain->ResizeBuffers(Constants::Graphics::BUFFER_COUNT, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+            HRESULT result = m_SwapChain->ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
             if (FAILED(result))
             {
                 RXN_LOGGER::Error(L"Failed to resize back buffer, hr=0x.8x", result);
@@ -359,7 +331,7 @@ namespace Rxn::Graphics
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame.
-            for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
+            for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
             {
 
                 result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
@@ -375,7 +347,7 @@ namespace Rxn::Graphics
 
             D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[m_FrameIndex]->GetDesc();
             D3D12_CLEAR_VALUE clearValue = {};
-            memcpy(clearValue.Color, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, sizeof(Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR));
+            memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
             // Create an intermediate render target that is the same dimensions as the swap chain.
@@ -434,26 +406,26 @@ namespace Rxn::Graphics
     void SimulationWindow::PreRenderPass()
     {
         ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
-        ThrowIfFailed(m_CommandList->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
+        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
 
         // Set necessary state.
-        m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+        m_CommandListManager.GetCommandList("Main")->SetGraphicsRootSignature(m_RootSignature.Get());
 
         ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
-        m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+        m_CommandListManager.GetCommandList("Main")->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_CommandList->RSSetViewports(1, &m_Viewport);
-        m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+        m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &m_Viewport);
+        m_CommandListManager.GetCommandList("Main")->RSSetScissorRects(1, &m_ScissorRect);
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::BUFFER_COUNT, m_RTVDescriptorSize);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_RTVDescriptorSize);
         CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
 
-        m_CommandList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
+        m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
 
         // Record commands.
-        m_CommandList->ClearRenderTargetView(intermediateRtvHandle, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+        m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
 
         {
             static float rot = 0.0f;
@@ -462,30 +434,30 @@ namespace Rxn::Graphics
 
             rot += 0.01f;
 
-            m_CommandList->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
-            m_CommandList->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
+            m_CommandListManager.GetCommandList("Main")->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
 
-            m_CommandList->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
-            m_CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            m_CommandListManager.GetCommandList("Main")->DrawIndexedInstanced(36, 1, 0, 0, 0);
             m_DrawIndex++;
         }
 
         // Set up the state for a fullscreen quad.
-        m_CommandList->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
-        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
+        m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
         D3D12_RESOURCE_BARRIER barriers[] = {
             CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET),
             CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
         };
 
-        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
-        m_CommandList->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+        m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandListManager.GetCommandList("Main")->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
 
         const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        m_CommandList->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
-        m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+        m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
+        m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
         {
             UINT quadCount = 0;
@@ -503,9 +475,9 @@ namespace Rxn::Graphics
                         m_Viewport.Width / quadsX,
                         m_Viewport.Height / quadsY);
 
-                    m_CommandList->RSSetViewports(1, &viewport);
-                    m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
-                    m_CommandList->DrawInstanced(4, 1, 0, 0);
+                    m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &viewport);
+                    m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
+                    m_CommandListManager.GetCommandList("Main")->DrawInstanced(4, 1, 0, 0);
                 }
 
                 quadCount++;
@@ -518,12 +490,12 @@ namespace Rxn::Graphics
         barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
 
-        ThrowIfFailed(m_CommandList->Close());
+        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Close());
 
-        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
-        m_CommandQueueManager.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Main").Get() };
+        m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
     }
 
     void SimulationWindow::PostRenderPass()

@@ -3,8 +3,6 @@
 
 namespace Rxn::Graphics
 {
-
-
     class RXN_ENGINE_API RenderContext
     {
     public:
@@ -29,6 +27,8 @@ namespace Rxn::Graphics
         void GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
         void CheckTearingSupport();
 
+        static const uint32 &GetEngineSeed();
+
     public:
 
         HWND m_Hwnd;
@@ -44,8 +44,9 @@ namespace Rxn::Graphics
 
         ComPointer<ID3D12Device> m_Device;
         ComPointer<IDXGIFactory4> m_Factory;
-
         D3D_ROOT_SIGNATURE_VERSION m_HighestRootSignatureVersion;
+
+        uint32 m_Seed;
 
     };
 }

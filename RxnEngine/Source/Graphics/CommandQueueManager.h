@@ -1,21 +1,20 @@
 #pragma once
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::Manager
 {
     class CommandQueueManager
     {
     public:
 
-        CommandQueueManager(uint32 num);
+        CommandQueueManager(ComPointer<ID3D12Device> device);
         ~CommandQueueManager();
 
-        void CreateCommantQueues();
-        ComPointer<ID3D12CommandQueue> &GetCommandQueue(int index = 0);
+        void CreateCommandQueue(String queueName);
+        ComPointer<ID3D12CommandQueue> &GetCommandQueue(String queueName);
 
     private:
+        ComPointer<ID3D12Device> m_Device;
 
-        uint32 m_NumCommandQueues;
-
-        std::vector<ComPointer<ID3D12CommandQueue>> m_CommandQueues;
+        std::unordered_map<uint32, ComPointer<ID3D12CommandQueue>> m_CommandQueues;
     };
 }

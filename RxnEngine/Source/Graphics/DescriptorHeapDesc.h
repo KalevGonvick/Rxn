@@ -11,8 +11,11 @@ namespace Rxn::Graphics
 
     public:
 
-        // TODO these are null
+        void SetMask(uint32 mask);
         void CreateRTVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &rtvDescriptorHeap);
         void CreateSRVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &srvDescriptorHeap);
+        void CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &dsvDescriptorHeap);
+        void CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &samplerDescriptorHeap);
+
     };
 }

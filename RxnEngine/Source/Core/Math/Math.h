@@ -114,6 +114,48 @@ namespace Rxn::Core::Math
         return AlignDownWithMask(value, alignment - 1);
     }
 
+    static inline uint32 Murmer32Scramble(uint32 k) {
+        k *= 0xcc9e2d51;
+        k = (k << 15) | (k >> 17);
+        k *= 0x1b873593;
+        return k;
+    }
+
+    static inline uint32 Murmer3(const uint8 *key, uint64 len, uint32 seed)
+    {
+        uint32 hashResult = seed;
+        uint32 inputString;
+
+        /* Read in groups of 4. */
+        for (uint64 i = len >> 2; i; i--) {
+            // Here is a source of differing results across endiannesses.
+            // A swap here has no effects on hash properties though.
+            memcpy(&inputString, key, sizeof(uint32));
+            key += sizeof(uint32);
+            hashResult ^= Murmer32Scramble(inputString);
+            hashResult = (hashResult << 13) | (hashResult >> 19);
+            hashResult = hashResult * 5 + 0xe6546b64;
+        }
+        /* Read the rest. */
+        inputString = 0;
+        for (uint64 i = len & 3; i; i--) {
+            inputString <<= 8;
+            inputString |= key[i - 1];
+        }
+        // A swap is *not* necessary here because the preceding loop already
+        // places the low bytes in the low places according to whatever endianness
+        // we use. Swaps only apply when the memory is copied in a chunk.
+        hashResult ^= Murmer32Scramble(inputString);
+        /* Finalize. */
+        hashResult ^= len;
+        hashResult ^= hashResult >> 16;
+        hashResult *= 0x85ebca6b;
+        hashResult ^= hashResult >> 13;
+        hashResult *= 0xc2b2ae35;
+        hashResult ^= hashResult >> 16;
+        return hashResult;
+    }
+
     // This requires SSE4.2 which is present on Intel Nehalem (Nov. 2008)
     // and AMD Bulldozer (Oct. 2011) processors.  I could put a runtime
     // check for this, but I'm just going to assume people playing with
