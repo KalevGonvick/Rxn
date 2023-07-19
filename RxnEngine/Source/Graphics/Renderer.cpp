@@ -1,5 +1,6 @@
 #include "Rxn.h"
 #include "Renderer.h"
+#include "DescriptorHeapDesc.h"
 
 namespace Rxn::Graphics
 {
@@ -17,6 +18,7 @@ namespace Rxn::Graphics
         , m_FenceValues{}
         , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, Constants::Graphics::BUFFER_COUNT)
         , m_PipelineLibrary(Constants::Graphics::BUFFER_COUNT, RootParameterCB)
+        , m_CommandQueueManager(1)
     {
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
@@ -27,86 +29,25 @@ namespace Rxn::Graphics
 
     Renderer::~Renderer() = default;
 
-    void Renderer::Initialize()
+
+
+    HRESULT Renderer::CreateDescriptorHeaps()
     {
-        if (m_Initialized)
-            return;
+        DescriptorHeapDesc rtvDesc(Constants::Graphics::BUFFER_COUNT + 1);
+        rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
 
-
-    }
-
-    HRESULT Renderer::DX12_LoadPipeline()
-    {
-        HRESULT result;
-
-        result = DX12_CreateCommantQueue();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create command queue");
-            return result;
-        }
-
-        result = DX12_CreateDescriptorHeaps();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create descriptor heaps.");
-            return result;
-        }
-
-        result = DX12_CreateRootSignature();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create root signature.");
-        }
-
-        return result;
-    }
-
-    HRESULT Renderer::DX12_CreateCommantQueue()
-    {
-        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-        return RenderContext::GetGraphicsDevice()->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_CommandQueue));
-    }
-
-    HRESULT Renderer::DX12_CreateDescriptorHeaps()
-    {
-        HRESULT result;
-        // Describe and create a render target view (RTV) descriptor heap.
-        D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-        rtvHeapDesc.NumDescriptors = Constants::Graphics::BUFFER_COUNT + 1;
-        rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        result = RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_RTVHeap));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create new RTV descriptor heap.");
-            return result;
-        }
-
-        // Describe and create a shader resource view (SRV) heap for the texture.
-        D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-        srvHeapDesc.NumDescriptors = 1;
-        srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-        result = RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_SRVHeap));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create new SRV descriptor heap.");
-            return result;
-        }
-
+        DescriptorHeapDesc srvDesc(1);
+        srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
 
         m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+
+
         return S_OK;
     }
 
-    HRESULT Renderer::DX12_CreateCommandAllocators()
+    HRESULT Renderer::CreateCommandAllocators()
     {
 
         HRESULT result;
@@ -128,7 +69,7 @@ namespace Rxn::Graphics
         return S_OK;
     }
 
-    HRESULT Renderer::DX12_CreateRootSignature()
+    HRESULT Renderer::CreateRootSignature()
     {
 
 
@@ -185,57 +126,7 @@ namespace Rxn::Graphics
         return S_OK;
     }
 
-    HRESULT Renderer::DX12_LoadAssets()
-    {
-        HRESULT result;
-
-        result = DX12_CreateCommandList();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create new commandlist");
-            return result;
-        }
-
-        result = DX12_CreateVertexBufferResource();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create vertex buffer resource.");
-            return result;
-        }
-
-        m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
-
-        // Close the command list and execute it to begin the initial GPU setup.
-        ThrowIfFailed(m_CommandList->Close());
-        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
-        m_CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-        result = DX12_CreateFrameSyncObjects();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create frame sync objects");
-            return result;
-        }
-
-        const UINT64 fence = m_FenceValues[m_FrameIndex];
-        ThrowIfFailed(m_CommandQueue->Signal(m_Fence.Get(), fence));
-        m_FenceValues[m_FrameIndex]++;
-
-        // Wait until the previous frame is finished.
-        if (m_Fence->GetCompletedValue() < fence)
-        {
-            ThrowIfFailed(m_Fence->SetEventOnCompletion(fence, m_FenceEvent));
-            WaitForSingleObject(m_FenceEvent, INFINITE);
-        }
-
-        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-
-        m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
-
-        return S_OK;
-    }
-
-    HRESULT Renderer::DX12_CreateCommandList()
+    HRESULT Renderer::CreateCommandList()
     {
         HRESULT result;
         result = RenderContext::GetGraphicsDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
@@ -248,7 +139,7 @@ namespace Rxn::Graphics
         return result;
     }
 
-    HRESULT Renderer::DX12_CreateVertexBufferResource()
+    HRESULT Renderer::CreateVertexBufferResource()
     {
 
         // Define the geometry for a cube.
@@ -321,7 +212,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueue.Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue().Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
@@ -336,7 +227,7 @@ namespace Rxn::Graphics
 
         m_Quad.ReadDataFromRaw(quadVertices);
 
-        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueue.Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
+        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue().Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandList.Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
@@ -344,62 +235,59 @@ namespace Rxn::Graphics
         }
 
         return S_OK;
-
-
-        //const UINT vertexIndexBufferSize = sizeof(cubeIndices) + sizeof(cubeVertices) + sizeof(quadVertices);
-
-        //HRESULT result;
-
-        //const auto defaultBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
-        //const CD3DX12_HEAP_PROPERTIES defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-        //ThrowIfFailed(m_Device->CreateCommittedResource(&defaultHeapProps, D3D12_HEAP_FLAG_NONE, &defaultBuf, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_VertexIndexBuffer)));
-
-        //const CD3DX12_HEAP_PROPERTIES uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-        //const auto uploadBuf = CD3DX12_RESOURCE_DESC::Buffer(vertexIndexBufferSize);
-        //ThrowIfFailed(m_Device->CreateCommittedResource(
-        //    &uploadHeapProps,
-        //    D3D12_HEAP_FLAG_NONE,
-        //    &uploadBuf,
-        //    D3D12_RESOURCE_STATE_GENERIC_READ,
-        //    nullptr,
-        //    IID_PPV_ARGS(&vertexIndexBufferUpload)));
-
-        //NAME_D3D12_OBJECT(m_VertexIndexBuffer);
-
-        //UINT8 *mappedUploadHeap = nullptr;
-        //CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-        //ThrowIfFailed(vertexIndexBufferUpload->Map(0, &readRange, reinterpret_cast<void **>(&mappedUploadHeap)));
-
-        //// Fill in part of the upload heap with our index and vertex data.
-        //UINT8 *heapLocation = static_cast<UINT8 *>(mappedUploadHeap);
-        //memcpy(heapLocation, cubeVertices, sizeof(cubeVertices));
-        //heapLocation += sizeof(cubeVertices);
-        //memcpy(heapLocation, cubeIndices, sizeof(cubeIndices));
-        //heapLocation += sizeof(cubeIndices);
-        //memcpy(heapLocation, quadVertices, sizeof(quadVertices));
-
-        //// Pack the vertices and indices into their destination by copying from the upload heap.
-        //m_CommandList->CopyBufferRegion(m_VertexIndexBuffer.Get(), 0, vertexIndexBufferUpload.Get(), 0, vertexIndexBufferSize);
-        //const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_VertexIndexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER | D3D12_RESOURCE_STATE_INDEX_BUFFER);
-        //m_CommandList->ResourceBarrier(1, &transition);
-
-        //// Create the index and vertex buffer views.
-        //m_CubeVbv.BufferLocation = m_VertexIndexBuffer.Get()->GetGPUVirtualAddress();
-        //m_CubeVbv.SizeInBytes = sizeof(cubeVertices);
-        //m_CubeVbv.StrideInBytes = sizeof(VertexPositionColour);
-
-        //m_CubeIbv.BufferLocation = m_CubeVbv.BufferLocation + sizeof(cubeVertices);
-        //m_CubeIbv.SizeInBytes = sizeof(cubeIndices);
-        //m_CubeIbv.Format = DXGI_FORMAT_R32_UINT;
-
-        //m_QuadVbv.BufferLocation = m_CubeIbv.BufferLocation + sizeof(cubeIndices);
-        //m_QuadVbv.SizeInBytes = sizeof(quadVertices);
-        //m_QuadVbv.StrideInBytes = sizeof(VertexPositionUV);
-
-        //return S_OK;
     }
 
-    HRESULT Renderer::DX12_CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap)
+    HRESULT Renderer::CreatePipelineSwapChain()
+    {
+        HRESULT result;
+
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+        swapChainDesc.BufferCount = Constants::Graphics::BUFFER_COUNT;
+        swapChainDesc.Width = m_Width;
+        swapChainDesc.Height = m_Height;
+        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        swapChainDesc.SampleDesc.Count = 1;
+
+        // It is recommended to always use the tearing flag when it is available.
+        swapChainDesc.Flags = m_HasTearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+
+
+        ComPointer<IDXGISwapChain1> swapChain;
+        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue().Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain);
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to create a swap chain for window.");
+            return result;
+        }
+
+        if (m_HasTearingSupport)
+        {
+            // This sample does not support fullscreen transitions.
+            result = RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER);
+            if (FAILED(result))
+            {
+                RXN_LOGGER::Error(L"Factory failed to set window option.");
+                return result;
+            }
+        }
+
+
+        /* Cast */
+        result = swapChain->QueryInterface(&m_SwapChain);
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to cast swapchain.");
+        }
+
+        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+        m_SwapChainEvent = m_SwapChain->GetFrameLatencyWaitableObject();
+
+        return result;
+    }
+
+    HRESULT Renderer::CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap)
     {
         HRESULT result;
 
@@ -497,7 +385,7 @@ namespace Rxn::Graphics
         return data;
     }
 
-    HRESULT Renderer::DX12_CreateFrameSyncObjects()
+    HRESULT Renderer::CreateFrameSyncObjects()
     {
         HRESULT result;
 
@@ -521,13 +409,13 @@ namespace Rxn::Graphics
         return result;
     }
 
-    HRESULT Renderer::DX12_MoveToNextFrame()
+    HRESULT Renderer::MoveToNextFrame()
     {
         HRESULT result;
 
         const UINT64 fenceValue = m_FenceValues[m_FrameIndex];
 
-        result = m_CommandQueue->Signal(m_Fence.Get(), fenceValue);
+        result = m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fenceValue);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
@@ -552,10 +440,10 @@ namespace Rxn::Graphics
         m_FenceValues[m_FrameIndex] = fenceValue + 1;
     }
 
-    void Renderer::DX12_WaitForGPUFence()
+    void Renderer::WaitForBufferedFence()
     {
         // Schedule a Signal command in the queue.
-        ThrowIfFailed(m_CommandQueue->Signal(m_Fence.Get(), m_FenceValues[m_FrameIndex]));
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), m_FenceValues[m_FrameIndex]));
 
         ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[m_FrameIndex], m_FenceEvent));
         WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
@@ -563,151 +451,33 @@ namespace Rxn::Graphics
         m_FenceValues[m_FrameIndex]++;
     }
 
-    void Renderer::DX12_ToggleEffect(Mapped::EffectPipelineType type)
+    void Renderer::WaitForSingleFrame()
+    {
+        const UINT64 fence = m_FenceValues[m_FrameIndex];
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fence));
+        m_FenceValues[m_FrameIndex]++;
+
+        if (m_Fence->GetCompletedValue() < fence)
+        {
+            ThrowIfFailed(m_Fence->SetEventOnCompletion(fence, m_FenceEvent));
+            WaitForSingleObject(m_FenceEvent, INFINITE);
+        }
+    }
+
+    void Renderer::ToggleEffect(Mapped::EffectPipelineType type)
     {
         if (m_EnabledEffects[type])
         {
-            DX12_WaitForGPUFence();
+            WaitForBufferedFence();
             m_PipelineLibrary.DestroyShader(type);
         }
 
         m_EnabledEffects[type] = !m_EnabledEffects[type];
     }
 
-    void Renderer::DX12_PopulateCommandList()
+    void Renderer::PopulateCommandList()
     {
-        // Command list allocators can only be reset when the associated 
-        // command lists have finished execution on the GPU; apps should use 
-        // fences to determine GPU execution progress.
-        ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
 
-        // However, when ExecuteCommandList() is called on a particular command 
-        // list, that command list can then be reset at any time and must be before 
-        // re-recording.
-        ThrowIfFailed(m_CommandList->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
-
-        // Set necessary state.
-        m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-
-        ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
-        m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-        //m_CommandList->SetGraphicsRootDescriptorTable(0, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
-        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_CommandList->RSSetViewports(1, &m_Viewport);
-        m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::BUFFER_COUNT, m_RTVDescriptorSize);
-        CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
-
-        m_CommandList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
-
-        // Record commands.
-        m_CommandList->ClearRenderTargetView(intermediateRtvHandle, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
-
-        {
-            static float rot = 0.0f;
-            DrawConstantBuffer *drawCB = (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, m_FrameIndex);
-            drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Camera.GetViewMatrix() * m_ProjectionMatrix);
-
-            rot += 0.01f;
-
-            m_CommandList->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
-            m_CommandList->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
-
-            m_CommandList->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
-            m_CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-            m_DrawIndex++;
-        }
-
-        // Set up the state for a fullscreen quad.
-        m_CommandList->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
-        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-        // Indicate that the back buffer will be used as a render target and the
-        // intermediate render target will be used as a SRV.
-        D3D12_RESOURCE_BARRIER barriers[] = {
-            CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET),
-            CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-        };
-
-        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
-        m_CommandList->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
-
-        const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        m_CommandList->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
-        m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-        {
-            UINT quadCount = 0;
-            static const UINT quadsX = 4;
-            static const UINT quadsY = 4;
-
-            // Cycle through all of the effects.
-            for (UINT i = Mapped::PostBlit; i < Mapped::EffectPipelineTypeCount; i++)
-            {
-                if (m_EnabledEffects[i])
-                {
-                    CD3DX12_VIEWPORT viewport(
-                        (quadCount % quadsX) * (m_Viewport.Width / quadsX),
-                        (quadCount / quadsY) * (m_Viewport.Height / quadsY),
-                        m_Viewport.Width / quadsX,
-                        m_Viewport.Height / quadsY);
-
-                    m_CommandList->RSSetViewports(1, &viewport);
-                    m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
-                    m_CommandList->DrawInstanced(4, 1, 0, 0);
-                }
-
-                quadCount++;
-            }
-        }
-
-        // Revert resource states back to original values.
-        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-        barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
-
-        ThrowIfFailed(m_CommandList->Close());
-    }
-
-    void Renderer::DX12_Destroy()
-    {
-        DX12_WaitForGPUFence();
-        CloseHandle(m_FenceEvent);
-    }
-
-    void Renderer::DX12_Render()
-    {
-        // Record all the commands we need to render the scene into the command list.
-        DX12_PopulateCommandList();
-
-        // Execute the command list.
-        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
-        m_CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-        // Present the frame.
-        ThrowIfFailed(m_SwapChain->Present(1, 0));
-
-        m_DrawIndex = 0;
-        m_PipelineLibrary.EndFrame();
-
-        DX12_MoveToNextFrame();
-
-    }
-
-    void Renderer::DX12_Update()
-    {
-        // Wait for the previous Present to complete.
-        //WaitForSingleObjectEx(m_SwapChainEvent, 100, FALSE);
-
-        Engine::EngineContext::Tick(NULL);
-        m_Camera.Update(static_cast<float>(Engine::EngineContext::GetElapsedSeconds()));
     }
 
 

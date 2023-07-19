@@ -12,7 +12,7 @@
 #include "Renderable.h"
 #include "Shape.h"
 #include "Quad.h"
-#include "SamplerDesc.h"
+#include "CommandQueueManager.h"
 
 namespace Rxn::Graphics
 {
@@ -42,10 +42,6 @@ namespace Rxn::Graphics
         Renderer(int width, int height);
         ~Renderer();
 
-        void DX12_Destroy();
-        void DX12_Render();
-        void DX12_Update();
-
     protected:
 
         inline float GetRandomColour()
@@ -58,38 +54,37 @@ namespace Rxn::Graphics
             return m_AssetsPath + assetName;
         }
 
-        void Initialize();
-        void Shutdown();
+        virtual void InitializeRender() = 0;
+        virtual void ShutdownRender() = 0;
+        virtual void RenderPass() = 0;
+        virtual void PreRenderPass() = 0;
+        virtual void PostRenderPass() = 0;
 
-        HRESULT DX12_LoadPipeline();
-        HRESULT DX12_CreateCommantQueue();
-        HRESULT DX12_CreateDescriptorHeaps();
-        HRESULT DX12_CreateCommandAllocators();
-        HRESULT DX12_CreateRootSignature();
-        HRESULT DX12_LoadAssets();
-        HRESULT DX12_CreateCommandList();
-        HRESULT DX12_CreateVertexBufferResource();
+        HRESULT CreateDescriptorHeaps();
+        HRESULT CreateCommandAllocators();
+        HRESULT CreateRootSignature();
+        HRESULT CreateCommandList();
+        HRESULT CreateVertexBufferResource();
+        HRESULT CreatePipelineSwapChain();
+        HRESULT CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
+        HRESULT CreateFrameSyncObjects();
+        HRESULT MoveToNextFrame();
 
-        HRESULT DX12_CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
 
         std::vector<UINT8> GenerateTextureData();
-
-        HRESULT DX12_CreateFrameSyncObjects();
-
-        HRESULT DX12_MoveToNextFrame();
-        void DX12_WaitForGPUFence();
-
-        void DX12_ToggleEffect(Mapped::EffectPipelineType type);
+        void WaitForBufferedFence();
+        void WaitForSingleFrame();
+        void ToggleEffect(Mapped::EffectPipelineType type);
 
 
-        void DX12_PopulateCommandList();
+        void PopulateCommandList();
 
         bool m_UseWarpDevice;
         bool m_HasTearingSupport;
 
         UINT m_DrawIndex;
 
-        ComPointer<ID3D12CommandQueue> m_CommandQueue;
+        CommandQueueManager m_CommandQueueManager;
         ComPointer<ID3D12GraphicsCommandList> m_CommandList;
         ComPointer<IDXGISwapChain4> m_SwapChain;
 
@@ -132,11 +127,9 @@ namespace Rxn::Graphics
         ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
 
         std::array<Resolution, 2> const m_Resolutions = { { { 1280, 720 }, { 1920, 1080 } } };
-
-    private:
         ComPointer<ID3D12CommandAllocator> m_CommandAllocators[Constants::Graphics::BUFFER_COUNT];
-
         UINT m_SRVDescriptorSize;
+    private:
 
         static const UINT MaxDrawsPerFrame = 256;
         static const UINT TextureWidth = 256;

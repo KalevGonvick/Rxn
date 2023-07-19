@@ -75,7 +75,7 @@ namespace Rxn::Platform::Win32
         /**
          * .
          */
-        HWND m_pHWnd;
+        HWND m_HWnd;
 
     protected:
 

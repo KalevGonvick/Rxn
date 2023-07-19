@@ -1,5 +1,6 @@
 #include "Rxn.h"
 #include "SimulationWindow.h"
+#include "DescriptorHeapDesc.h"
 
 namespace Rxn::Graphics
 {
@@ -11,32 +12,22 @@ namespace Rxn::Graphics
 
     SimulationWindow::~SimulationWindow() = default;
 
-    LRESULT SimulationWindow::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+
+    void SimulationWindow::ShutdownRender()
     {
-        switch (msg)
-        {
-        case WM_KEYUP:
-        {
-            HandleKeyDown(static_cast<UINT8>(wParam));
-            return 0;
-        }
-        case WM_KEYDOWN:
-        {
-            HandleKeyUp(static_cast<UINT8>(wParam));
-            return 0;
-        }
-        case WM_SIZE:
-        {
-            if (m_Initialized)
-                OnSizeChange();
+        WaitForBufferedFence();
+        CloseHandle(m_FenceEvent);
+    }
 
-            return 0;
-        }
-        default:
-            break;
+    void SimulationWindow::DestroySwapChainResources()
+    {
+        for (int i = 0; i < Constants::Graphics::BUFFER_COUNT; ++i)
+        {
+            m_RenderTargets[i].Release();
+            m_IntermediateRenderTarget.Release();
         }
 
-        return Window::MessageHandler(hWnd, msg, wParam, lParam);
+        WaitForBufferedFence();
     }
 
     void SimulationWindow::SetupWindow()
@@ -50,50 +41,192 @@ namespace Rxn::Graphics
         RegisterComponentClass();
         InitializeWin32();
 
+        InitializeRender();
+
+        m_Initialized = true;
+
+        ShowWindow(m_HWnd, SW_SHOW);
+        UpdateWindow(m_HWnd);
+    }
+
+    void SimulationWindow::InitializeRender()
+    {
+        RenderContext::SetHWND(m_HWnd);
+
         HRESULT result;
 
-        result = DX12_LoadPipeline();
-        if (FAILED(result))
+        m_CommandQueueManager.CreateCommantQueues();
+
         {
-            RXN_LOGGER::Error(L"Error loading pipeline, exiting...");
-            throw std::exception("Error loading pipeline, exiting...");
+            DescriptorHeapDesc rtvDesc(Constants::Graphics::BUFFER_COUNT + 1);
+            rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
+
+            DescriptorHeapDesc srvDesc(1);
+            srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
+
+            m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         }
 
-        result = CreatePipelineSwapChain();
+
+        //result = Renderer::CreateDescriptorHeaps();
+
+        result = Renderer::CreateRootSignature();
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to create root signature.");
+        }
+
+        result = Renderer::CreatePipelineSwapChain();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Error creating swapchain...");
             throw std::exception("Error creating swapchain...");
         }
 
-        result = DX12_CreateCommandAllocators();
+        result = Renderer::CreateCommandAllocators();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Error creating frame resources...");
             throw std::exception("Error creating frame resources...");
         }
 
-        result = DX12_LoadAssets();
+        {
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
+
+            // Create a RTV for each frame.
+            for (UINT n = 0; n < Constants::Graphics::BUFFER_COUNT; n++)
+            {
+
+                result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
+                if (FAILED(result))
+                {
+                    RXN_LOGGER::Error(L"Failed to create RTV for buffer %d", n);
+                }
+                RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
+                rtvHandle.Offset(1, m_RTVDescriptorSize);
+                NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
+
+                result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
+                if (FAILED(result))
+                {
+                    RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
+                }
+                NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
+            }
+
+            D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[m_FrameIndex]->GetDesc();
+            D3D12_CLEAR_VALUE clearValue = {};
+            memcpy(clearValue.Color, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, sizeof(Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR));
+            clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+            // Create an intermediate render target that is the same dimensions as the swap chain.
+            const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(
+                &heapProps,
+                D3D12_HEAP_FLAG_NONE,
+                &renderTargetDesc,
+                D3D12_RESOURCE_STATE_RENDER_TARGET,
+                &clearValue,
+                IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+
+            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
+            rtvHandle.Offset(1, m_RTVDescriptorSize);
+
+            // Create a SRV of the intermediate render target.
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.Format = renderTargetDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = 1;
+
+            CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
+            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
+        }
+
+
+
+
+        result = Renderer::CreateCommandList();
         if (FAILED(result))
         {
-            RXN_LOGGER::Error(L"Failed to load assets...");
-            throw std::exception("Failed to load assets...");
+            RXN_LOGGER::Error(L"Failed to create new commandlist");
+            throw std::exception("Failed to create new commandlist, exiting...");
         }
+
+        result = Renderer::CreateVertexBufferResource();
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to create vertex buffer resource.");
+            throw std::exception("Failed to create vertex buffer resource, exiting...");
+        }
+
+        m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
+
+        // Close the command list and execute it to begin the initial GPU setup.
+        ThrowIfFailed(m_CommandList->Close());
+        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
+        m_CommandQueueManager.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+        result = CreateFrameSyncObjects();
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to create frame sync objects");
+            throw std::exception("ailed to create frame sync objects, exiting...");
+        }
+
+        const UINT64 fence = m_FenceValues[m_FrameIndex];
+        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue()->Signal(m_Fence.Get(), fence));
+        m_FenceValues[m_FrameIndex]++;
+
+        // Wait until the previous frame is finished.
+        if (m_Fence->GetCompletedValue() < fence)
+        {
+            ThrowIfFailed(m_Fence->SetEventOnCompletion(fence, m_FenceEvent));
+            WaitForSingleObject(m_FenceEvent, INFINITE);
+        }
+
+        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+
+        m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
 
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
         m_Camera.SetMoveSpeed(1.0f);
-
         m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
+        WaitForBufferedFence();
+    }
 
-        // Wait for the command list to execute; we are reusing the same command 
-        // list in our main loop but for now, we just want to wait for setup to 
-        // complete before continuing.
-        DX12_WaitForGPUFence();
+    /* -------------------------------------------------------- */
+    /*  WIN-API                                                 */
+    /* -------------------------------------------------------- */
+#pragma region WIN-API
 
-        m_Initialized = true;
+    LRESULT SimulationWindow::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        switch (msg)
+        {
+        case WM_KEYUP:
+        {
+            HandleKeyDown(static_cast<UINT8>(wParam));
+            return 0;
+        }
+        //case WM_SIZE:
+        //{
+        //    OnSizeChange();
+        //    return 0;
+        //}
+        case WM_KEYDOWN:
+        {
+            HandleKeyUp(static_cast<UINT8>(wParam));
+            return 0;
+        }
+        default:
+            break;
+        }
 
-        ShowWindow(m_pHWnd, SW_SHOW);
-        UpdateWindow(m_pHWnd);
+        return Window::MessageHandler(hWnd, msg, wParam, lParam);
     }
 
     void SimulationWindow::HandleKeyDown(uint8 key)
@@ -108,7 +241,7 @@ namespace Rxn::Graphics
         switch (key)
         {
         case 'C':
-            DX12_WaitForGPUFence();
+            WaitForBufferedFence();
             m_PipelineLibrary.ClearPSOCache();
             m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
             break;
@@ -126,39 +259,39 @@ namespace Rxn::Graphics
             break;
 
         case '1':
-            DX12_ToggleEffect(Mapped::PostBlit);
+            ToggleEffect(Mapped::PostBlit);
             break;
 
         case '2':
-            DX12_ToggleEffect(Mapped::PostInvert);
+            ToggleEffect(Mapped::PostInvert);
             break;
 
         case '3':
-            DX12_ToggleEffect(Mapped::PostGrayScale);
+            ToggleEffect(Mapped::PostGrayScale);
             break;
 
         case '4':
-            DX12_ToggleEffect(Mapped::PostEdgeDetect);
+            ToggleEffect(Mapped::PostEdgeDetect);
             break;
 
         case '5':
-            DX12_ToggleEffect(Mapped::PostBlur);
+            ToggleEffect(Mapped::PostBlur);
             break;
 
         case '6':
-            DX12_ToggleEffect(Mapped::PostWarp);
+            ToggleEffect(Mapped::PostWarp);
             break;
 
         case '7':
-            DX12_ToggleEffect(Mapped::PostPixelate);
+            ToggleEffect(Mapped::PostPixelate);
             break;
 
         case '8':
-            DX12_ToggleEffect(Mapped::PostDistort);
+            ToggleEffect(Mapped::PostDistort);
             break;
 
         case '9':
-            DX12_ToggleEffect(Mapped::PostWave);
+            ToggleEffect(Mapped::PostWave);
             break;
 
         default:
@@ -166,67 +299,14 @@ namespace Rxn::Graphics
         }
     }
 
-    HRESULT SimulationWindow::CreatePipelineSwapChain()
-    {
-        HRESULT result;
+#pragma endregion // WIN-API
+    /* -------------------------------------------------------- */
 
-        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.BufferCount = Constants::Graphics::BUFFER_COUNT;
-        swapChainDesc.Width = m_Width;
-        swapChainDesc.Height = m_Height;
-        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapChainDesc.SampleDesc.Count = 1;
-
-        ComPointer<IDXGISwapChain1> swapChain;
-        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueue.Get(), m_pHWnd, &swapChainDesc, nullptr, nullptr, &swapChain);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create a swap chain for window.");
-            return result;
-        }
-
-        if (m_HasTearingSupport)
-        {
-            // This sample does not support fullscreen transitions.
-            result = RenderContext::GetFactory()->MakeWindowAssociation(m_pHWnd, DXGI_MWA_NO_ALT_ENTER);
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Factory failed to set window option.");
-                return result;
-            }
-        }
-
-
-        /* Cast */
-        result = swapChain->QueryInterface(&m_SwapChain);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to cast swapchain.");
-        }
-
-        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-        m_SwapChainEvent = m_SwapChain->GetFrameLatencyWaitableObject();
-
-        return result;
-    }
-
-    void SimulationWindow::DestroySwapChainResources()
-    {
-        for (int i = 0; i < Constants::Graphics::BUFFER_COUNT; ++i)
-        {
-            m_RenderTargets[i].Release();
-            m_IntermediateRenderTarget.Release();
-        }
-
-        DX12_WaitForGPUFence();
-    }
 
     HRESULT SimulationWindow::OnSizeChange()
     {
         RECT clientRect;
-        GetClientRect(m_pHWnd, &clientRect);
+        GetClientRect(m_HWnd, &clientRect);
         LONG newWidth = clientRect.right - clientRect.left;
         LONG newHeight = clientRect.bottom - clientRect.top;
 
@@ -325,6 +405,129 @@ namespace Rxn::Graphics
         }
 
         return S_OK;
+    }
+
+    void SimulationWindow::UpdateSimulation()
+    {
+        Engine::EngineContext::Tick(NULL);
+        m_Camera.Update(static_cast<float>(Engine::EngineContext::GetElapsedSeconds()));
+    }
+
+
+    void SimulationWindow::RenderPass()
+    {
+        // Record all the commands we need to render the scene into the command list.
+        //PopulateCommandList();
+
+        // Execute the command list.
+
+
+        // Present the frame.
+        ThrowIfFailed(m_SwapChain->Present(1, 0));
+
+        m_DrawIndex = 0;
+        m_PipelineLibrary.EndFrame();
+
+        MoveToNextFrame();
+    }
+
+    void SimulationWindow::PreRenderPass()
+    {
+        ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
+        ThrowIfFailed(m_CommandList->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
+
+        // Set necessary state.
+        m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+
+        ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
+        m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_CommandList->RSSetViewports(1, &m_Viewport);
+        m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), Constants::Graphics::BUFFER_COUNT, m_RTVDescriptorSize);
+        CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+        m_CommandList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
+
+        // Record commands.
+        m_CommandList->ClearRenderTargetView(intermediateRtvHandle, Constants::Graphics::INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+
+        {
+            static float rot = 0.0f;
+            DrawConstantBuffer *drawCB = (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, m_FrameIndex);
+            drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Camera.GetViewMatrix() * m_ProjectionMatrix);
+
+            rot += 0.01f;
+
+            m_CommandList->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
+            m_CommandList->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+
+            m_CommandList->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            m_CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+            m_DrawIndex++;
+        }
+
+        // Set up the state for a fullscreen quad.
+        m_CommandList->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
+        m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+        D3D12_RESOURCE_BARRIER barriers[] = {
+            CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET),
+            CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+        };
+
+        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandList->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+        const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        m_CommandList->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
+        m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+        {
+            UINT quadCount = 0;
+            static const UINT quadsX = 4;
+            static const UINT quadsY = 4;
+
+            // Cycle through all of the effects.
+            for (UINT i = Mapped::PostBlit; i < Mapped::EffectPipelineTypeCount; i++)
+            {
+                if (m_EnabledEffects[i])
+                {
+                    CD3DX12_VIEWPORT viewport(
+                        (quadCount % quadsX) * (m_Viewport.Width / quadsX),
+                        (quadCount / quadsY) * (m_Viewport.Height / quadsY),
+                        m_Viewport.Width / quadsX,
+                        m_Viewport.Height / quadsY);
+
+                    m_CommandList->RSSetViewports(1, &viewport);
+                    m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandList.Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
+                    m_CommandList->DrawInstanced(4, 1, 0, 0);
+                }
+
+                quadCount++;
+            }
+        }
+
+        // Revert resource states back to original values.
+        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+        barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+        m_CommandList->ResourceBarrier(_countof(barriers), barriers);
+
+        ThrowIfFailed(m_CommandList->Close());
+
+        ID3D12CommandList *ppCommandLists[] = { m_CommandList.Get() };
+        m_CommandQueueManager.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    }
+
+    void SimulationWindow::PostRenderPass()
+    {
     }
 
 

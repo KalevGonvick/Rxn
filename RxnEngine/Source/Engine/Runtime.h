@@ -1,5 +1,6 @@
 #pragma once
 #include "Platform/WIN32/WindowManager.h"
+#include "RxnEngine.h"
 
 namespace Rxn::Engine
 {
@@ -14,7 +15,7 @@ namespace Rxn::Engine
 
     public:
 
-        virtual void PreInitialize() override;
+        virtual void InitializeEngineSystems() override;
 
         void SetMode(EngineRuntimeMode mode);
 

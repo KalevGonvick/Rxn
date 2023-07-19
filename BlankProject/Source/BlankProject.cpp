@@ -11,21 +11,23 @@
 class BlankProject : public Rxn::Engine::Runtime
 {
 public:
-    BlankProject() {};
 
+    BlankProject() {};
     ~BlankProject() {};
 
 public:
-    void ConfigureEngine();
-    void Initialize();
-    void OnDestroy();
-    void Update();
+
+
+    virtual void SetupEngineConfigurations() override;
+    virtual void InitializeRuntime() override;
+    virtual void UpdateEngine() override;
+    virtual void OnDestroy() override;
 };
 
 ENTRYAPP(BlankProject)
 
 
-void BlankProject::ConfigureEngine()
+void BlankProject::SetupEngineConfigurations()
 {
     RXN_CONTEXT::GetEngineSettings().SetGameName(L"Blank Project");
     RXN_CONTEXT::GetEngineSettings().SetGameShortName(L"BP");
@@ -41,7 +43,7 @@ void BlankProject::ConfigureEngine()
 
 }
 
-void BlankProject::Initialize()
+void BlankProject::InitializeRuntime()
 {
     RXN_LOGGER::Info(L"Creating window classes");
 
@@ -49,18 +51,20 @@ void BlankProject::Initialize()
     splash->SetupWindow();
     m_WindowManager->AddWindow(splash);
 
-    auto mainsim = std::make_shared<Rxn::Graphics::SimulationWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1280, 720);
+    auto mainsim = std::make_shared<Rxn::Graphics::SimulationWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1920, 1080);
     mainsim->SetupWindow();
     m_WindowManager->AddWindow(mainsim);
 }
 
 
 
-void BlankProject::Update()
+void BlankProject::UpdateEngine()
 {
     auto win = std::dynamic_pointer_cast<Rxn::Graphics::SimulationWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY));
-    win->DX12_Update();
-    win->DX12_Render();
+    win->UpdateSimulation();
+    win->PreRenderPass();
+    win->RenderPass();
+    win->PostRenderPass();
 
 }
 

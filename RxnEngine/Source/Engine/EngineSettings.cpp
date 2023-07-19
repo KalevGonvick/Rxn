@@ -1,4 +1,5 @@
 #include "Rxn.h"
+#include "EngineSettings.h"
 
 namespace Rxn::Engine
 {

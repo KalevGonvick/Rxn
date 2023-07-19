@@ -15,7 +15,8 @@ namespace Rxn::Graphics
     public:
 
         static void InitRenderContext();
-
+        static void SetHWND(const HWND &hwnd);
+        static HWND &GetHWND();
         static ComPointer<ID3D12Device> &GetGraphicsDevice();
         static ComPointer<IDXGIFactory4> &GetFactory();
         static D3D_ROOT_SIGNATURE_VERSION &GetHighestRootSignatureVersion();
@@ -28,7 +29,12 @@ namespace Rxn::Graphics
         void GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
         void CheckTearingSupport();
 
+    public:
+
+        HWND m_Hwnd;
+
     private:
+
 
         bool m_IsInitialized;
         bool m_HasTearingSupport;

@@ -98,7 +98,6 @@
     <ClCompile Include="Source\Common\CommandLine.cpp" />
     <ClCompile Include="Source\Common\Logger.cpp" />
     <ClCompile Include="Source\Common\Time.cpp" />
-    <ClCompile Include="Source\Core\Context.cpp" />
     <ClCompile Include="Source\Core\Core.cpp" />
     <ClCompile Include="Source\Core\CoreDefinitions.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
@@ -110,6 +109,8 @@
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Engine\SplashScreen.cpp" />
+    <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
+    <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
     <ClCompile Include="Source\Graphics\RenderContext.cpp" />
     <ClCompile Include="Source\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp" />
@@ -152,7 +153,6 @@
     <ClInclude Include="Source\Common\Logger.h" />
     <ClInclude Include="Source\Common\LoggerImpl.h" />
     <ClInclude Include="Source\Common\Time.h" />
-    <ClInclude Include="Source\Core\Context.h" />
     <ClInclude Include="Source\Core\Core.h" />
     <ClInclude Include="Source\Core\CoreDefinitions.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
@@ -166,6 +166,8 @@
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Engine\SplashScreen.h" />
+    <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
+    <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />
     <ClInclude Include="Source\Graphics\RenderContext.h" />
     <ClInclude Include="Source\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Graphics\d3dx12.h" />

@@ -38,6 +38,16 @@ namespace Rxn::Graphics
         GetContext().m_IsInitialized = true;
     }
 
+    void RenderContext::SetHWND(const HWND &hwnd)
+    {
+        GetContext().m_Hwnd = hwnd;
+    }
+
+    HWND &RenderContext::GetHWND()
+    {
+        return GetContext().m_Hwnd;
+    }
+
     ComPointer<ID3D12Device> &RenderContext::GetGraphicsDevice()
     {
         return GetContext().m_Device;

@@ -33,6 +33,14 @@ namespace Rxn::Graphics
 
         virtual void SetupWindow() override;
 
+        void UpdateSimulation();
+        virtual void InitializeRender() override;
+        virtual void ShutdownRender() override;
+        virtual void RenderPass() override;
+        virtual void PreRenderPass() override;
+        virtual void PostRenderPass() override;
+
+
     protected:
 
         virtual void HandleKeyDown(uint8 key) override;
@@ -40,7 +48,6 @@ namespace Rxn::Graphics
 
     private:
 
-        HRESULT CreatePipelineSwapChain();
         HRESULT OnSizeChange();
 
         void DestroySwapChainResources();

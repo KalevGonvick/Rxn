@@ -1,7 +1,5 @@
 #pragma once
 
-#define ENGINE_CONFIG Core::GameSettings
-
 namespace Rxn::Engine
 {
 

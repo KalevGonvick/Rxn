@@ -21,11 +21,12 @@ namespace Rxn::Platform::Win32
 
     public:
 
-        virtual void ConfigureEngine() = 0;
-        virtual void PreInitialize() = 0;
-        virtual void Initialize() = 0;
-        virtual void Update() = 0;
+        virtual void SetupEngineConfigurations() = 0;
+        virtual void InitializeEngineSystems() = 0;
+        virtual void InitializeRuntime() = 0;
+        virtual void UpdateEngine() = 0;
         virtual void OnDestroy() = 0;
+
     };
 
 } // Rxn::Platform::Win32

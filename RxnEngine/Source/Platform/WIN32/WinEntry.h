@@ -22,12 +22,12 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
 {
     auto entry = EntryApplication();
 
-    entry->ConfigureEngine();
+    entry->SetupEngineConfigurations();
 
     Rxn::Graphics::RenderContext::InitRenderContext();
 
-    entry->PreInitialize();
-    entry->Initialize();
+    entry->InitializeEngineSystems();
+    entry->InitializeRuntime();
     FILE *fStreamOut = CreateConsole();
     MSG msg = { 0 };
     while (msg.message != WM_QUIT)
@@ -39,7 +39,7 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
         }
         else
         {
-            entry->Update();
+            entry->UpdateEngine();
         }
     }
     entry->OnDestroy();

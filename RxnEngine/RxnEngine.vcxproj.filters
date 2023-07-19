@@ -202,9 +202,6 @@
     <ClCompile Include="Source\Graphics\RenderContext.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Context.cpp">
-      <Filter>Source\Core\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\SamplerDesc.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
@@ -219,6 +216,12 @@
     </ClCompile>
     <ClCompile Include="Source\Graphics\Shape.cpp">
       <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandQueueManager.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp">
+      <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -369,9 +372,6 @@
     <ClInclude Include="Source\Graphics\RenderContext.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Context.h">
-      <Filter>Source\Core\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Graphics\SamplerDesc.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
@@ -389,6 +389,12 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\Model.h">
       <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandQueueManager.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h">
+      <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

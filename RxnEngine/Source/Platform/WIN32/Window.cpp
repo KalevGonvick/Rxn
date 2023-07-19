@@ -52,7 +52,7 @@ namespace Rxn::Platform::Win32
 
         HWND parent = GetParentHandle();
 
-        m_pHWnd = CreateWindow(
+        m_HWnd = CreateWindow(
             m_ClassName.c_str(),
             m_TitleName.c_str(),
             m_WindowStyle,
@@ -66,7 +66,7 @@ namespace Rxn::Platform::Win32
             (void *)this
         );
 
-        if (!m_pHWnd)
+        if (!m_HWnd)
         {
             RXN_LOGGER::Error(L"Failed to create window %s.", m_TitleName.c_str());
             return;
@@ -148,10 +148,10 @@ namespace Rxn::Platform::Win32
 
     void Window::HandleNonClientPaint(const HRGN &region)
     {
-        HDC hdc = GetDCEx(m_pHWnd, region, DCX_WINDOW | DCX_INTERSECTRGN | DCX_USESTYLE);
+        HDC hdc = GetDCEx(m_HWnd, region, DCX_WINDOW | DCX_INTERSECTRGN | DCX_USESTYLE);
 
         RECT rect;
-        GetWindowRect(m_pHWnd, &rect);
+        GetWindowRect(m_HWnd, &rect);
         SIZE size = SIZE{ rect.right - rect.left, rect.bottom - rect.top };
         RECT adjustedRect = RECT{ 0, 0, size.cx, size.cy };
 
@@ -159,7 +159,7 @@ namespace Rxn::Platform::Win32
         PaintWindowConditionalHighlight(hdc, adjustedRect);
         PaintWindowCaption(hdc, size);
 
-        ReleaseDC(m_pHWnd, hdc);
+        ReleaseDC(m_HWnd, hdc);
     }
 
     void Window::HandleNonClientLeftClickDown()
@@ -168,7 +168,7 @@ namespace Rxn::Platform::Win32
         GetCursorPos(&pt);
 
         RECT rect;
-        GetWindowRect(m_pHWnd, &rect);
+        GetWindowRect(m_HWnd, &rect);
 
         Command cmd = m_WindowCaption.GetWindowCaptionButtonClicked(pt, rect);
 
@@ -176,17 +176,17 @@ namespace Rxn::Platform::Win32
         {
         case Command::CB_CLOSE:
         {
-            SendMessage(m_pHWnd, WM_CLOSE, 0, 0);
+            SendMessage(m_HWnd, WM_CLOSE, 0, 0);
             break;
         }
         case Command::CB_MAXIMIZE:
         {
-            MaximizeWindow(m_pHWnd);
+            MaximizeWindow(m_HWnd);
             break;
         }
         case Command::CB_MINIMIZE:
         {
-            ShowWindow(m_pHWnd, SW_MINIMIZE);
+            ShowWindow(m_HWnd, SW_MINIMIZE);
             break;
         }
         case Command::CB_NOP:
@@ -199,16 +199,16 @@ namespace Rxn::Platform::Win32
     void Window::HandlePaint()
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(m_pHWnd, &ps);
+        HDC hdc = BeginPaint(m_HWnd, &ps);
 
         RECT rc;
-        GetClientRect(m_pHWnd, &rc);
+        GetClientRect(m_HWnd, &rc);
 
         HBRUSH brush = CreateSolidBrush(m_WindowBackgroundColour);
         FillRect(hdc, &rc, brush);
         DeleteObject(brush);
 
-        EndPaint(m_pHWnd, &ps);
+        EndPaint(m_HWnd, &ps);
     }
 
     void Window::PaintWindowBorder(const HDC &hdc, const RECT &rect)
@@ -231,13 +231,13 @@ namespace Rxn::Platform::Win32
     void Window::Redraw()
     {
         /* reset window */
-        SetWindowPos(m_pHWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
-        InvalidateRect(m_pHWnd, nullptr, false);
+        SetWindowPos(m_HWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
+        InvalidateRect(m_HWnd, nullptr, false);
     }
 
     void Window::HandleNonClientAreaDoubleClick()
     {
-        MaximizeWindow(m_pHWnd);
+        MaximizeWindow(m_HWnd);
     }
 
     void Window::HandleNonClientCreate()
@@ -245,15 +245,15 @@ namespace Rxn::Platform::Win32
         if (m_IsInteractive)
         {
             RXN_LOGGER::Trace(L"Window %s is interactive, setting invalidate timer", m_ClassName.c_str());
-            SetTimer(m_pHWnd, 1, 250, 0);
+            SetTimer(m_HWnd, 1, 250, 0);
         }
 
 
         RXN_LOGGER::Trace(L"Removing default theme from window %s.", m_ClassName.c_str());
-        SetWindowTheme(m_pHWnd, L"", L"");
+        SetWindowTheme(m_HWnd, L"", L"");
 
         RXN_LOGGER::Trace(L"Adding dropshadow to window '%s'.", m_ClassName.c_str());
-        ModifyClassStyle(m_pHWnd, 0, CS_DROPSHADOW);
+        ModifyClassStyle(m_HWnd, 0, CS_DROPSHADOW);
 
         if (m_AddCloseButton)
         {

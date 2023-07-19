@@ -18,7 +18,7 @@ namespace Rxn::Engine
 
     void SplashWindow::AddMessage(const wchar_t *msg)
     {
-        PostMessage(m_pHWnd, WM_OUTPUTMESSAGE, (WPARAM)msg, 0);
+        PostMessage(m_HWnd, WM_OUTPUTMESSAGE, (WPARAM)msg, 0);
     }
 
     LRESULT SplashWindow::MessageHandler(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM lParam)
@@ -72,7 +72,7 @@ namespace Rxn::Engine
         RegisterComponentClass();
         InitializeWin32();
 
-        ShowWindow(m_pHWnd, SW_SHOW);
-        UpdateWindow(m_pHWnd);
+        ShowWindow(m_HWnd, SW_SHOW);
+        UpdateWindow(m_HWnd);
     }
 }
