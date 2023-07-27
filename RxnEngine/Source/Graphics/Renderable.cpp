@@ -4,17 +4,10 @@
 namespace Rxn::Graphics::Basic
 {
     Renderable::Renderable()
-        : m_DataSize(0)
-        , m_StrideSize(0)
     {
     }
 
     Renderable::~Renderable() = default;
-
-    const D3D12_VERTEX_BUFFER_VIEW &Renderable::GetBufferView()
-    {
-        return m_BufferView;
-    }
 
     HRESULT Renderable::CreateCommittedBufferDestinationResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size)
     {

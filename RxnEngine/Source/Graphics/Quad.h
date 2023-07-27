@@ -18,5 +18,13 @@ namespace Rxn::Graphics::Basic
         virtual HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) override;
 
         std::vector<VertexPositionUV> m_Quads;
+        uint32 m_QuadStrideSize;
+        uint32 m_QuadDataSize;
+
+        ComPointer<ID3D12Resource> m_QuadDataBuffer;
+        ComPointer<ID3D12Resource> m_QuadUploadBuffer;
+        D3D12_VERTEX_BUFFER_VIEW m_QuadBufferView;
+
+
     };
 }

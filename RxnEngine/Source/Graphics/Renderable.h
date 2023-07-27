@@ -35,23 +35,14 @@ namespace Rxn::Graphics::Basic
             }
         }
 
-        const D3D12_VERTEX_BUFFER_VIEW &GetBufferView();
-
     protected:
 
         HRESULT CreateCommittedBufferDestinationResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size);
-
         HRESULT CreateCommittedUploadBufferResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size);
 
         void AddCopyRegionTransition(ID3D12GraphicsCommandList *cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer);
 
         uint8 *MapAndGetHeapLocationFromBuffer(ComPointer<ID3D12Resource> &buffer);
-
-        uint32 m_DataSize;
-        uint32 m_StrideSize;
-        ComPointer<ID3D12Resource> m_DataBuffer;
-        ComPointer<ID3D12Resource> m_UploadBuffer;
-        D3D12_VERTEX_BUFFER_VIEW m_BufferView;
 
     };
 }

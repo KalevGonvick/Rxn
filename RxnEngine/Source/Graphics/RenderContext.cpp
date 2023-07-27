@@ -35,7 +35,6 @@ namespace Rxn::Graphics
         }
 
         GetContext().SetHighestRootSignatureVersion();
-
         GetContext().m_IsInitialized = true;
     }
 

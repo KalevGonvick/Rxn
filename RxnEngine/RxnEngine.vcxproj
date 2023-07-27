@@ -127,6 +127,7 @@
     <ClCompile Include="Source\Graphics\SamplerDesc.cpp" />
     <ClCompile Include="Source\Graphics\Shape.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
+    <ClCompile Include="Source\Graphics\SwapChain.cpp" />
     <ClCompile Include="Source\Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Source\Graphics\SamplerDesc.h" />
     <ClInclude Include="Source\Graphics\Shape.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
+    <ClInclude Include="Source\Graphics\SwapChain.h" />
     <ClInclude Include="Source\Graphics\VertexBuffer.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />

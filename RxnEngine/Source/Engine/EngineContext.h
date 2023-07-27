@@ -15,8 +15,7 @@ namespace Rxn::Engine
 
         static EngineSettings &GetEngineSettings();
 
-        static void Tick(Core::StepTimer::LPUPDATEFUNC func);
-
+        static void Tick();
         static uint64 GetElapsedTicks();
         static float64 GetElapsedSeconds();
         static uint64 GetTotalTicks();
@@ -24,6 +23,7 @@ namespace Rxn::Engine
         static uint32 GetFrameCount();
         static uint32 GetFramesPerSecond();
         static void SetFixedTimeStep(bool isFixedTimestep);
+        static void SetTargetElapsedTicks(uint64 tickrate);
 
     private:
 

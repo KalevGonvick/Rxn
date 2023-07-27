@@ -49,9 +49,10 @@ namespace Rxn::Graphics
     private:
 
         HRESULT OnSizeChange();
-
+        float64 m_LastDrawTime;
+        uint32 m_FrameCount;
         void DestroySwapChainResources();
-
+        uint32 GetFPS();
 
     };
 }

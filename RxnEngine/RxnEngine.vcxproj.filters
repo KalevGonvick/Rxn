@@ -238,6 +238,9 @@
     <ClCompile Include="Source\Graphics\SamplerDesc.cpp">
       <Filter>Source\Graphics\Private\Descriptor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\SwapChain.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Core\Core.h">
@@ -413,6 +416,9 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\SamplerDesc.h">
       <Filter>Source\Graphics\Classes\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SwapChain.h">
+      <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

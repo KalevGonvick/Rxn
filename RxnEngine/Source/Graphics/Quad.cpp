@@ -14,7 +14,7 @@ namespace Rxn::Graphics::Basic
     void Quad::ReadDataFromRaw(std::vector<VertexPositionUV> &quads)
     {
         m_Quads = quads;
-        CalculateBufferInfo(quads, m_StrideSize, m_DataSize);
+        CalculateBufferInfo(quads, m_QuadStrideSize, m_QuadDataSize);
     }
 
 
@@ -27,14 +27,14 @@ namespace Rxn::Graphics::Basic
     {
         HRESULT result;
 
-        result = Renderable::CreateCommittedBufferDestinationResource(device, m_DataBuffer, m_DataSize);
+        result = Renderable::CreateCommittedBufferDestinationResource(device, m_QuadDataBuffer, m_QuadDataSize);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create committed resource destination buffer for quad.");
             return result;
         }
 
-        result = Renderable::CreateCommittedUploadBufferResource(device, m_UploadBuffer, m_DataSize);
+        result = Renderable::CreateCommittedUploadBufferResource(device, m_QuadUploadBuffer, m_QuadDataSize);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create committed resource upload buffer for quad.");
@@ -42,16 +42,16 @@ namespace Rxn::Graphics::Basic
         }
 
 #ifdef _DEBUG
-        NAME_D3D12_OBJECT(m_DataBuffer);
+        NAME_D3D12_OBJECT(m_QuadDataBuffer);
 #endif
 
-        uint8 *heap = Renderable::MapAndGetHeapLocationFromBuffer(m_UploadBuffer);
+        uint8 *heap = Renderable::MapAndGetHeapLocationFromBuffer(m_QuadUploadBuffer);
         Renderable::CopyDataToHeap(&heap, m_Quads);
-        Renderable::AddCopyRegionTransition(cmdList, m_DataBuffer, m_DataSize, m_UploadBuffer);
+        Renderable::AddCopyRegionTransition(cmdList, m_QuadDataBuffer, m_QuadDataSize, m_QuadUploadBuffer);
 
-        m_BufferView.BufferLocation = m_DataBuffer.Get()->GetGPUVirtualAddress();
-        m_BufferView.SizeInBytes = m_DataSize;
-        m_BufferView.StrideInBytes = m_StrideSize;
+        m_QuadBufferView.BufferLocation = m_QuadDataBuffer.Get()->GetGPUVirtualAddress();
+        m_QuadBufferView.SizeInBytes = m_QuadDataSize;
+        m_QuadBufferView.StrideInBytes = m_QuadStrideSize;
 
         return S_OK;
     }

@@ -256,28 +256,15 @@ namespace Rxn::Graphics
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.SampleDesc.Count = 1;
-
-        // It is recommended to always use the tearing flag when it is available.
         swapChainDesc.Flags = m_HasTearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-
         ComPointer<IDXGISwapChain1> swapChain;
-        result = RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue("Basic").Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create a swap chain for window.");
-            return result;
-        }
+
+        ThrowIfFailed(RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue("Basic").Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain));
 
         if (m_HasTearingSupport)
         {
-            // This sample does not support fullscreen transitions.
-            result = RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER);
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Factory failed to set window option.");
-                return result;
-            }
+            ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
         }
 
 

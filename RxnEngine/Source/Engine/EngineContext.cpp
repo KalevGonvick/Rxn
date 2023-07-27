@@ -21,9 +21,9 @@ namespace Rxn::Engine
         return GetContext().m_EngineSettings;
     }
 
-    void EngineContext::Tick(Core::StepTimer::LPUPDATEFUNC func)
+    void EngineContext::Tick()
     {
-        GetContext().m_Timer.Tick(func);
+        GetContext().m_Timer.Tick(NULL);
     }
 
     uint64 EngineContext::GetElapsedTicks()
@@ -59,6 +59,11 @@ namespace Rxn::Engine
     void EngineContext::SetFixedTimeStep(bool isFixedTimestep)
     {
         GetContext().m_Timer.SetFixedTimeStep(isFixedTimestep);
+    }
+
+    void EngineContext::SetTargetElapsedTicks(uint64 tickrate)
+    {
+        GetContext().m_Timer.SetTargetElapsedTicks(tickrate);
     }
 
 

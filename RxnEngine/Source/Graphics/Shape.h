@@ -47,7 +47,6 @@ namespace Rxn::Graphics::Basic
 
         D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
         D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
-    private:
 
 
     };

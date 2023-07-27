@@ -7,6 +7,8 @@ namespace Rxn::Graphics
     SimulationWindow::SimulationWindow(WString windowTitle, WString windowClass, int width, int height)
         : Platform::Win32::Window(windowTitle, windowClass)
         , Renderer(width, height)
+        , m_LastDrawTime(0)
+        , m_FrameCount(0)
     {
     }
 
@@ -27,6 +29,13 @@ namespace Rxn::Graphics
 
         WaitForBufferedFence();
     }
+
+    uint32 SimulationWindow::GetFPS()
+    {
+        return Engine::EngineContext::GetFramesPerSecond();
+    }
+
+
 
     void SimulationWindow::SetupWindow()
     {
@@ -56,6 +65,7 @@ namespace Rxn::Graphics
         m_CommandQueueManager.CreateCommandQueue("Basic");
 
         {
+            /* RTV + Intermediate target view*/
             DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
             rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
 
@@ -142,12 +152,7 @@ namespace Rxn::Graphics
 
         }
 
-        result = CreateFrameSyncObjects();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create frame sync objects");
-            throw std::exception("ailed to create frame sync objects, exiting...");
-        }
+        ThrowIfFailed(CreateFrameSyncObjects());
 
         const UINT64 fence = m_FenceValues[m_FrameIndex];
         ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fence));
@@ -161,9 +166,7 @@ namespace Rxn::Graphics
         }
 
         m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-
         m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
-
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
         m_Camera.SetMoveSpeed(1.0f);
         m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
@@ -381,18 +384,16 @@ namespace Rxn::Graphics
 
     void SimulationWindow::UpdateSimulation()
     {
-        Engine::EngineContext::Tick(NULL);
+
+        Engine::EngineContext::Tick();
+
+        uint32 fps = GetFPS();
         m_Camera.Update(static_cast<float>(Engine::EngineContext::GetElapsedSeconds()));
     }
 
 
     void SimulationWindow::RenderPass()
     {
-        // Record all the commands we need to render the scene into the command list.
-        //PopulateCommandList();
-
-        // Execute the command list.
-
 
         // Present the frame.
         ThrowIfFailed(m_SwapChain->Present(1, 0));
@@ -408,80 +409,56 @@ namespace Rxn::Graphics
         ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
         ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
 
-        // Set necessary state.
-        m_CommandListManager.GetCommandList("Main")->SetGraphicsRootSignature(m_RootSignature.Get());
-
-        ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
-        m_CommandListManager.GetCommandList("Main")->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-        m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &m_Viewport);
-        m_CommandListManager.GetCommandList("Main")->RSSetScissorRects(1, &m_ScissorRect);
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_RTVDescriptorSize);
-        CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
-
-        m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
-
-        // Record commands.
-        m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
-
         {
+            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootSignature(m_RootSignature.Get());
+
+            ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
+            m_CommandListManager.GetCommandList("Main")->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+            m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &m_Viewport);
+            m_CommandListManager.GetCommandList("Main")->RSSetScissorRects(1, &m_ScissorRect);
+
+            /* This rotation could probably move to the update loop */
             static float rot = 0.0f;
             DrawConstantBuffer *drawCB = (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, m_FrameIndex);
             drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Camera.GetViewMatrix() * m_ProjectionMatrix);
-
             rot += 0.01f;
-
-            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
-            m_CommandListManager.GetCommandList("Main")->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
-
-            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
-            m_CommandListManager.GetCommandList("Main")->DrawIndexedInstanced(36, 1, 0, 0, 0);
-            m_DrawIndex++;
         }
 
-        // Set up the state for a fullscreen quad.
-        m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Quad.GetBufferView());
-        m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-        D3D12_RESOURCE_BARRIER barriers[] = {
-            CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET),
-            CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-        };
+        {
 
+            CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_RTVDescriptorSize);
+            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
+            m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+
+            m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
+            m_CommandListManager.GetCommandList("Main")->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
+
+
+            m_CommandListManager.GetCommandList("Main")->DrawIndexedInstanced(m_Shape.m_Indices.size(), 1, 0, 0, 0);
+        }
+
+
+        D3D12_RESOURCE_BARRIER barriers[2] = {};
+        barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
         m_CommandListManager.GetCommandList("Main")->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
 
-        const float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(rtvHandle, black, 0, nullptr);
-        m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
         {
-            UINT quadCount = 0;
-            static const UINT quadsX = 4;
-            static const UINT quadsY = 4;
 
-            // Cycle through all of the effects.
-            for (UINT i = Mapped::PostBlit; i < Mapped::EffectPipelineTypeCount; i++)
-            {
-                if (m_EnabledEffects[i])
-                {
-                    CD3DX12_VIEWPORT viewport(
-                        (quadCount % quadsX) * (m_Viewport.Width / quadsX),
-                        (quadCount / quadsY) * (m_Viewport.Height / quadsY),
-                        m_Viewport.Width / quadsX,
-                        m_Viewport.Height / quadsY);
-
-                    m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &viewport);
-                    m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), static_cast<Mapped::EffectPipelineType>(i), m_FrameIndex);
-                    m_CommandListManager.GetCommandList("Main")->DrawInstanced(4, 1, 0, 0);
-                }
-
-                quadCount++;
-            }
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
+            m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+            m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(rtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::PostBlit, m_FrameIndex);
+            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Quad.m_QuadBufferView);
+            m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+            m_CommandListManager.GetCommandList("Main")->DrawInstanced(m_Quad.m_Quads.size(), 1, 0, 0);
         }
 
         // Revert resource states back to original values.
@@ -489,17 +466,16 @@ namespace Rxn::Graphics
         barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
         barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
         m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
 
-        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Close());
+        m_CommandListManager.CloseCommandList("Main");
+        m_CommandListManager.ExecuteCommandList("Main", m_CommandQueueManager.GetCommandQueue("Basic"));
 
-        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Main").Get() };
-        m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
     }
 
     void SimulationWindow::PostRenderPass()
     {
+        m_DrawIndex++;
     }
 
 
