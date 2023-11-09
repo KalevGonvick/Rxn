@@ -24,23 +24,38 @@
 #include <DirectXMath.h>
 
 #pragma endregion // GraphicsExternalLibs
-/* -------------------------------------------------------- */
+
 
 /* -------------------------------------------------------- */
-/*  GraphicsHeaders                                         */
-/* -------------------------------------------------------- */
-#pragma region GraphicsHeaders
-
-#include "d3dx12.h"
-#include "ComPointer.h"
-#include "RenderContext.h"
-#include "Renderer.h"
-
-#pragma endregion // GraphicsHeaders
-/* -------------------------------------------------------- */
-
 namespace Rxn::Graphics
 {
+    enum SwapChainBuffers : uint32
+    {
+        BUFFER_ONE = 0,
+        BUFFER_TWO,
+        TOTAL_BUFFERS
+    };
+
+    const float INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
+
+    enum RootParameters : uint32
+    {
+        RootParameterUberShaderCB = 0,
+        RootParameterCB,
+        RootParameterSRV,
+        RootParametersCount
+    };
+
+    struct DrawConstantBuffer
+    {
+        DirectX::XMMATRIX worldViewProjection;
+    };
+
+    struct Resolution
+    {
+        uint32 Width;
+        uint32 Height;
+    };
 
     template<class T>
     void ResetComPointerArray(T *comPtrArray)
@@ -154,5 +169,20 @@ namespace Rxn::Graphics
 #define NAME_D3D12_OBJECT_INDEXED(x, n) SetNameIndexed((x)[n].Get(), L#x, n)
 
 }
+
+/* -------------------------------------------------------- */
+/*  GraphicsHeaders                                         */
+/* -------------------------------------------------------- */
+#pragma region GraphicsHeaders
+
+#include "d3dx12.h"
+#include "ComPointer.h"
+#include "RenderContext.h"
+#include "Renderer.h"
+
+#pragma endregion // GraphicsHeaders
+/* -------------------------------------------------------- */
+
+
 
 

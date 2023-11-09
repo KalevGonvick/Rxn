@@ -17,8 +17,10 @@ namespace Rxn::Graphics
 
     void SimulationWindow::ShutdownRender()
     {
-        WaitForBufferedFence();
-        CloseHandle(m_FenceEvent);
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.WaitInfinite(m_FrameIndex);
+        m_RenderFence.IncrementFenceValue(m_FrameIndex);
+        m_RenderFence.Shutdown();
     }
 
     void SimulationWindow::DestroySwapChainResources()
@@ -27,7 +29,9 @@ namespace Rxn::Graphics
         m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Release();
         m_IntermediateRenderTarget.Release();
 
-        WaitForBufferedFence();
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.WaitInfinite(m_FrameIndex);
+        m_RenderFence.IncrementFenceValue(m_FrameIndex);
     }
 
     uint32 SimulationWindow::GetFPS()
@@ -85,11 +89,15 @@ namespace Rxn::Graphics
             RXN_LOGGER::Error(L"Failed to create root signature.");
         }
 
-        result = Renderer::CreatePipelineSwapChain();
-        if (FAILED(result))
+        m_SwapChain.SetTearingSupport(m_HasTearingSupport);
+        m_SwapChain.CreateSwapChain(m_CommandQueueManager.GetCommandQueue("Basic").Get());
+
+        m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
+        m_SwapChainEvent = m_SwapChain.GetFrameLatencyWaitableObject();
+
+        if (m_HasTearingSupport)
         {
-            RXN_LOGGER::Error(L"Error creating swapchain...");
-            throw std::exception("Error creating swapchain...");
+            ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
         }
 
         ThrowIfFailed(Renderer::CreateCommandAllocators());
@@ -99,12 +107,12 @@ namespace Rxn::Graphics
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame swap chain buffer
-            ThrowIfFailed(m_SwapChain->GetBuffer(SwapChainBuffers::BUFFER_ONE, IID_PPV_ARGS(&m_RenderTargets[SwapChainBuffers::BUFFER_ONE])));
+            ThrowIfFailed(m_SwapChain.GetBuffer(SwapChainBuffers::BUFFER_ONE, m_RenderTargets[SwapChainBuffers::BUFFER_ONE]));
             RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
             NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_ONE);
 
-            ThrowIfFailed(m_SwapChain->GetBuffer(SwapChainBuffers::BUFFER_TWO, IID_PPV_ARGS(&m_RenderTargets[SwapChainBuffers::BUFFER_TWO])));
+            ThrowIfFailed(m_SwapChain.GetBuffer(SwapChainBuffers::BUFFER_TWO, m_RenderTargets[SwapChainBuffers::BUFFER_TWO]));
             RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
             NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_TWO);
@@ -152,25 +160,20 @@ namespace Rxn::Graphics
 
         }
 
-        ThrowIfFailed(CreateFrameSyncObjects());
+        m_RenderFence.CreateFence(m_FrameIndex);
 
-        const UINT64 fence = m_FenceValues[m_FrameIndex];
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fence));
-        m_FenceValues[m_FrameIndex]++;
-
-        // Wait until the previous frame is finished.
-        if (m_Fence->GetCompletedValue() < fence)
-        {
-            ThrowIfFailed(m_Fence->SetEventOnCompletion(fence, m_FenceEvent));
-            WaitForSingleObject(m_FenceEvent, INFINITE);
-        }
-
-        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
+        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_FrameIndex, nextFrameIndex);
+        m_FrameIndex = nextFrameIndex;
+        
+        
         m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
         m_Camera.SetMoveSpeed(1.0f);
         m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
-        WaitForBufferedFence();
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.WaitInfinite(m_FrameIndex);
+        m_RenderFence.IncrementFenceValue(m_FrameIndex);
     }
 
     /* -------------------------------------------------------- */
@@ -216,7 +219,9 @@ namespace Rxn::Graphics
         switch (key)
         {
         case 'C':
-            WaitForBufferedFence();
+            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+            m_RenderFence.WaitInfinite(m_FrameIndex);
+            m_RenderFence.IncrementFenceValue(m_FrameIndex);
             m_PipelineLibrary.ClearPSOCache();
             m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
             break;
@@ -322,14 +327,9 @@ namespace Rxn::Graphics
             m_ScissorRect.right = m_Width;
             m_ScissorRect.bottom = m_Height;
 
-            HRESULT result = m_SwapChain->ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Failed to resize back buffer, hr=0x.8x", result);
-                return result;
-            }
+            ThrowIfFailed(m_SwapChain.ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight));
 
-            m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
+            m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
             m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -337,12 +337,7 @@ namespace Rxn::Graphics
             for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
             {
 
-                result = m_SwapChain->GetBuffer(n, IID_PPV_ARGS(&m_RenderTargets[n]));
-                if (FAILED(result))
-                {
-                    RXN_LOGGER::Error(L"Failed to create RTV for buffer %d", n);
-                    return result;
-                }
+                ThrowIfFailed(m_SwapChain.GetBuffer(n, m_RenderTargets[n]));
                 RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
                 rtvHandle.Offset(1, m_RTVDescriptorSize);
                 NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
@@ -396,7 +391,7 @@ namespace Rxn::Graphics
     {
 
         // Present the frame.
-        ThrowIfFailed(m_SwapChain->Present(1, 0));
+        ThrowIfFailed(m_SwapChain.Present(1, 0));
 
         m_DrawIndex = 0;
         m_PipelineLibrary.EndFrame();
@@ -467,7 +462,6 @@ namespace Rxn::Graphics
         barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
         m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
-
         m_CommandListManager.CloseCommandList("Main");
         m_CommandListManager.ExecuteCommandList("Main", m_CommandQueueManager.GetCommandQueue("Basic"));
 

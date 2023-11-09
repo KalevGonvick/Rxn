@@ -29,7 +29,7 @@ namespace Rxn::Graphics
          * \param lParam    - additional lparam from msg (optional)
          * \return
          */
-        LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
+        LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
 
         virtual void SetupWindow() override;
 
@@ -43,7 +43,18 @@ namespace Rxn::Graphics
 
     protected:
 
+        /**
+         * Handles key down events.
+         *
+         * \param key - key code.
+         */
         virtual void HandleKeyDown(uint8 key) override;
+
+        /**
+         * Handles key up events.
+         *
+         * \param key - key code.
+         */
         virtual void HandleKeyUp(uint8 key) override;
 
     private:

@@ -112,6 +112,7 @@
     <ClCompile Include="Source\Graphics\CommandListManager.cpp" />
     <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
+    <ClCompile Include="Source\Graphics\RenderFence.cpp" />
     <ClCompile Include="Source\Graphics\RenderContext.cpp" />
     <ClCompile Include="Source\Graphics\ComPointer.cpp" />
     <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="Source\Graphics\CommandListManager.h" />
     <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />
+    <ClInclude Include="Source\Graphics\RenderFence.h" />
     <ClInclude Include="Source\Graphics\RenderContext.h" />
     <ClInclude Include="Source\Graphics\ComPointer.h" />
     <ClInclude Include="Source\Graphics\d3dx12.h" />

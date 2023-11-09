@@ -4,22 +4,23 @@
 
 namespace Rxn::Graphics
 {
-    Renderer::Renderer(int width, int height)
+    Renderer::Renderer(int32 width, int32 height)
         : m_UseWarpDevice(false)
         , m_HasTearingSupport(false)
         , m_Width(width)
-        , m_Viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height))
-        , m_ScissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
+        , m_Viewport(0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height))
+        , m_ScissorRect(0, 0, static_cast<uint64>(width), static_cast<uint64>(height))
         , m_Height(height)
         , m_RTVDescriptorSize(0)
         , m_SRVDescriptorSize(0)
         , m_Initialized(false)
         , m_DrawIndex(0)
-        , m_FenceValues{}
         , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), MaxDrawsPerFrame, SwapChainBuffers::TOTAL_BUFFERS)
         , m_PipelineLibrary(SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB)
         , m_CommandQueueManager(RenderContext::GetGraphicsDevice())
         , m_CommandListManager(RenderContext::GetGraphicsDevice())
+        , m_SwapChain(width, height)
+        , m_RenderFence()
     {
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
@@ -244,43 +245,6 @@ namespace Rxn::Graphics
         return S_OK;
     }
 
-    HRESULT Renderer::CreatePipelineSwapChain()
-    {
-        HRESULT result;
-
-        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.BufferCount = SwapChainBuffers::TOTAL_BUFFERS;
-        swapChainDesc.Width = m_Width;
-        swapChainDesc.Height = m_Height;
-        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapChainDesc.SampleDesc.Count = 1;
-        swapChainDesc.Flags = m_HasTearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-
-        ComPointer<IDXGISwapChain1> swapChain;
-
-        ThrowIfFailed(RenderContext::GetFactory()->CreateSwapChainForHwnd(m_CommandQueueManager.GetCommandQueue("Basic").Get(), RenderContext::GetHWND(), &swapChainDesc, nullptr, nullptr, &swapChain));
-
-        if (m_HasTearingSupport)
-        {
-            ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
-        }
-
-
-        /* Cast */
-        result = swapChain->QueryInterface(&m_SwapChain);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to cast swapchain.");
-        }
-
-        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-        m_SwapChainEvent = m_SwapChain->GetFrameLatencyWaitableObject();
-
-        return result;
-    }
-
     HRESULT Renderer::CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap)
     {
         HRESULT result;
@@ -379,90 +343,27 @@ namespace Rxn::Graphics
         return data;
     }
 
-    HRESULT Renderer::CreateFrameSyncObjects()
+    void Renderer::MoveToNextFrame()
     {
-        HRESULT result;
-
-        result = RenderContext::GetGraphicsDevice()->CreateFence(m_FenceValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
-
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create new fence.");
-            return result;
-        }
-        m_FenceValues[m_FrameIndex]++;
-
-        // Create an event handle to use for frame synchronization.
-        m_FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (m_FenceEvent == nullptr)
-        {
-            RXN_LOGGER::Error(L"Failed to create new fence event.");
-            return HRESULT_FROM_WIN32(GetLastError());
-        }
-
-        return result;
-    }
-
-    HRESULT Renderer::MoveToNextFrame()
-    {
-        HRESULT result;
-
-        const UINT64 fenceValue = m_FenceValues[m_FrameIndex];
-
-        result = m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fenceValue);
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
-            return result;
-        }
-
-        m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-
-        // If the next frame is not ready to be rendered yet, wait until it is ready.
-        if (m_Fence->GetCompletedValue() < m_FenceValues[m_FrameIndex])
-        {
-            result = m_Fence->SetEventOnCompletion(m_FenceValues[m_FrameIndex], m_FenceEvent);
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Failed to set new event on completion.");
-                return result;
-            }
-
-            WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
-        }
-
-        m_FenceValues[m_FrameIndex] = fenceValue + 1;
-    }
-
-    void Renderer::WaitForBufferedFence()
-    {
-        // Schedule a Signal command in the queue.
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), m_FenceValues[m_FrameIndex]));
-
-        ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[m_FrameIndex], m_FenceEvent));
-        WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
-
-        m_FenceValues[m_FrameIndex]++;
+        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
+        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex, nextFrameIndex);
+        m_FrameIndex = nextFrameIndex;
     }
 
     void Renderer::WaitForSingleFrame()
     {
-        const UINT64 fence = m_FenceValues[m_FrameIndex];
-        ThrowIfFailed(m_CommandQueueManager.GetCommandQueue("Basic")->Signal(m_Fence.Get(), fence));
-        m_FenceValues[m_FrameIndex]++;
-
-        if (m_Fence->GetCompletedValue() < fence)
-        {
-            ThrowIfFailed(m_Fence->SetEventOnCompletion(fence, m_FenceEvent));
-            WaitForSingleObject(m_FenceEvent, INFINITE);
-        }
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.IncrementFenceValue(m_FrameIndex);
+        m_RenderFence.WaitInfinite(m_FrameIndex);
     }
 
     void Renderer::ToggleEffect(Mapped::EffectPipelineType type)
     {
         if (m_EnabledEffects[type])
         {
-            WaitForBufferedFence();
+            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+            m_RenderFence.WaitInfinite(m_FrameIndex);
+            m_RenderFence.IncrementFenceValue(m_FrameIndex);
             m_PipelineLibrary.DestroyShader(type);
         }
 
