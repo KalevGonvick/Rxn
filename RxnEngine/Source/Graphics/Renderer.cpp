@@ -31,46 +31,6 @@ namespace Rxn::Graphics
 
     Renderer::~Renderer() = default;
 
-
-
-    HRESULT Renderer::CreateDescriptorHeaps()
-    {
-        DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
-        rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
-
-        DescriptorHeapDesc srvDesc(1);
-        srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
-
-        m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
-
-        return S_OK;
-    }
-
-    HRESULT Renderer::CreateCommandAllocators()
-    {
-
-        HRESULT result;
-        // Create a RTV for each frame.
-        for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
-        {
-
-            result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
-            if (FAILED(result))
-            {
-                RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
-                return result;
-            }
-            NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
-        }
-
-
-
-        return S_OK;
-    }
-
     HRESULT Renderer::CreateRootSignature()
     {
 
@@ -123,6 +83,7 @@ namespace Rxn::Graphics
             RXN_LOGGER::Error(L"Failed to declare root signature.");
             return result;
         }
+
         NAME_D3D12_OBJECT(m_RootSignature);
 
         return S_OK;
@@ -130,19 +91,10 @@ namespace Rxn::Graphics
 
     HRESULT Renderer::CreateCommandList()
     {
-        /*HRESULT result;
-        result = RenderContext::GetGraphicsDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to initialize new command list.");
-            return result;
-        }*/
-
-        m_CommandListManager.CreateCommandList("Main", m_CommandAllocators[m_FrameIndex]);
-        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Close());
-        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Main").Get() };
-
-        m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+        m_CommandListManager.CreateCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST, m_CommandAllocators[m_FrameIndex]);
+        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->Close());
+        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST).Get() };
+        m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE)->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
         return S_OK;
     }
 
@@ -220,7 +172,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList("Setup").Get());
+        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
@@ -235,7 +187,7 @@ namespace Rxn::Graphics
 
         m_Quad.ReadDataFromRaw(quadVertices);
 
-        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList("Setup").Get());
+        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
@@ -284,16 +236,16 @@ namespace Rxn::Graphics
 
         // Copy data to the intermediate upload heap and then schedule a copy 
         // from the upload heap to the Texture2D.
-        std::vector<UINT8> texture = GenerateTextureData();
+        std::vector<uint8> texture = GenerateTextureData();
 
         D3D12_SUBRESOURCE_DATA textureData = {};
         textureData.pData = &texture[0];
-        textureData.RowPitch = static_cast<LONG_PTR>(TextureWidth) * TextureBytesPerPixel;
+        textureData.RowPitch = static_cast<int64>(TextureWidth) * TextureBytesPerPixel;
         textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
-        UpdateSubresources(m_CommandListManager.GetCommandList("Setup").Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
+        UpdateSubresources(m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
         const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_Texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        m_CommandListManager.GetCommandList("Setup")->ResourceBarrier(1, &transition);
+        m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST)->ResourceBarrier(1, &transition);
 
         // Describe and create a SRV for the texture.
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -307,22 +259,22 @@ namespace Rxn::Graphics
     }
 
     // Generate a simple black and white checkerboard texture.
-    std::vector<UINT8> Renderer::GenerateTextureData()
+    std::vector<uint8> Renderer::GenerateTextureData()
     {
-        const UINT rowPitch = TextureWidth * TextureBytesPerPixel;
-        const UINT cellPitch = rowPitch >> 3;        // The width of a cell in the checkboard texture.
-        const UINT cellHeight = TextureWidth >> 3;    // The height of a cell in the checkerboard texture.
-        const UINT textureSize = rowPitch * TextureHeight;
+        const uint32 rowPitch = TextureWidth * TextureBytesPerPixel;
+        const uint32 cellPitch = rowPitch >> 3;        // The width of a cell in the checkboard texture.
+        const uint32 cellHeight = TextureWidth >> 3;    // The height of a cell in the checkerboard texture.
+        const uint32 textureSize = rowPitch * TextureHeight;
 
-        std::vector<UINT8> data(textureSize);
-        UINT8 *pData = &data[0];
+        std::vector<uint8> data(textureSize);
+        uint8 *pData = &data[0];
 
-        for (UINT n = 0; n < textureSize; n += TextureBytesPerPixel)
+        for (uint32 n = 0; n < textureSize; n += TextureBytesPerPixel)
         {
-            UINT x = n % rowPitch;
-            UINT y = n / rowPitch;
-            UINT i = x / cellPitch;
-            UINT j = y / cellHeight;
+            uint32 x = n % rowPitch;
+            uint32 y = n / rowPitch;
+            uint32 i = x / cellPitch;
+            uint32 j = y / cellHeight;
 
             if (i % 2 == j % 2)
             {
@@ -343,25 +295,11 @@ namespace Rxn::Graphics
         return data;
     }
 
-    void Renderer::MoveToNextFrame()
-    {
-        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex, nextFrameIndex);
-        m_FrameIndex = nextFrameIndex;
-    }
-
-    void Renderer::WaitForSingleFrame()
-    {
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
-        m_RenderFence.IncrementFenceValue(m_FrameIndex);
-        m_RenderFence.WaitInfinite(m_FrameIndex);
-    }
-
     void Renderer::ToggleEffect(Mapped::EffectPipelineType type)
     {
         if (m_EnabledEffects[type])
         {
-            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
             m_RenderFence.WaitInfinite(m_FrameIndex);
             m_RenderFence.IncrementFenceValue(m_FrameIndex);
             m_PipelineLibrary.DestroyShader(type);

@@ -24,6 +24,8 @@ namespace Rxn::Graphics::Manager
 
         m_CommandLists.emplace(hash, commandList);
         m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&m_CommandLists.at(hash)));
+        
+        NAME_D3D12_OBJECT(m_CommandLists.at(hash));
 
         if (autoClose)
         {

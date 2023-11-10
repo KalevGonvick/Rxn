@@ -23,8 +23,7 @@ namespace Rxn::Graphics
         HRESULT CreateFactory();
         void SetHighestRootSignatureVersion();
 
-        _Use_decl_annotations_;
-        void GetHardwareAdapter(_In_ IDXGIFactory1 *pFactory, _Outptr_result_maybenull_ IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
+        void GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
         void CheckTearingSupport();
 
         static const uint32 &GetEngineSeed();

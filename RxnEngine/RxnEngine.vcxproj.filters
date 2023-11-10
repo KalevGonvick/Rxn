@@ -119,6 +119,12 @@
     <Filter Include="Source\Graphics\Private\Descriptor">
       <UniqueIdentifier>{25c20569-51d6-4a49-84a5-cd03c3b6b15a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Graphics\Private\GPU">
+      <UniqueIdentifier>{6dfc8b3e-7fbd-42d0-996f-d2c3a2223cd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\GPU">
+      <UniqueIdentifier>{df01d010-c343-46ef-811c-07333da558eb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -239,9 +245,12 @@
       <Filter>Source\Graphics\Private\Descriptor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\SwapChain.cpp">
-      <Filter>Source\Graphics\Private</Filter>
+      <Filter>Source\Graphics\Private\GPU</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\RenderFence.cpp">
+    <ClCompile Include="Source\Graphics\Fence.cpp">
+      <Filter>Source\Graphics\Private\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\GraphicsCommon.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -420,11 +429,14 @@
     <ClInclude Include="Source\Graphics\SamplerDesc.h">
       <Filter>Source\Graphics\Classes\Descriptor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\SwapChain.h">
-      <Filter>Source\Graphics\Classes</Filter>
+    <ClInclude Include="Source\Graphics\Fence.h">
+      <Filter>Source\Graphics\Classes\GPU</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\RenderFence.h">
-      <Filter>Source\Graphics\Classes</Filter>
+    <ClInclude Include="Source\Graphics\SwapChain.h">
+      <Filter>Source\Graphics\Classes\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\GraphicsCommon.h">
+      <Filter>Source\Graphics\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

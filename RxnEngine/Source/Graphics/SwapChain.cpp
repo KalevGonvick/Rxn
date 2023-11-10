@@ -1,7 +1,7 @@
 #include "Rxn.h"
 #include "SwapChain.h"
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::GPU
 {
     SwapChain::SwapChain(int width, int height)
         : m_Initialized(false)
@@ -30,6 +30,7 @@ namespace Rxn::Graphics
         ComPointer<IDXGISwapChain1> swapChain;
         ThrowIfFailed(RenderContext::GetFactory()->CreateSwapChainForHwnd(cmdQueue, RenderContext::GetHWND(), &m_SwapChainDesc, nullptr, nullptr, &swapChain));
         ThrowIfFailed(swapChain->QueryInterface(&m_SwapChain));
+        m_SwapChainEvent = GetFrameLatencyWaitableObject();
     }
 
     uint32 SwapChain::GetCurrentBackBufferIndex()

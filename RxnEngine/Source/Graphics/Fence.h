@@ -7,20 +7,20 @@
  *********************************************************************/
 #pragma once
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::GPU
 {
-    class RXN_ENGINE_API RenderFence
+    class RXN_ENGINE_API Fence
     {
     public:
 
-        RenderFence();
-        ~RenderFence();
+        Fence();
+        ~Fence();
 
     public:
 
         HANDLE GetFenceEvent();
         ComPointer<ID3D12Fence> GetFence();
-        UINT64 GetFenceValue(uint64 index);
+        uint64 GetFenceValue(uint64 index);
 
         void CreateFenceEvent();
         void CreateFence(uint32 frameIndex);

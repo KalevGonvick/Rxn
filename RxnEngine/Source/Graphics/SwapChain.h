@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::GPU
 {
     class RXN_ENGINE_API SwapChain
     {
@@ -23,6 +23,7 @@ namespace Rxn::Graphics
 
     private:
 
+        HANDLE m_SwapChainEvent;
         DXGI_SWAP_CHAIN_DESC1 m_SwapChainDesc;
         ComPointer<IDXGISwapChain4> m_SwapChain;
         bool m_Initialized;

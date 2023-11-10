@@ -1,34 +1,34 @@
 #include "Rxn.h"
-#include "RenderFence.h"
+#include "Fence.h"
 
-namespace Rxn::Graphics
+namespace Rxn::Graphics::GPU
 {
-    RenderFence::RenderFence()
+    Fence::Fence()
     {
 
     }
 
-    RenderFence::~RenderFence()
+    Fence::~Fence()
     {
         Shutdown();
     }
 
-    HANDLE RenderFence::GetFenceEvent()
+    HANDLE Fence::GetFenceEvent()
     {
         return m_FenceEvent;
     }
 
-    ComPointer<ID3D12Fence> RenderFence::GetFence()
+    ComPointer<ID3D12Fence> Fence::GetFence()
     {
         return m_Fence;
     }
 
-    UINT64 RenderFence::GetFenceValue(uint64 index)
+    UINT64 Fence::GetFenceValue(uint64 index)
     {
         return m_FenceValues[index];
     }
 
-    void RenderFence::CreateFence(uint32 frameIndex)
+    void Fence::CreateFence(uint32 frameIndex)
     {
         HRESULT result = RenderContext::GetGraphicsDevice()->CreateFence(m_FenceValues[frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
         if (FAILED(result))
@@ -40,7 +40,7 @@ namespace Rxn::Graphics
         CreateFenceEvent();
     }
 
-    void RenderFence::CreateFenceEvent()
+    void Fence::CreateFenceEvent()
     {
         // Create an event handle to use for frame synchronization.
         m_FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -50,12 +50,12 @@ namespace Rxn::Graphics
         }
     }
 
-    void RenderFence::IncrementFenceValue(uint32 frameIndex)
+    void Fence::IncrementFenceValue(uint32 frameIndex)
     {
         m_FenceValues[frameIndex]++;
     }
 
-    void RenderFence::SignalFence(ID3D12CommandQueue *cmdQueue, const uint32 frameIndex)
+    void Fence::SignalFence(ID3D12CommandQueue *cmdQueue, const uint32 frameIndex)
     {
         const uint64 fenceValue = m_FenceValues[frameIndex];
 
@@ -66,12 +66,12 @@ namespace Rxn::Graphics
         }
     }
 
-    void RenderFence::Shutdown()
+    void Fence::Shutdown()
     {
         CloseHandle(m_FenceEvent);
     }
 
-    void RenderFence::WaitInfinite(const uint32 frameIndex)
+    void Fence::WaitInfinite(const uint32 frameIndex)
     {
         if (m_Fence->GetCompletedValue() < m_FenceValues[frameIndex])
         {
@@ -80,7 +80,7 @@ namespace Rxn::Graphics
         }
     }
 
-    void RenderFence::Wait(const uint32 frameIndex, uint64 ms)
+    void Fence::Wait(const uint32 frameIndex, uint64 ms)
     {
         if (m_Fence->GetCompletedValue() < m_FenceValues[frameIndex])
         {
@@ -89,7 +89,7 @@ namespace Rxn::Graphics
         }
     }
 
-    void RenderFence::MoveFenceMarker(ID3D12CommandQueue * cmdQueue, const uint32 frameIndex, uint32 nextFrameIndex)
+    void Fence::MoveFenceMarker(ID3D12CommandQueue * cmdQueue, const uint32 frameIndex, uint32 nextFrameIndex)
     {
         const UINT64 fenceValue = m_FenceValues[frameIndex];
 

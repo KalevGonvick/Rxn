@@ -15,7 +15,7 @@
 #include "CommandQueueManager.h"
 #include "CommandListManager.h"
 #include "SwapChain.h"
-#include "RenderFence.h"
+#include "Fence.h"
 
 namespace Rxn::Graphics
 {
@@ -45,21 +45,14 @@ namespace Rxn::Graphics
         virtual void PreRenderPass() = 0;
         virtual void PostRenderPass() = 0;
 
-        HRESULT CreateDescriptorHeaps();
-        HRESULT CreateCommandAllocators();
         HRESULT CreateRootSignature();
         HRESULT CreateCommandList();
         HRESULT CreateVertexBufferResource();
         HRESULT CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
+
+        std::vector<uint8> GenerateTextureData();
         
-        void MoveToNextFrame();
-
-
-        std::vector<UINT8> GenerateTextureData();
-        void WaitForSingleFrame();
         void ToggleEffect(Mapped::EffectPipelineType type);
-
-
         void PopulateCommandList();
 
         bool m_UseWarpDevice;
@@ -69,7 +62,7 @@ namespace Rxn::Graphics
 
         Manager::CommandQueueManager m_CommandQueueManager;
         Manager::CommandListManager m_CommandListManager;
-        SwapChain m_SwapChain;
+        
 
         ComPointer<ID3D12Resource> m_Texture;
         Basic::Shape m_Shape;
@@ -85,18 +78,19 @@ namespace Rxn::Graphics
 
         uint32 m_Width;
         uint32 m_Height;
+        
         float m_AspectRatio;
 
         Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
         Mapped::PipelineLibrary m_PipelineLibrary;
-        bool m_EnabledEffects[Mapped::EffectPipelineTypeCount];
 
         uint32 m_FrameIndex;
 
-        HANDLE m_SwapChainEvent;
+        GPU::Fence m_RenderFence;
+        GPU::SwapChain m_SwapChain;
 
-        RenderFence m_RenderFence;
         bool m_Initialized;
+        bool m_EnabledEffects[Mapped::EffectPipelineTypeCount];
 
         ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
         ComPointer<ID3D12DescriptorHeap> m_RTVHeap;

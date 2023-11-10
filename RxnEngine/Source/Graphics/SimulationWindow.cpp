@@ -17,7 +17,7 @@ namespace Rxn::Graphics
 
     void SimulationWindow::ShutdownRender()
     {
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
         m_RenderFence.WaitInfinite(m_FrameIndex);
         m_RenderFence.IncrementFenceValue(m_FrameIndex);
         m_RenderFence.Shutdown();
@@ -29,7 +29,7 @@ namespace Rxn::Graphics
         m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Release();
         m_IntermediateRenderTarget.Release();
 
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
         m_RenderFence.WaitInfinite(m_FrameIndex);
         m_RenderFence.IncrementFenceValue(m_FrameIndex);
     }
@@ -66,7 +66,7 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        m_CommandQueueManager.CreateCommandQueue("Basic");
+        m_CommandQueueManager.CreateCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE);
 
         {
             /* RTV + Intermediate target view*/
@@ -90,17 +90,32 @@ namespace Rxn::Graphics
         }
 
         m_SwapChain.SetTearingSupport(m_HasTearingSupport);
-        m_SwapChain.CreateSwapChain(m_CommandQueueManager.GetCommandQueue("Basic").Get());
+        m_SwapChain.CreateSwapChain(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get());
 
         m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-        m_SwapChainEvent = m_SwapChain.GetFrameLatencyWaitableObject();
+       
 
         if (m_HasTearingSupport)
         {
             ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
         }
 
-        ThrowIfFailed(Renderer::CreateCommandAllocators());
+        {
+            HRESULT result;
+            // Create a RTV for each frame.
+            for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
+            {
+
+                result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
+                if (FAILED(result))
+                {
+                    RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
+                    return;
+                }
+
+                NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
+            }
+        }
 
 
         {
@@ -145,7 +160,7 @@ namespace Rxn::Graphics
         }
 
         {
-            m_CommandListManager.CreateCommandList("Setup", m_CommandAllocators[m_FrameIndex]);
+            m_CommandListManager.CreateCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST, m_CommandAllocators[m_FrameIndex]);
 
 
             ThrowIfFailed(Renderer::CreateVertexBufferResource());
@@ -153,9 +168,9 @@ namespace Rxn::Graphics
             m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
 
             // Close the command list and execute it to begin the initial GPU setup.
-            ThrowIfFailed(m_CommandListManager.GetCommandList("Setup")->Close());
-            ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList("Setup").Get() };
-            m_CommandQueueManager.GetCommandQueue("Basic")->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+            ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST)->Close());
+            ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get() };
+            m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE)->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 
         }
@@ -163,7 +178,7 @@ namespace Rxn::Graphics
         m_RenderFence.CreateFence(m_FrameIndex);
 
         const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue("Basic").Get(), m_FrameIndex, nextFrameIndex);
+        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get(), m_FrameIndex, nextFrameIndex);
         m_FrameIndex = nextFrameIndex;
         
         
@@ -171,7 +186,7 @@ namespace Rxn::Graphics
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
         m_Camera.SetMoveSpeed(1.0f);
         m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
         m_RenderFence.WaitInfinite(m_FrameIndex);
         m_RenderFence.IncrementFenceValue(m_FrameIndex);
     }
@@ -219,7 +234,7 @@ namespace Rxn::Graphics
         switch (key)
         {
         case 'C':
-            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue("Basic"), m_FrameIndex);
+            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
             m_RenderFence.WaitInfinite(m_FrameIndex);
             m_RenderFence.IncrementFenceValue(m_FrameIndex);
             m_PipelineLibrary.ClearPSOCache();
@@ -396,22 +411,24 @@ namespace Rxn::Graphics
         m_DrawIndex = 0;
         m_PipelineLibrary.EndFrame();
 
-        MoveToNextFrame();
+        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
+        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex, nextFrameIndex);
+        m_FrameIndex = nextFrameIndex;
     }
 
     void SimulationWindow::PreRenderPass()
     {
         ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
-        ThrowIfFailed(m_CommandListManager.GetCommandList("Main")->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
+        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
 
         {
-            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootSignature(m_RootSignature.Get());
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->SetGraphicsRootSignature(m_RootSignature.Get());
 
             ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
-            m_CommandListManager.GetCommandList("Main")->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-            m_CommandListManager.GetCommandList("Main")->RSSetViewports(1, &m_Viewport);
-            m_CommandListManager.GetCommandList("Main")->RSSetScissorRects(1, &m_ScissorRect);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->RSSetViewports(1, &m_Viewport);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->RSSetScissorRects(1, &m_ScissorRect);
 
             /* This rotation could probably move to the update loop */
             static float rot = 0.0f;
@@ -424,36 +441,36 @@ namespace Rxn::Graphics
         {
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_RTVDescriptorSize);
-            m_CommandListManager.GetCommandList("Main")->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
-            m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
-            m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
 
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST).Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
 
-            m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
-            m_CommandListManager.GetCommandList("Main")->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
 
 
-            m_CommandListManager.GetCommandList("Main")->DrawIndexedInstanced(m_Shape.m_Indices.size(), 1, 0, 0, 0);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->DrawIndexedInstanced(m_Shape.m_Indices.size(), 1, 0, 0, 0);
         }
 
 
         D3D12_RESOURCE_BARRIER barriers[2] = {};
         barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
         barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
-        m_CommandListManager.GetCommandList("Main")->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+        m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
 
         {
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
-            m_CommandListManager.GetCommandList("Main")->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-            m_CommandListManager.GetCommandList("Main")->ClearRenderTargetView(rtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList("Main").Get(), Mapped::PostBlit, m_FrameIndex);
-            m_CommandListManager.GetCommandList("Main")->IASetVertexBuffers(0, 1, &m_Quad.m_QuadBufferView);
-            m_CommandListManager.GetCommandList("Main")->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-            m_CommandListManager.GetCommandList("Main")->DrawInstanced(m_Quad.m_Quads.size(), 1, 0, 0);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->ClearRenderTargetView(rtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST).Get(), Mapped::PostBlit, m_FrameIndex);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->IASetVertexBuffers(0, 1, &m_Quad.m_QuadBufferView);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+            m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->DrawInstanced(m_Quad.m_Quads.size(), 1, 0, 0);
         }
 
         // Revert resource states back to original values.
@@ -461,9 +478,9 @@ namespace Rxn::Graphics
         barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
         barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        m_CommandListManager.GetCommandList("Main")->ResourceBarrier(_countof(barriers), barriers);
-        m_CommandListManager.CloseCommandList("Main");
-        m_CommandListManager.ExecuteCommandList("Main", m_CommandQueueManager.GetCommandQueue("Basic"));
+        m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->ResourceBarrier(_countof(barriers), barriers);
+        m_CommandListManager.CloseCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST);
+        m_CommandListManager.ExecuteCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST, m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE));
 
     }
 
