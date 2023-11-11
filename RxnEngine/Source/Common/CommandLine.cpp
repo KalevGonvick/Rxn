@@ -10,6 +10,7 @@ namespace Rxn::Common::Cmd
         if (wcscmp(arg, L"debug") == 0)
         {
             //Engine::Runtime::SetMode(Engine::Runtime::EngineRuntimeMode::DEBUG);
+            //Engine::EngineContext::
         }
 
         if (wcscmp(arg, L"editor") == 0)

@@ -160,9 +160,6 @@
     <ClCompile Include="Source\Common\CommandLine.cpp">
       <Filter>Source\Common\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SplashScreen.cpp">
-      <Filter>Source\Engine\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Platform\WIN32\Window.cpp">
       <Filter>Source\Platform\Win32\Private</Filter>
     </ClCompile>
@@ -208,9 +205,6 @@
     <ClCompile Include="Source\Graphics\PipelineLibrary.cpp">
       <Filter>Source\Graphics\Private\Mapped</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera.cpp">
-      <Filter>Source\Engine\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
       <Filter>Source\Graphics\Private\Buffer</Filter>
     </ClCompile>
@@ -251,6 +245,12 @@
       <Filter>Source\Graphics\Private\GPU</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\GraphicsCommon.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Camera.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\SplashScreen.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -314,9 +314,6 @@
     </ClInclude>
     <ClInclude Include="Source\Platform\WIN32\WindowManager.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\SplashScreen.h">
-      <Filter>Source\Engine\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\ComPointer.h">
       <Filter>Source\Graphics\Public</Filter>
@@ -384,9 +381,6 @@
     <ClInclude Include="Source\Core\StepTimer.h">
       <Filter>Source\Core\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera.h">
-      <Filter>Source\Engine\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
       <Filter>Source\Graphics\Public\Buffer</Filter>
     </ClInclude>
@@ -437,6 +431,12 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\GraphicsCommon.h">
       <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Camera.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SplashScreen.h">
+      <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

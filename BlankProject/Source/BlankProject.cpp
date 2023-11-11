@@ -2,7 +2,7 @@
 #include <memory>
 #include "BlankProject.h"
 #include "Engine/Runtime.h"
-#include "Engine/SplashScreen.h"
+#include "Graphics/SplashScreen.h"
 #include "Platform/WIN32/WinEntry.h"
 #include "Platform/WIN32/Window.h"
 #include "Graphics/SimulationWindow.h"
@@ -36,7 +36,7 @@ void BlankProject::SetupEngineConfigurations()
     RXN_CONTEXT::GetEngineSettings().SetLogWriteToConsole(true);
     RXN_CONTEXT::GetEngineSettings().SetLogWriteToFile(true);
     RXN_CONTEXT::GetEngineSettings().SetSplashScreenURL(L"Content\\Images\\splashscreen.bmp");
-    RXN_CONTEXT::GetEngineSettings().SetBootTime(Rxn::Common::Time::GetTime(true).c_str());
+    RXN_CONTEXT::GetEngineSettings().SetBootTime(RXN_TIME_UTIL::GetTime(true).c_str());
 
     RXN_LOGGER::SetLogLevel(RXN_CONTEXT::GetEngineSettings().GetLogLevel());
     Rxn::Common::Cmd::ReadCommandLineArguments();

@@ -1,6 +1,5 @@
 #include "Rxn.h"
 #include "SamplerDesc.h"
-#include "Core/Math/Math.h"
 
 namespace Rxn::Graphics
 {

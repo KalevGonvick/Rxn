@@ -87,6 +87,7 @@
 /* Singleton Accessors */
 #define RXN_LOGGER Rxn::Common::Logger
 #define RXN_CONTEXT Rxn::Engine::EngineContext
+#define RXN_TIME_UTIL Rxn::Common::Time
 
 /* Strings */
 using String = std::string;

@@ -1,6 +1,5 @@
 #include "Rxn.h"
 #include "CommandQueueManager.h"
-#include "Core/Math/Math.h"
 
 namespace Rxn::Graphics::Manager
 {

@@ -1,5 +1,4 @@
 #include "Rxn.h"
-#include "RenderContext.h"
 
 namespace Rxn::Graphics
 {

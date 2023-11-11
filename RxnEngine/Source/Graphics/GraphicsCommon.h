@@ -2,6 +2,19 @@
 
 namespace Rxn::Graphics
 {
+
+    struct VertexPositionUV
+    {
+        DirectX::XMFLOAT4 position;
+        DirectX::XMFLOAT2 uv;
+    };
+
+    struct VertexPositionColour
+    {
+        DirectX::XMFLOAT4 position;
+        DirectX::XMFLOAT3 colour;
+    };
+
     enum SwapChainBuffers : uint32
     {
         BUFFER_ONE = 0,
@@ -33,10 +46,19 @@ namespace Rxn::Graphics
     // graphics object hash keys
     namespace GOHKeys
     {
-        const static String MAIN_SIM_COMMAND_LIST = "aamcl";
-        const static String MAIN_SIM_COMMAND_QUEUE = "aamcq";
-        const static String SETUP_SIM_COMMAND_LIST = "aamsl";
+        namespace CmdList
+        {
+            const static String INIT = "iCmdLst";
+            const static String PRIMARY = "pCmdLst";
+            const static String SECONDARY = "sCmdLst";
+        };
 
+        namespace CmdQueue
+        {
+            const static String INIT = "iCmdQueue";
+            const static String PRIMARY = "pCmdQueue";
+            const static String SECONDARY = "sCmdQueue";
+        };
     };
 
     template<class T>

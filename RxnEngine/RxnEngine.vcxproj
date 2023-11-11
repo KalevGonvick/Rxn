@@ -55,7 +55,6 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;WIN32;BUILD_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -65,6 +64,9 @@
       <PrecompiledHeaderFile>Rxn.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(SolutionDir)\RxnEngine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
+      <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -103,12 +105,11 @@
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
     <ClCompile Include="Source\Core\Math\Math.cpp" />
     <ClCompile Include="Source\Core\RxnBinaryHandler.cpp" />
-    <ClCompile Include="Source\Engine\Camera.cpp" />
     <ClCompile Include="Source\Engine\EngineContext.cpp" />
     <ClCompile Include="Source\Engine\EngineSettings.cpp" />
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
-    <ClCompile Include="Source\Engine\SplashScreen.cpp" />
+    <ClCompile Include="Source\Graphics\Camera.cpp" />
     <ClCompile Include="Source\Graphics\CommandListManager.cpp" />
     <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
@@ -129,6 +130,7 @@
     <ClCompile Include="Source\Graphics\SamplerDesc.cpp" />
     <ClCompile Include="Source\Graphics\Shape.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
+    <ClCompile Include="Source\Graphics\SplashScreen.cpp" />
     <ClCompile Include="Source\Graphics\SwapChain.cpp" />
     <ClCompile Include="Source\Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
@@ -164,12 +166,11 @@
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
     <ClInclude Include="Source\Core\Span.h" />
     <ClInclude Include="Source\Core\StepTimer.h" />
-    <ClInclude Include="Source\Engine\Camera.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
     <ClInclude Include="Source\Engine\EngineSettings.h" />
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
-    <ClInclude Include="Source\Engine\SplashScreen.h" />
+    <ClInclude Include="Source\Graphics\Camera.h" />
     <ClInclude Include="Source\Graphics\CommandListManager.h" />
     <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Source\Graphics\SamplerDesc.h" />
     <ClInclude Include="Source\Graphics\Shape.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
+    <ClInclude Include="Source\Graphics\SplashScreen.h" />
     <ClInclude Include="Source\Graphics\SwapChain.h" />
     <ClInclude Include="Source\Graphics\VertexBuffer.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />

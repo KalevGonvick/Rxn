@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include "EngineSettings.h"
 
 namespace Rxn::Engine

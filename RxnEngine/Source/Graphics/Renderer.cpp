@@ -1,6 +1,5 @@
 #include "Rxn.h"
 #include "Renderer.h"
-#include "DescriptorHeapDesc.h"
 
 namespace Rxn::Graphics
 {
@@ -62,7 +61,6 @@ namespace Rxn::Graphics
         sampler.RegisterSpace = 0;
         sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
         rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -76,7 +74,7 @@ namespace Rxn::Graphics
             RXN_LOGGER::Error(L"Failed to serialize root signature descriptor.");
             return result;
         }
-
+        
         result = RenderContext::GetGraphicsDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature));
         if (FAILED(result))
         {
@@ -89,29 +87,20 @@ namespace Rxn::Graphics
         return S_OK;
     }
 
-    HRESULT Renderer::CreateCommandList()
-    {
-        m_CommandListManager.CreateCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST, m_CommandAllocators[m_FrameIndex]);
-        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST)->Close());
-        ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList(GOHKeys::MAIN_SIM_COMMAND_LIST).Get() };
-        m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE)->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-        return S_OK;
-    }
-
     HRESULT Renderer::CreateVertexBufferResource()
     {
 
         // Define the geometry for a cube.
-        std::vector<Basic::VertexPositionColour> cubeVertices;
-        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        std::vector<VertexPositionColour> cubeVertices;
+        cubeVertices.push_back(VertexPositionColour{ { -1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ {  1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ {  1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ { -1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
 
-        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ {  1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
-        cubeVertices.push_back(Basic::VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ {  1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+        cubeVertices.push_back(VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
 
         std::vector<UINT> cubeIndices;
 
@@ -172,22 +161,22 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get());
+        result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
             return result;
         }
 
-        std::vector<Basic::VertexPositionUV> quadVertices;
-        quadVertices.push_back(Basic::VertexPositionUV{ { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } });
-        quadVertices.push_back(Basic::VertexPositionUV{ { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } });
-        quadVertices.push_back(Basic::VertexPositionUV{ { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } });
-        quadVertices.push_back(Basic::VertexPositionUV{ { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } });
+        std::vector<VertexPositionUV> quadVertices;
+        quadVertices.push_back(VertexPositionUV{ { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } });
+        quadVertices.push_back(VertexPositionUV{ { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } });
+        quadVertices.push_back(VertexPositionUV{ { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } });
+        quadVertices.push_back(VertexPositionUV{ { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } });
 
         m_Quad.ReadDataFromRaw(quadVertices);
 
-        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get());
+        result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_CommandAllocators[m_FrameIndex].Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get());
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
@@ -243,9 +232,9 @@ namespace Rxn::Graphics
         textureData.RowPitch = static_cast<int64>(TextureWidth) * TextureBytesPerPixel;
         textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
-        UpdateSubresources(m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST).Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
+        UpdateSubresources(m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get(), m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
         const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_Texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        m_CommandListManager.GetCommandList(GOHKeys::SETUP_SIM_COMMAND_LIST)->ResourceBarrier(1, &transition);
+        m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT)->ResourceBarrier(1, &transition);
 
         // Describe and create a SRV for the texture.
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -299,18 +288,13 @@ namespace Rxn::Graphics
     {
         if (m_EnabledEffects[type])
         {
-            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::MAIN_SIM_COMMAND_QUEUE), m_FrameIndex);
+            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex);
             m_RenderFence.WaitInfinite(m_FrameIndex);
             m_RenderFence.IncrementFenceValue(m_FrameIndex);
             m_PipelineLibrary.DestroyShader(type);
         }
 
         m_EnabledEffects[type] = !m_EnabledEffects[type];
-    }
-
-    void Renderer::PopulateCommandList()
-    {
-
     }
 
 

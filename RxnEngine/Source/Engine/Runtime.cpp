@@ -1,7 +1,7 @@
 #include "Rxn.h"
 #include "Engine/Runtime.h"
 
-#include "Engine/SplashScreen.h"
+#include "Graphics/SplashScreen.h"
 #include "Graphics/SimulationWindow.h"
 
 

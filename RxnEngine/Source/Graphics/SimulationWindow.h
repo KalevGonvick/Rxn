@@ -7,6 +7,8 @@
  *********************************************************************/
 #pragma once
 
+#include "Renderer.h"
+
 namespace Rxn::Graphics
 {
 
@@ -62,7 +64,7 @@ namespace Rxn::Graphics
 
     private:
 
-        HRESULT OnSizeChange();
+        void OnSizeChange();
         float64 m_LastDrawTime;
         uint32 m_FrameCount;
         void DestroySwapChainResources();

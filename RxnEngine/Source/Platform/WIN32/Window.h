@@ -6,9 +6,10 @@
  * \date   July 2023
  *********************************************************************/
 #pragma once
-#include "SubComponent.h"
+
 #include "Caption.h"
 #include <Uxtheme.h>
+
 #pragma comment(lib,"uxtheme.lib")
 
 namespace Rxn::Platform::Win32

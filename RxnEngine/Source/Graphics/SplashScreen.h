@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Platform/WIN32/Window.h"
-
 namespace Rxn::Engine
 {
     class RXN_ENGINE_API SplashWindow : public Platform::Win32::Window

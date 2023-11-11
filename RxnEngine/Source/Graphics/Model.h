@@ -136,7 +136,7 @@ namespace Rxn::Graphics::Basic
         }
     };
 
-    class Model : public Basic::Renderable
+    class RXN_ENGINE_API Model : public Basic::Renderable
     {
     public:
         virtual HRESULT LoadFromFile(const wchar_t *filename) override;

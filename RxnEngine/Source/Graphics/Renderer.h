@@ -8,7 +8,7 @@
 #pragma once
 #include "DynamicConstantBuffer.h"
 #include "PipelineLibrary.h"
-#include "Engine/Camera.h"
+#include "Camera.h"
 #include "Renderable.h"
 #include "Shape.h"
 #include "Quad.h"
@@ -46,14 +46,13 @@ namespace Rxn::Graphics
         virtual void PostRenderPass() = 0;
 
         HRESULT CreateRootSignature();
-        HRESULT CreateCommandList();
         HRESULT CreateVertexBufferResource();
         HRESULT CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
 
         std::vector<uint8> GenerateTextureData();
-        
+        //void CreateCommandList();
+
         void ToggleEffect(Mapped::EffectPipelineType type);
-        void PopulateCommandList();
 
         bool m_UseWarpDevice;
         bool m_HasTearingSupport;
@@ -74,7 +73,7 @@ namespace Rxn::Graphics
         CD3DX12_RECT m_ScissorRect;
         DirectX::XMMATRIX m_ProjectionMatrix;
 
-        Engine::Camera m_Camera;
+        Camera m_Camera;
 
         uint32 m_Width;
         uint32 m_Height;

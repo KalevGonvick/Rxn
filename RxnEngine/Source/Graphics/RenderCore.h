@@ -11,6 +11,8 @@
  /*  GraphicsExternalLibs                                    */
  /* -------------------------------------------------------- */
 #pragma region GraphicsExternalLibs
+#ifndef RXN_GraphicsExternalLibs
+#define RXN_GraphicsExternalLibs
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -24,6 +26,8 @@
 #include <DirectXMath.h>
 #include "d3dx12.h"
 
+
+#endif
 #pragma endregion // GraphicsExternalLibs
 /* -------------------------------------------------------- */
 
@@ -32,13 +36,14 @@
 /*  GraphicsHeaders                                         */
 /* -------------------------------------------------------- */
 #pragma region GraphicsHeaders
-
+#ifndef RXN_GraphicsHeaders
+#define RXN_GraphicsHeaders
 
 #include "GraphicsCommon.h"
 #include "ComPointer.h"
 #include "RenderContext.h"
-#include "Renderer.h"
 
+#endif
 #pragma endregion // GraphicsHeaders
 /* -------------------------------------------------------- */
 

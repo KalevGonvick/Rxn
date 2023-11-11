@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Rxn::Engine
+namespace Rxn::Graphics
 {
     class Camera
     {

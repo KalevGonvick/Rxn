@@ -1,24 +1,8 @@
 #pragma once
 #include "Renderable.h"
-#include "RenderCore.h"
 
 namespace Rxn::Graphics::Basic
 {
-
-    struct VertexPositionUV
-    {
-        DirectX::XMFLOAT4 position;
-        DirectX::XMFLOAT2 uv;
-    };
-
-    struct VertexPositionColour
-    {
-        DirectX::XMFLOAT4 position;
-        DirectX::XMFLOAT3 colour;
-    };
-
-
-
     class RXN_ENGINE_API Shape : public Renderable
     {
     public:

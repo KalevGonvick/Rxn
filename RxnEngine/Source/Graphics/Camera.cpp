@@ -1,7 +1,7 @@
 #include "Rxn.h"
 #include "Camera.h"
 
-namespace Rxn::Engine
+namespace Rxn::Graphics
 {
     Camera::Camera() :
         m_initialPosition(0, 0, 0),
