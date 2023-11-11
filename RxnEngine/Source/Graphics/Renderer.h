@@ -9,12 +9,11 @@
 #include "DynamicConstantBuffer.h"
 #include "PipelineLibrary.h"
 #include "Camera.h"
-#include "Renderable.h"
-#include "Shape.h"
-#include "Quad.h"
+#include "Display.h"
 #include "CommandQueueManager.h"
 #include "CommandListManager.h"
 #include "SwapChain.h"
+#include "Scene.h"
 #include "Fence.h"
 
 namespace Rxn::Graphics
@@ -50,7 +49,6 @@ namespace Rxn::Graphics
         HRESULT CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
 
         std::vector<uint8> GenerateTextureData();
-        //void CreateCommandList();
 
         void ToggleEffect(Mapped::EffectPipelineType type);
 
@@ -62,47 +60,32 @@ namespace Rxn::Graphics
         Manager::CommandQueueManager m_CommandQueueManager;
         Manager::CommandListManager m_CommandListManager;
         
-
-        ComPointer<ID3D12Resource> m_Texture;
+        /*ComPointer<ID3D12Resource> m_Texture;
         Basic::Shape m_Shape;
-        Basic::Quad m_Quad;
-
+        Basic::Quad m_Quad;*/
+        Scene m_Scene;
         WString m_AssetsPath;
-
-        CD3DX12_VIEWPORT m_Viewport;
-        CD3DX12_RECT m_ScissorRect;
-        DirectX::XMMATRIX m_ProjectionMatrix;
-
-        Camera m_Camera;
-
-        uint32 m_Width;
-        uint32 m_Height;
+        Display m_Display;
         
-        float m_AspectRatio;
-
-        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
+        /*Camera m_Camera;
+        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;*/
         Mapped::PipelineLibrary m_PipelineLibrary;
 
-        uint32 m_FrameIndex;
-
-        GPU::Fence m_RenderFence;
-        GPU::SwapChain m_SwapChain;
+        GPU::Fence m_Fence;
 
         bool m_Initialized;
         bool m_EnabledEffects[Mapped::EffectPipelineTypeCount];
 
-        ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
-        ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
-        uint32 m_RTVDescriptorSize;
+        //ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
+        //ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
+        //uint32 m_RTVDescriptorSize;
 
-        ComPointer<ID3D12RootSignature> m_RootSignature;
-        ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
-        ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
-
-        std::array<Resolution, 2> const m_Resolutions = { { { 1280, 720 }, { 1920, 1080 } } };
+        //ComPointer<ID3D12RootSignature> m_RootSignature;
+        //ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
+        //ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
 
         ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
-        uint32 m_SRVDescriptorSize;
+        //uint32 m_SRVDescriptorSize;
 
     private:
 

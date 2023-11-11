@@ -17,21 +17,22 @@ namespace Rxn::Graphics
 
     void SimulationWindow::ShutdownRender()
     {
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex);
-        m_RenderFence.WaitInfinite(m_FrameIndex);
-        m_RenderFence.IncrementFenceValue(m_FrameIndex);
-        m_RenderFence.Shutdown();
+        m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
+        m_Fence.WaitInfinite(m_Display.GetFrameIndex());
+        m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
+        m_Fence.Shutdown();
     }
 
     void SimulationWindow::DestroySwapChainResources()
     {
-        m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Release();
+        /*m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Release();
         m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Release();
-        m_IntermediateRenderTarget.Release();
+        m_IntermediateRenderTarget.Release();*/
+        m_Scene.ReleaseResourceViews();
 
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex);
-        m_RenderFence.WaitInfinite(m_FrameIndex);
-        m_RenderFence.IncrementFenceValue(m_FrameIndex);
+        m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
+        m_Fence.WaitInfinite(m_Display.GetFrameIndex());
+        m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
     }
 
     uint32 SimulationWindow::GetFPS()
@@ -66,40 +67,48 @@ namespace Rxn::Graphics
 
         HRESULT result;
 
-        m_CommandQueueManager.CreateCommandQueue(GOHKeys::CmdQueue::PRIMARY);
-
-        {
-            /* RTV + Intermediate target view*/
-            DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
-            rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
-
-            DescriptorHeapDesc srvDesc(1);
-            srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
-
-            m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-            m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        }
 
 
         //result = Renderer::CreateDescriptorHeaps();
 
-        result = Renderer::CreateRootSignature();
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create root signature.");
-        }
+        // We don't modify the SRV in the command list after SetGraphicsRootDescriptorTable
+        // is executed on the GPU so we can use the default range behavior:
+        // D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[RootParametersCount]{};
+        ranges[RootParameterSRV].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
-        m_SwapChain.SetTearingSupport(m_HasTearingSupport);
-        m_SwapChain.CreateSwapChain(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get());
+        CD3DX12_ROOT_PARAMETER1 rootParameters[3]{};
+        rootParameters[RootParameterUberShaderCB].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameters[RootParameterCB].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameters[RootParameterSRV].InitAsDescriptorTable(1, &ranges[RootParameterSRV], D3D12_SHADER_VISIBILITY_PIXEL);
 
-        // TODO move frame index into swap chain
-        m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-       
+        D3D12_STATIC_SAMPLER_DESC sampler = {};
+        sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+        sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.MipLODBias = 0;
+        sampler.MaxAnisotropy = 0;
+        sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+        sampler.MinLOD = 0.0f;
+        sampler.MaxLOD = D3D12_FLOAT32_MAX;
+        sampler.ShaderRegister = 0;
+        sampler.RegisterSpace = 0;
+        sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-        if (m_HasTearingSupport)
-        {
-            ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
-        }
+        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+        rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+        m_CommandQueueManager.CreateCommandQueue(GOHKeys::CmdQueue::PRIMARY);
+        m_Scene.InitHeaps();
+        m_Scene.SetSerializedRootSignature(rootSignatureDesc);
+
+        m_Display.GetSwapChain().SetTearingSupport(m_HasTearingSupport);
+        m_Display.GetSwapChain().CreateSwapChain(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get());
+        m_Display.TurnOverSwapChainBuffer();
+
+        
 
         {
             // TODO move command allocator to it's own class
@@ -121,44 +130,51 @@ namespace Rxn::Graphics
 
 
         {
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
+            //CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame swap chain buffer
-            ThrowIfFailed(m_SwapChain.GetBuffer(SwapChainBuffers::BUFFER_ONE, m_RenderTargets[SwapChainBuffers::BUFFER_ONE]));
+            /*ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(SwapChainBuffers::BUFFER_ONE, m_RenderTargets[SwapChainBuffers::BUFFER_ONE]));
             RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
             NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_ONE);
 
-            ThrowIfFailed(m_SwapChain.GetBuffer(SwapChainBuffers::BUFFER_TWO, m_RenderTargets[SwapChainBuffers::BUFFER_TWO]));
+            ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(SwapChainBuffers::BUFFER_TWO, m_RenderTargets[SwapChainBuffers::BUFFER_TWO]));
             RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_RTVDescriptorSize);
-            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_TWO);
+            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_TWO);*/
+
+            //m_Scene.CreateRenderTargets(m_Display.GetSwapChain());
 
 
-            D3D12_CLEAR_VALUE clearValue = {};
-            memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
-            clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            //D3D12_CLEAR_VALUE clearValue = {};
+            //memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
+            //clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-            // Create an intermediate render target that is the same dimensions as the swap chain.
-            auto renderTargetDescCopy = m_RenderTargets[m_FrameIndex]->GetDesc();
-            const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-            ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &renderTargetDescCopy, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+            //// Create an intermediate render target that is the same dimensions as the swap chain.
+            //auto renderTargetDescCopy = m_RenderTargets[m_Display.GetFrameIndex()]->GetDesc();
+            //const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            //ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &renderTargetDescCopy, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&m_IntermediateRenderTarget)));
 
 
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
-            rtvHandle.Offset(1, m_RTVDescriptorSize);
-            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+            //RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
+            //rtvHandle.Offset(1, m_RTVDescriptorSize);
+            //NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+
+            //m_Scene.CreateIntermediateRenderTarget(m_Display.GetFrameIndex());
 
             // Create a SRV of the intermediate render target.
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            /*D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srvDesc.Format = renderTargetDescCopy.Format;
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = 1;
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
-            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
-            m_CommandListManager.CreateCommandList(GOHKeys::CmdList::PRIMARY, m_CommandAllocators[m_FrameIndex]);
+            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);*/
+            
+            m_Scene.InitSceneRenderTargets(m_Display.GetFrameIndex(), m_Display.GetSwapChain());
+
+            m_CommandListManager.CreateCommandList(GOHKeys::CmdList::PRIMARY, m_CommandAllocators[m_Display.GetFrameIndex()]);
 
             ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Close());
 
@@ -167,9 +183,9 @@ namespace Rxn::Graphics
         }
 
         {
-            m_CommandListManager.CreateCommandList(GOHKeys::CmdList::INIT, m_CommandAllocators[m_FrameIndex]);
+            m_CommandListManager.CreateCommandList(GOHKeys::CmdList::INIT, m_CommandAllocators[m_Display.GetFrameIndex()]);
             ThrowIfFailed(Renderer::CreateVertexBufferResource());
-            m_DynamicConstantBuffer.Init(RenderContext::GetGraphicsDevice().Get());
+            m_Scene.GetDynamicConstantBuffer().Init(RenderContext::GetGraphicsDevice().Get());
 
             // Close the command list and execute it to begin the initial GPU setup.
             ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT)->Close());
@@ -179,18 +195,18 @@ namespace Rxn::Graphics
 
         }
 
-        m_RenderFence.CreateFence(m_FrameIndex);
-        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_FrameIndex, nextFrameIndex);
-        m_FrameIndex = nextFrameIndex;
+        m_Fence.CreateFence(m_Display.GetFrameIndex());
+        const uint32 nextFrameIndex = m_Display.GetSwapChain().GetCurrentBackBufferIndex();
+        m_Fence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_Display.GetFrameIndex(), nextFrameIndex);
+        //m_FrameIndex = nextFrameIndex;
+        m_Display.TurnOverSwapChainBuffer();
         
-        m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
-        m_Camera.Init({ 0.0f, 0.0f, 5.0f });
-        m_Camera.SetMoveSpeed(1.0f);
-        m_ProjectionMatrix = m_Camera.GetProjectionMatrix(0.8f, m_AspectRatio);
-        m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex);
-        m_RenderFence.WaitInfinite(m_FrameIndex);
-        m_RenderFence.IncrementFenceValue(m_FrameIndex);
+        m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_Scene.GetRootSignature());
+        
+        m_Display.UpdateProjectionMatrix(m_Scene.GetCamera());
+        m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
+        m_Fence.WaitInfinite(m_Display.GetFrameIndex());
+        m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
     }
 
     /* -------------------------------------------------------- */
@@ -226,21 +242,21 @@ namespace Rxn::Graphics
 
     void SimulationWindow::HandleKeyDown(uint8 key)
     {
-        m_Camera.OnKeyDown(key);
+        m_Scene.GetCamera().OnKeyDown(key);
     }
 
     void SimulationWindow::HandleKeyUp(uint8 key)
     {
-        m_Camera.OnKeyUp(key);
+        m_Scene.GetCamera().OnKeyUp(key);
 
         switch (key)
         {
         case 'C':
-            m_RenderFence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex);
-            m_RenderFence.WaitInfinite(m_FrameIndex);
-            m_RenderFence.IncrementFenceValue(m_FrameIndex);
+            m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
+            m_Fence.WaitInfinite(m_Display.GetFrameIndex());
+            m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
             m_PipelineLibrary.ClearPSOCache();
-            m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get());
+            m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_Scene.GetRootSignature().Get());
             break;
 
         case 'U':
@@ -296,6 +312,7 @@ namespace Rxn::Graphics
         }
     }
 
+
 #pragma endregion // WIN-API
     /* -------------------------------------------------------- */
 
@@ -310,57 +327,60 @@ namespace Rxn::Graphics
         //
         // If the window size changed, resize our swapchain and recreate swapchain resources.
         //
-        if (newWidth != m_Width || newHeight != m_Height)
+        if (newWidth != m_Display.GetWidth() || newHeight != m_Display.GetHeight())
         {
-            m_Height = newHeight;
-            m_Width = newWidth;
-
             DestroySwapChainResources();
+            m_Display.HandleSizeChange(newWidth, newHeight);
+            //m_Height = newHeight;
+            //m_Width = newWidth;
 
-            float32 viewWidthRatio = static_cast<float32>(m_Resolutions[1].Width) / m_Width;
-            float32 viewHeightRatio = static_cast<float32>(m_Resolutions[1].Height) / m_Height;
+            //DestroySwapChainResources();
 
-            float32 x = 1.0f;
-            float32 y = 1.0f;
+            //float32 viewWidthRatio = static_cast<float32>(m_Resolutions[1].Width) / m_Width;
+            //float32 viewHeightRatio = static_cast<float32>(m_Resolutions[1].Height) / m_Height;
 
-            if (viewWidthRatio < viewHeightRatio)
-            {
-                // The scaled image's height will fit to the viewport's height and 
-                // its width will be smaller than the viewport's width.
-                x = viewWidthRatio / viewHeightRatio;
-            }
-            else
-            {
-                // The scaled image's width will fit to the viewport's width and 
-                // its height may be smaller than the viewport's height.
-                y = viewHeightRatio / viewWidthRatio;
-            }
+            //float32 x = 1.0f;
+            //float32 y = 1.0f;
 
-            m_Viewport.TopLeftX = m_Width * (1.0f - x) / 2.0f;
-            m_Viewport.TopLeftY = m_Height * (1.0f - y) / 2.0f;
-            m_Viewport.Width = x * m_Width;
-            m_Viewport.Height = y * m_Height;
+            //if (viewWidthRatio < viewHeightRatio)
+            //{
+            //    // The scaled image's height will fit to the viewport's height and 
+            //    // its width will be smaller than the viewport's width.
+            //    x = viewWidthRatio / viewHeightRatio;
+            //}
+            //else
+            //{
+            //    // The scaled image's width will fit to the viewport's width and 
+            //    // its height may be smaller than the viewport's height.
+            //    y = viewHeightRatio / viewWidthRatio;
+            //}
 
-            m_ScissorRect.right = m_Width;
-            m_ScissorRect.bottom = m_Height;
+            //m_Viewport.TopLeftX = m_Width * (1.0f - x) / 2.0f;
+            //m_Viewport.TopLeftY = m_Height * (1.0f - y) / 2.0f;
+            //m_Viewport.Width = x * m_Width;
+            //m_Viewport.Height = y * m_Height;
 
-            ThrowIfFailed(m_SwapChain.ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight));
+            //m_ScissorRect.right = m_Width;
+            //m_ScissorRect.bottom = m_Height;
 
-            m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-            m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
+            //ThrowIfFailed(m_SwapChain.ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight));
+
+            //m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
+
+           // m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_Scene.GetRtvHeap()->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame.
             for (uint32 n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
             {
 
-                ThrowIfFailed(m_SwapChain.GetBuffer(n, m_RenderTargets[n]));
-                RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
-                rtvHandle.Offset(1, m_RTVDescriptorSize);
-                NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
+                ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(n, m_Scene.GetRenderTarget(n)));
+                RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_Scene.GetRenderTarget(n), nullptr, rtvHandle);
+                rtvHandle.Offset(1, m_Scene.GetRtvDescriptorHeapSize());
+                //NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
             }
             
-            D3D12_RESOURCE_DESC renderTargetDesc = m_RenderTargets[m_FrameIndex]->GetDesc();
+            D3D12_RESOURCE_DESC renderTargetDesc = m_Scene.GetRenderTarget(m_Display.GetFrameIndex())->GetDesc();
             D3D12_CLEAR_VALUE clearValue = {};
             memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -373,12 +393,12 @@ namespace Rxn::Graphics
                 &renderTargetDesc,
                 D3D12_RESOURCE_STATE_RENDER_TARGET,
                 &clearValue,
-                IID_PPV_ARGS(&m_IntermediateRenderTarget)));
+                IID_PPV_ARGS(&m_Scene.GetIntermediateRenderTarget())));
             
-            NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+            NAME_D3D12_OBJECT(m_Scene.GetIntermediateRenderTarget());
 
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
-            rtvHandle.Offset(1, m_RTVDescriptorSize);
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_Scene.GetIntermediateRenderTarget().Get(), nullptr, rtvHandle);
+            rtvHandle.Offset(1, m_Scene.GetRtvDescriptorHeapSize());
 
             // Create a SRV of the intermediate render target.
             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -387,8 +407,8 @@ namespace Rxn::Graphics
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = 1;
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
-            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_Scene.GetSrvHeap()->GetCPUDescriptorHandleForHeapStart());
+            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_Scene.GetIntermediateRenderTarget().Get(), &srvDesc, srvHandle);
         }
 
         }
@@ -399,7 +419,7 @@ namespace Rxn::Graphics
         Engine::EngineContext::Tick();
 
         uint32 fps = GetFPS();
-        m_Camera.Update(static_cast<float>(Engine::EngineContext::GetElapsedSeconds()));
+        m_Scene.GetCamera().Update(static_cast<float>(Engine::EngineContext::GetElapsedSeconds()));
     }
 
 
@@ -407,71 +427,77 @@ namespace Rxn::Graphics
     {
 
         // Present the frame.
-        ThrowIfFailed(m_SwapChain.Present(1, 0));
+        ThrowIfFailed(m_Display.GetSwapChain().Present(1, 0));
 
         m_DrawIndex = 0;
         m_PipelineLibrary.EndFrame();
 
-        const uint32 nextFrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-        m_RenderFence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_FrameIndex, nextFrameIndex);
-        m_FrameIndex = nextFrameIndex;
+        const uint32 nextFrameIndex = m_Display.GetSwapChain().GetCurrentBackBufferIndex();
+        m_Fence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex(), nextFrameIndex);
+        m_Display.TurnOverSwapChainBuffer();
     }
 
     void SimulationWindow::PreRenderPass()
     {
-        ThrowIfFailed(m_CommandAllocators[m_FrameIndex]->Reset());
-        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Reset(m_CommandAllocators[m_FrameIndex].Get(), nullptr));
+        ThrowIfFailed(m_CommandAllocators[m_Display.GetFrameIndex()]->Reset());
+        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Reset(m_CommandAllocators[m_Display.GetFrameIndex()].Get(), nullptr));
 
         {
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootSignature(m_RootSignature.Get());
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootSignature(m_Scene.GetRootSignature().Get());
 
-            ID3D12DescriptorHeap *ppHeaps[] = { m_SRVHeap.Get() };
+            ID3D12DescriptorHeap *ppHeaps[] = { m_Scene.GetSrvHeap().Get() };
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->RSSetViewports(1, &m_Viewport);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->RSSetScissorRects(1, &m_ScissorRect);
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->RSSetViewports(1, &m_Display.GetViewPort());
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->RSSetScissorRects(1, &m_Display.GetScissorRect());
 
             /* This rotation could probably move to the update loop */
             static float rot = 0.0f;
-            DrawConstantBuffer *drawCB = (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, m_FrameIndex);
-            drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Camera.GetViewMatrix() * m_ProjectionMatrix);
+            DrawConstantBuffer *drawCB = (DrawConstantBuffer *) m_Scene.GetDynamicConstantBuffer().GetMappedMemory(m_DrawIndex, m_Display.GetFrameIndex());
+            //DrawConstantBuffer *drawCB = m_Scene.GetConstantBuffer(m_DrawIndex, m_Display.GetFrameIndex());
+            drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Scene.GetCamera().GetViewMatrix() * m_Display.GetProjectionMatrix());
             rot += 0.01f;
         }
 
 
         {
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_RTVDescriptorSize);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootConstantBufferView(RootParameterCB, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, m_FrameIndex));
+            CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(m_Scene.GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, m_Scene.GetRtvDescriptorHeapSize());
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootConstantBufferView(RootParameterCB, m_Scene.GetDynamicConstantBuffer().GetGpuVirtualAddress(m_DrawIndex, m_Display.GetFrameIndex()));
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
 
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY).Get(), Mapped::BaseNormal3DRender, m_FrameIndex);
+            m_PipelineLibrary.SetPipelineState(
+                RenderContext::GetGraphicsDevice().Get(), 
+                m_Scene.GetRootSignature(), 
+                m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY).Get(), 
+                Mapped::BaseNormal3DRender, 
+                m_Display.GetFrameIndex());
 
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetVertexBuffers(0, 1, &m_Shape.m_VertexBufferView);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetIndexBuffer(&m_Shape.m_IndexBufferView);
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetVertexBuffers(0, 1, &m_Scene.GetShape().m_VertexBufferView);
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetIndexBuffer(&m_Scene.GetShape().m_IndexBufferView);
 
 
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->DrawIndexedInstanced(m_Shape.m_Indices.size(), 1, 0, 0, 0);
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->DrawIndexedInstanced(m_Scene.GetShape().m_Indices.size(), 1, 0, 0, 0);
         }
 
 
         D3D12_RESOURCE_BARRIER barriers[2] = {};
-        barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m_RenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m_IntermediateRenderTarget.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m_Scene.GetRenderTarget(m_Display.GetFrameIndex()).Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m_Scene.GetIntermediateRenderTarget().Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->ResourceBarrier(_countof(barriers), barriers);
-        m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootDescriptorTable(RootParameterSRV, m_SRVHeap->GetGPUDescriptorHandleForHeapStart());
+        m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootDescriptorTable(RootParameterSRV, m_Scene.GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
 
         {
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_RTVDescriptorSize);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_Scene.GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(), m_Display.GetFrameIndex(), m_Scene.GetRtvDescriptorHeapSize());
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->ClearRenderTargetView(rtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
-            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_RootSignature.Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY).Get(), Mapped::PostBlit, m_FrameIndex);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetVertexBuffers(0, 1, &m_Quad.m_QuadBufferView);
+            m_PipelineLibrary.SetPipelineState(RenderContext::GetGraphicsDevice().Get(), m_Scene.GetRootSignature().Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY).Get(), Mapped::PostBlit, m_Display.GetFrameIndex());
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetVertexBuffers(0, 1, &m_Scene.GetQuad().m_QuadBufferView);
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->DrawInstanced(m_Quad.m_Quads.size(), 1, 0, 0);
+            m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->DrawInstanced(m_Scene.GetQuad().m_Quads.size(), 1, 0, 0);
         }
 
         // Revert resource states back to original values.

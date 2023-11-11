@@ -23,6 +23,10 @@ namespace Rxn::Graphics::GPU
     void SwapChain::SetTearingSupport(bool tearingSupport)
     {
         m_SwapChainDesc.Flags = tearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+        if (tearingSupport)
+        {
+            ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
+        }
     }
 
     void SwapChain::CreateSwapChain(ID3D12CommandQueue *cmdQueue)

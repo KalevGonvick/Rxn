@@ -253,6 +253,12 @@
     <ClCompile Include="Source\Graphics\SplashScreen.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Graphics\Display.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Scene.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Core\Core.h">
@@ -436,6 +442,12 @@
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\SplashScreen.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Display.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Scene.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
   </ItemGroup>

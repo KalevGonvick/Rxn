@@ -113,6 +113,7 @@
     <ClCompile Include="Source\Graphics\CommandListManager.cpp" />
     <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
+    <ClCompile Include="Source\Graphics\Display.cpp" />
     <ClCompile Include="Source\Graphics\Fence.cpp" />
     <ClCompile Include="Source\Graphics\GraphicsCommon.cpp" />
     <ClCompile Include="Source\Graphics\RenderContext.cpp" />
@@ -128,6 +129,7 @@
     <ClCompile Include="Source\Graphics\RenderCore.cpp" />
     <ClCompile Include="Source\Graphics\Renderer.cpp" />
     <ClCompile Include="Source\Graphics\SamplerDesc.cpp" />
+    <ClCompile Include="Source\Graphics\Scene.cpp" />
     <ClCompile Include="Source\Graphics\Shape.cpp" />
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
     <ClCompile Include="Source\Graphics\SplashScreen.cpp" />
@@ -174,6 +176,7 @@
     <ClInclude Include="Source\Graphics\CommandListManager.h" />
     <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />
+    <ClInclude Include="Source\Graphics\Display.h" />
     <ClInclude Include="Source\Graphics\Fence.h" />
     <ClInclude Include="Source\Graphics\GraphicsCommon.h" />
     <ClInclude Include="Source\Graphics\RenderContext.h" />
@@ -190,6 +193,7 @@
     <ClInclude Include="Source\Graphics\RenderCore.h" />
     <ClInclude Include="Source\Graphics\Renderer.h" />
     <ClInclude Include="Source\Graphics\SamplerDesc.h" />
+    <ClInclude Include="Source\Graphics\Scene.h" />
     <ClInclude Include="Source\Graphics\Shape.h" />
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Graphics\SplashScreen.h" />
