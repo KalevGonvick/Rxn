@@ -12,6 +12,7 @@
 #include "Display.h"
 #include "CommandQueueManager.h"
 #include "CommandListManager.h"
+#include "CommandAllocatorPool.h"
 #include "SwapChain.h"
 #include "Scene.h"
 #include "Fence.h"
@@ -44,48 +45,34 @@ namespace Rxn::Graphics
         virtual void PreRenderPass() = 0;
         virtual void PostRenderPass() = 0;
 
-        HRESULT CreateRootSignature();
-        HRESULT CreateVertexBufferResource();
-        HRESULT CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
+        void CreateVertexBufferResource();
+        void CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
 
-        std::vector<uint8> GenerateTextureData();
+        std::vector<uint8> GenerateTextureData() const;
 
         void ToggleEffect(Mapped::EffectPipelineType type);
 
-        bool m_UseWarpDevice;
-        bool m_HasTearingSupport;
+        bool m_UseWarpDevice = false;
+        bool m_HasTearingSupport = false;
 
-        uint32 m_DrawIndex;
+        uint32 m_DrawIndex = 0;
 
         Manager::CommandQueueManager m_CommandQueueManager;
         Manager::CommandListManager m_CommandListManager;
         
-        /*ComPointer<ID3D12Resource> m_Texture;
-        Basic::Shape m_Shape;
-        Basic::Quad m_Quad;*/
+        Pooled::CommandAllocatorPool m_AllocatorPool;
+        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
+        
         Scene m_Scene;
         WString m_AssetsPath;
         Display m_Display;
         
-        /*Camera m_Camera;
-        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;*/
         Mapped::PipelineLibrary m_PipelineLibrary;
 
         GPU::Fence m_Fence;
 
         bool m_Initialized;
-        bool m_EnabledEffects[Mapped::EffectPipelineTypeCount];
-
-        //ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
-        //ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
-        //uint32 m_RTVDescriptorSize;
-
-        //ComPointer<ID3D12RootSignature> m_RootSignature;
-        //ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
-        //ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
-
-        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
-        //uint32 m_SRVDescriptorSize;
+        std::vector<bool> m_EnabledEffects;
 
     private:
 

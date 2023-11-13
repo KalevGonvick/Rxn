@@ -3,15 +3,10 @@
 
 namespace Rxn::Graphics::Basic
 {
-    Quad::Quad()
-    {
-    }
+    Quad::Quad() = default;
+    Quad::~Quad() = default;
 
-    Quad::~Quad()
-    {
-    }
-
-    void Quad::ReadDataFromRaw(std::vector<VertexPositionUV> &quads)
+    void Quad::ReadDataFromRaw(const std::vector<VertexPositionUV> &quads)
     {
         m_Quads = quads;
         CalculateBufferInfo(quads, m_QuadStrideSize, m_QuadDataSize);

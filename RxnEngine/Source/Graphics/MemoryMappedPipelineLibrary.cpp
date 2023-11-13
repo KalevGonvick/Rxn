@@ -3,7 +3,7 @@
 
 namespace Rxn::Graphics::Mapped
 {
-    bool MemoryMappedPipelineLibrary::Init(ID3D12Device *pDevice, std::wstring filename)
+    bool MemoryMappedPipelineLibrary::InitPipelineLibrary(ID3D12Device *pDevice, const WString &filename)
     {
         if (pDevice)
         {
@@ -16,12 +16,11 @@ namespace Rxn::Graphics::Mapped
             {
 
                 RXN_LOGGER::Debug(L"Initializing memory mapped file: %s", filename.c_str());
-                MemoryMappedFile::Init(filename);
+                InitFile(filename);
 
                 RXN_LOGGER::Debug(L"Create a Pipeline Library from the serialized blob.");
                 RXN_LOGGER::Debug(L"Note: The provided Library Blob must remain valid for the lifetime of the object returned - for efficiency, the data is not copied.");
-                const HRESULT hr = device1->CreatePipelineLibrary(GetData(), GetSize(), IID_PPV_ARGS(&m_pipelineLibrary));
-                switch (hr)
+                switch (const HRESULT hr = device1->CreatePipelineLibrary(GetData(), GetSize(), IID_PPV_ARGS(&m_pipelineLibrary)))
                 {
                 case DXGI_ERROR_UNSUPPORTED:
                 {
@@ -31,8 +30,8 @@ namespace Rxn::Graphics::Mapped
                 case D3D12_ERROR_ADAPTER_NOT_FOUND:         // The provided Library contains data for different hardware (Don't really need to clear the cache, could have a cache per adapter).
                 case D3D12_ERROR_DRIVER_VERSION_MISMATCH:   // The provided Library contains data from an old driver or runtime. We need to re-create it.
                 {
-                    MemoryMappedFile::Destroy(true);
-                    MemoryMappedFile::Init(filename);
+                    DestroyFile(true);
+                    InitFile(filename);
                     ThrowIfFailed(device1->CreatePipelineLibrary(GetData(), GetSize(), IID_PPV_ARGS(&m_pipelineLibrary)));
                     break;
                 }
@@ -53,7 +52,7 @@ namespace Rxn::Graphics::Mapped
         return m_pipelineLibrary != nullptr;
     }
 
-    void MemoryMappedPipelineLibrary::Destroy(bool deleteFile)
+    void MemoryMappedPipelineLibrary::DestroyPipelineLibrary(bool deleteFile)
     {
         // If we're not going to destroy the file, serialize the library to disk.
         if (!deleteFile && m_pipelineLibrary)
@@ -61,36 +60,32 @@ namespace Rxn::Graphics::Mapped
             // Important: An ID3D12PipelineLibrary object becomes undefined when the underlying memory, that was used to initalize it, changes.
 
             assert(m_pipelineLibrary->GetSerializedSize() <= UINT_MAX);    // Code below casts to UINT.
-            const UINT librarySize = static_cast<UINT>(m_pipelineLibrary->GetSerializedSize());
+            const auto librarySize = static_cast<uint32>(m_pipelineLibrary->GetSerializedSize());
             if (librarySize > 0)
             {
                 // Grow the file if needed.
                 const size_t neededSize = sizeof(UINT) + librarySize;
-                if (neededSize > m_currentFileSize)
+                void *pTempData = new BYTE[librarySize];
+                if (neededSize > GetCurrentFileSize() && pTempData)
                 {
-                    // The file mapping is going to change thus it will invalidate the ID3D12PipelineLibrary object.
-                    // Serialize the library contents to temporary memory first.
-                    void *pTempData = new BYTE[librarySize];
-                    if (pTempData)
-                    {
-                        ThrowIfFailed(m_pipelineLibrary->Serialize(pTempData, librarySize));
+                    ThrowIfFailed(m_pipelineLibrary->Serialize(pTempData, librarySize));
 
-                        // Now it's safe to grow the mapping.
-                        MemoryMappedFile::GrowMapping(librarySize);
+                    // Now it's safe to grow the mapping.
+                    MemoryMappedFile::GrowMapping(librarySize);
 
-                        // Save the size of the library and the library itself.
-                        memcpy(GetData(), pTempData, librarySize);
-                        MemoryMappedFile::SetSize(librarySize);
+                    // Save the size of the library and the library itself.
+                    memcpy(GetData(), pTempData, librarySize);
+                    MemoryMappedFile::SetSize(librarySize);
 
-                        delete[] pTempData;
-                        pTempData = nullptr;
-                    }
+                    delete[] pTempData;
+                    pTempData = nullptr;
+                    
                 }
                 else
                 {
                     // The mapping didn't change, we can serialize directly to the mapped file.
                     // Save the size of the library and the library itself.
-                    assert(neededSize <= m_currentFileSize);
+                    assert(neededSize <= GetCurrentFileSize());
                     ThrowIfFailed(m_pipelineLibrary->Serialize(GetData(), librarySize));
                     MemoryMappedFile::SetSize(librarySize);
                 }
@@ -100,7 +95,7 @@ namespace Rxn::Graphics::Mapped
             }
         }
 
-        MemoryMappedFile::Destroy(deleteFile);
+        DestroyFile(deleteFile);
         m_pipelineLibrary = nullptr;
     }
 

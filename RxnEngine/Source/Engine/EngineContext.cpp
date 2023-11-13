@@ -3,67 +3,59 @@
 
 namespace Rxn::Engine
 {
-    static EngineContext &GetContext()
-    {
-        static EngineContext inst;
-        return inst;
-    }
+    inline EngineContext g_EngineContext;
 
-    EngineContext::EngineContext()
-        : m_EngineSettings()
-    {
-    }
-
+    EngineContext::EngineContext() = default;
     EngineContext::~EngineContext() = default;
 
     EngineSettings &EngineContext::GetEngineSettings()
     {
-        return GetContext().m_EngineSettings;
+        return g_EngineContext.m_EngineSettings;
     }
 
     void EngineContext::Tick()
     {
-        GetContext().m_Timer.Tick(NULL);
+        g_EngineContext.m_Timer.Tick(nullptr);
     }
 
-    uint64 EngineContext::GetElapsedTicks()
+    float64 EngineContext::GetElapsedTicks()
     {
-        return GetContext().m_Timer.GetElapsedSeconds();
+        return g_EngineContext.m_Timer.GetElapsedSeconds();
     }
 
     float64 EngineContext::GetElapsedSeconds()
     {
-        return GetContext().m_Timer.GetElapsedSeconds();
+        return g_EngineContext.m_Timer.GetElapsedSeconds();
     }
 
     uint64 EngineContext::GetTotalTicks()
     {
-        return GetContext().m_Timer.GetTotalTicks();
+        return g_EngineContext.m_Timer.GetTotalTicks();
     }
 
     float64 EngineContext::GetTotalSeconds()
     {
-        return GetContext().m_Timer.GetTotalSeconds();
+        return g_EngineContext.m_Timer.GetTotalSeconds();
     }
 
-    uint32 EngineContext::GetFrameCount()
+    uint64 EngineContext::GetFrameCount()
     {
-        return GetContext().m_Timer.GetFrameCount();
+        return g_EngineContext.m_Timer.GetFrameCount();
     }
 
-    uint32 EngineContext::GetFramesPerSecond()
+    uint64 EngineContext::GetFramesPerSecond()
     {
-        return GetContext().m_Timer.GetFramesPerSecond();
+        return g_EngineContext.m_Timer.GetFramesPerSecond();
     }
 
     void EngineContext::SetFixedTimeStep(bool isFixedTimestep)
     {
-        GetContext().m_Timer.SetFixedTimeStep(isFixedTimestep);
+        g_EngineContext.m_Timer.SetFixedTimeStep(isFixedTimestep);
     }
 
     void EngineContext::SetTargetElapsedTicks(uint64 tickrate)
     {
-        GetContext().m_Timer.SetTargetElapsedTicks(tickrate);
+        g_EngineContext.m_Timer.SetTargetElapsedTicks(tickrate);
     }
 
 

@@ -6,7 +6,7 @@
 namespace Rxn::Common
 {
 
-    class Logger::LoggerImpl
+    class RXN_ENGINE_API Logger::LoggerImpl
     {
     public:
 
@@ -23,15 +23,15 @@ namespace Rxn::Common
         void PrintLnHeader(const wchar_t *fmt);
         void PrintLn(const LogLevel &level, const wchar_t *fmt);
 
-        bool IsMTailRunning();
+        bool IsMTailRunning() const;
         bool StartMTail();
 
-        bool IsInfoEnabled();
-        bool IsWarnEnabled();
-        bool IsErrorEnabled();
-        bool IsDebugEnabled();
-        bool IsTraceEnabled();
-        bool IsLevelEnabled(LogLevel level);
+        bool IsInfoEnabled() const;
+        bool IsWarnEnabled() const;
+        bool IsErrorEnabled() const;
+        bool IsDebugEnabled() const;
+        bool IsTraceEnabled() const;
+        bool IsLevelEnabled(LogLevel level) const;
 
         void Info(const wchar_t *fmt, char *args);
         void Debug(const wchar_t *fmt, char *args);
@@ -39,19 +39,19 @@ namespace Rxn::Common
         void Error(const wchar_t *fmt, char *args);
         void Trace(const wchar_t *fmt, char *args);
 
-        WString GetLogFileName();
+        WString GetLogFileName() const;
         WString GetLogDirectory();
-        LogLevel GetLogLevel();
+        LogLevel GetLogLevel() const;
 
     private:
 
-        bool m_WriteToFile;
-        bool m_WriteToConsole;
-        bool m_LogFileCreated;
+        bool m_WriteToFile = true;
+        bool m_WriteToConsole = true;
+        bool m_LogFileCreated = false;
 
-        LogLevel m_Level;
+        LogLevel m_Level = LogLevel::RXN_ERROR;
 
-        WString m_OutputLogDir;
+        WString m_OutputLogDir = L"";
 
         const WString m_DebugSeverity = L"[DEBUG]";
         const WString m_ErrorSeverity = L"[ERROR]";

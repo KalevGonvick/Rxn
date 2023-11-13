@@ -17,7 +17,7 @@ namespace Rxn::Graphics
     {
     public:
 
-        SimulationWindow(WString windowTitle, WString windowClass, int width, int height);
+        SimulationWindow(const WString &windowTitle, const WString &windowClass, int width, int height);
         ~SimulationWindow();
 
     public:
@@ -62,8 +62,8 @@ namespace Rxn::Graphics
     private:
 
         void OnSizeChange();
-        float64 m_LastDrawTime;
-        uint32 m_FrameCount;
+        float64 m_LastDrawTime = 0;
+        uint32 m_FrameCount = 0;
         void DestroySwapChainResources();
         uint32 GetFPS();
 

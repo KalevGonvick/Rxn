@@ -4,11 +4,9 @@
 
 namespace Rxn::Graphics
 {
-    SimulationWindow::SimulationWindow(WString windowTitle, WString windowClass, int width, int height)
-        : Platform::Win32::Window(windowTitle, windowClass)
-        , Renderer(width, height)
-        , m_LastDrawTime(0)
-        , m_FrameCount(0)
+    SimulationWindow::SimulationWindow(const WString &windowTitle, const WString &windowClass, int width, int height)
+        : Renderer(width, height)
+        , Platform::Win32::Window(windowTitle, windowClass)
     {
     }
 
@@ -25,11 +23,7 @@ namespace Rxn::Graphics
 
     void SimulationWindow::DestroySwapChainResources()
     {
-        /*m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Release();
-        m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Release();
-        m_IntermediateRenderTarget.Release();*/
         m_Scene.ReleaseResourceViews();
-
         m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
         m_Fence.WaitInfinite(m_Display.GetFrameIndex());
         m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
@@ -39,7 +33,6 @@ namespace Rxn::Graphics
     {
         return Engine::EngineContext::GetFramesPerSecond();
     }
-
 
 
     void SimulationWindow::SetupWindow()
@@ -65,7 +58,6 @@ namespace Rxn::Graphics
     {
         RenderContext::SetHWND(m_HWnd);
 
-        HRESULT result;
 
 
 
@@ -100,6 +92,11 @@ namespace Rxn::Graphics
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
         rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
+        m_AllocatorPool.Create(RenderContext::GetGraphicsDevice());
+        m_CommandAllocators[SwapChainBuffers::BUFFER_ONE] = m_AllocatorPool.RequestAllocator(SwapChainBuffers::BUFFER_ONE);
+        m_CommandAllocators[SwapChainBuffers::BUFFER_TWO] = m_AllocatorPool.RequestAllocator(SwapChainBuffers::BUFFER_TWO);
+        
+
         m_CommandQueueManager.CreateCommandQueue(GOHKeys::CmdQueue::PRIMARY);
         m_Scene.InitHeaps();
         m_Scene.SetSerializedRootSignature(rootSignatureDesc);
@@ -108,97 +105,114 @@ namespace Rxn::Graphics
         m_Display.GetSwapChain().CreateSwapChain(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get());
         m_Display.TurnOverSwapChainBuffer();
 
-        
-
         {
-            // TODO move command allocator to it's own class
-            HRESULT result;
-            // Create a RTV for each frame.
-            for (UINT n = 0; n < SwapChainBuffers::TOTAL_BUFFERS; n++)
-            {
-
-                result = RenderContext::GetGraphicsDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocators[n]));
-                if (FAILED(result))
-                {
-                    RXN_LOGGER::Error(L"Failed to create command allocator for buffer %d.", n);
-                    return;
-                }
-
-                NAME_D3D12_OBJECT_INDEXED(m_CommandAllocators, n);
-            }
-        }
-
-
-        {
-            //CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
-
-            // Create a RTV for each frame swap chain buffer
-            /*ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(SwapChainBuffers::BUFFER_ONE, m_RenderTargets[SwapChainBuffers::BUFFER_ONE]));
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_ONE].Get(), nullptr, rtvHandle);
-            rtvHandle.Offset(1, m_RTVDescriptorSize);
-            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_ONE);
-
-            ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(SwapChainBuffers::BUFFER_TWO, m_RenderTargets[SwapChainBuffers::BUFFER_TWO]));
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_RenderTargets[SwapChainBuffers::BUFFER_TWO].Get(), nullptr, rtvHandle);
-            rtvHandle.Offset(1, m_RTVDescriptorSize);
-            NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, SwapChainBuffers::BUFFER_TWO);*/
-
-            //m_Scene.CreateRenderTargets(m_Display.GetSwapChain());
-
-
-            //D3D12_CLEAR_VALUE clearValue = {};
-            //memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
-            //clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-            //// Create an intermediate render target that is the same dimensions as the swap chain.
-            //auto renderTargetDescCopy = m_RenderTargets[m_Display.GetFrameIndex()]->GetDesc();
-            //const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-            //ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &renderTargetDescCopy, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&m_IntermediateRenderTarget)));
-
-
-            //RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
-            //rtvHandle.Offset(1, m_RTVDescriptorSize);
-            //NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
-
-            //m_Scene.CreateIntermediateRenderTarget(m_Display.GetFrameIndex());
-
-            // Create a SRV of the intermediate render target.
-            /*D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Format = renderTargetDescCopy.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = 1;
-
-            CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
-            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);*/
             
             m_Scene.InitSceneRenderTargets(m_Display.GetFrameIndex(), m_Display.GetSwapChain());
-
             m_CommandListManager.CreateCommandList(GOHKeys::CmdList::PRIMARY, m_CommandAllocators[m_Display.GetFrameIndex()]);
-
             ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Close());
-
             ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY).Get() };
             m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY)->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+           
         }
 
         {
             m_CommandListManager.CreateCommandList(GOHKeys::CmdList::INIT, m_CommandAllocators[m_Display.GetFrameIndex()]);
-            ThrowIfFailed(Renderer::CreateVertexBufferResource());
+        }
+
+        {
+
+            // Define the geometry for a cube.
+            std::vector<VertexPositionColour> cubeVertices;
+            cubeVertices.push_back(VertexPositionColour{ { -1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ {  1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ {  1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ { -1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } });
+
+            cubeVertices.push_back(VertexPositionColour{ { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ {  1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+            cubeVertices.push_back(VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } });
+
+            std::vector<UINT> cubeIndices;
+
+            cubeIndices.push_back(0);
+            cubeIndices.push_back(1);
+            cubeIndices.push_back(3);
+
+            cubeIndices.push_back(1);
+            cubeIndices.push_back(2);
+            cubeIndices.push_back(3);
+
+
+            cubeIndices.push_back(3);
+            cubeIndices.push_back(2);
+            cubeIndices.push_back(7);
+
+            cubeIndices.push_back(6);
+            cubeIndices.push_back(7);
+            cubeIndices.push_back(2);
+
+
+            cubeIndices.push_back(2);
+            cubeIndices.push_back(1);
+            cubeIndices.push_back(6);
+
+            cubeIndices.push_back(5);
+            cubeIndices.push_back(6);
+            cubeIndices.push_back(1);
+
+
+            cubeIndices.push_back(1);
+            cubeIndices.push_back(0);
+            cubeIndices.push_back(5);
+
+            cubeIndices.push_back(4);
+            cubeIndices.push_back(5);
+            cubeIndices.push_back(0);
+
+
+            cubeIndices.push_back(0);
+            cubeIndices.push_back(3);
+            cubeIndices.push_back(4);
+
+            cubeIndices.push_back(7);
+            cubeIndices.push_back(4);
+            cubeIndices.push_back(3);
+
+
+            cubeIndices.push_back(7);
+            cubeIndices.push_back(6);
+            cubeIndices.push_back(4);
+
+            cubeIndices.push_back(5);
+            cubeIndices.push_back(4);
+            cubeIndices.push_back(6);
+
+            m_Scene.AddShapeFromRaw(cubeVertices, cubeIndices, m_CommandAllocators[m_Display.GetFrameIndex()], m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get());
+
+            std::vector<VertexPositionUV> quadVertices;
+            quadVertices.push_back(VertexPositionUV{ { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } });
+            quadVertices.push_back(VertexPositionUV{ { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } });
+            quadVertices.push_back(VertexPositionUV{ { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } });
+            quadVertices.push_back(VertexPositionUV{ { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } });
+
+            m_Scene.AddQuadFromRaw(quadVertices, m_CommandAllocators[m_Display.GetFrameIndex()], m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get());
+        }
+        {
             m_Scene.GetDynamicConstantBuffer().Init(RenderContext::GetGraphicsDevice().Get());
 
             // Close the command list and execute it to begin the initial GPU setup.
             ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT)->Close());
             ID3D12CommandList *ppCommandLists[] = { m_CommandListManager.GetCommandList(GOHKeys::CmdList::INIT).Get() };
             m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY)->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
+           
 
         }
 
         m_Fence.CreateFence(m_Display.GetFrameIndex());
         const uint32 nextFrameIndex = m_Display.GetSwapChain().GetCurrentBackBufferIndex();
         m_Fence.MoveFenceMarker(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY).Get(), m_Display.GetFrameIndex(), nextFrameIndex);
-        //m_FrameIndex = nextFrameIndex;
         m_Display.TurnOverSwapChainBuffer();
         
         m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), m_Scene.GetRootSignature());
@@ -207,6 +221,8 @@ namespace Rxn::Graphics
         m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
         m_Fence.WaitInfinite(m_Display.GetFrameIndex());
         m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
+
+        
     }
 
     /* -------------------------------------------------------- */
@@ -223,11 +239,6 @@ namespace Rxn::Graphics
             HandleKeyDown(static_cast<UINT8>(wParam));
             return 0;
         }
-        //case WM_SIZE:
-        //{
-        //    OnSizeChange();
-        //    return 0;
-        //}
         case WM_KEYDOWN:
         {
             HandleKeyUp(static_cast<UINT8>(wParam));
@@ -331,43 +342,6 @@ namespace Rxn::Graphics
         {
             DestroySwapChainResources();
             m_Display.HandleSizeChange(newWidth, newHeight);
-            //m_Height = newHeight;
-            //m_Width = newWidth;
-
-            //DestroySwapChainResources();
-
-            //float32 viewWidthRatio = static_cast<float32>(m_Resolutions[1].Width) / m_Width;
-            //float32 viewHeightRatio = static_cast<float32>(m_Resolutions[1].Height) / m_Height;
-
-            //float32 x = 1.0f;
-            //float32 y = 1.0f;
-
-            //if (viewWidthRatio < viewHeightRatio)
-            //{
-            //    // The scaled image's height will fit to the viewport's height and 
-            //    // its width will be smaller than the viewport's width.
-            //    x = viewWidthRatio / viewHeightRatio;
-            //}
-            //else
-            //{
-            //    // The scaled image's width will fit to the viewport's width and 
-            //    // its height may be smaller than the viewport's height.
-            //    y = viewHeightRatio / viewWidthRatio;
-            //}
-
-            //m_Viewport.TopLeftX = m_Width * (1.0f - x) / 2.0f;
-            //m_Viewport.TopLeftY = m_Height * (1.0f - y) / 2.0f;
-            //m_Viewport.Width = x * m_Width;
-            //m_Viewport.Height = y * m_Height;
-
-            //m_ScissorRect.right = m_Width;
-            //m_ScissorRect.bottom = m_Height;
-
-            //ThrowIfFailed(m_SwapChain.ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight));
-
-            //m_FrameIndex = m_SwapChain.GetCurrentBackBufferIndex();
-
-           // m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_Scene.GetRtvHeap()->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame.
@@ -377,7 +351,6 @@ namespace Rxn::Graphics
                 ThrowIfFailed(m_Display.GetSwapChain().GetBuffer(n, m_Scene.GetRenderTarget(n)));
                 RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_Scene.GetRenderTarget(n), nullptr, rtvHandle);
                 rtvHandle.Offset(1, m_Scene.GetRtvDescriptorHeapSize());
-                //NAME_D3D12_OBJECT_INDEXED(m_RenderTargets, n);
             }
             
             D3D12_RESOURCE_DESC renderTargetDesc = m_Scene.GetRenderTarget(m_Display.GetFrameIndex())->GetDesc();
@@ -440,7 +413,7 @@ namespace Rxn::Graphics
     void SimulationWindow::PreRenderPass()
     {
         ThrowIfFailed(m_CommandAllocators[m_Display.GetFrameIndex()]->Reset());
-        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Reset(m_CommandAllocators[m_Display.GetFrameIndex()].Get(), nullptr));
+        ThrowIfFailed(m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->Reset(m_CommandAllocators[m_Display.GetFrameIndex()], nullptr));
 
         {
             m_CommandListManager.GetCommandList(GOHKeys::CmdList::PRIMARY)->SetGraphicsRootSignature(m_Scene.GetRootSignature().Get());
@@ -454,7 +427,6 @@ namespace Rxn::Graphics
             /* This rotation could probably move to the update loop */
             static float rot = 0.0f;
             DrawConstantBuffer *drawCB = (DrawConstantBuffer *) m_Scene.GetDynamicConstantBuffer().GetMappedMemory(m_DrawIndex, m_Display.GetFrameIndex());
-            //DrawConstantBuffer *drawCB = m_Scene.GetConstantBuffer(m_DrawIndex, m_Display.GetFrameIndex());
             drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * m_Scene.GetCamera().GetViewMatrix() * m_Display.GetProjectionMatrix());
             rot += 0.01f;
         }

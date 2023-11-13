@@ -20,7 +20,7 @@ namespace Rxn::Graphics::GPU
 
         HANDLE GetFenceEvent();
         ComPointer<ID3D12Fence> GetFence();
-        uint64 GetFenceValue(uint64 index);
+        uint64 GetFenceValue(uint64 index) const;
 
         void CreateFenceEvent();
         void CreateFence(uint32 frameIndex);
@@ -33,7 +33,7 @@ namespace Rxn::Graphics::GPU
 
     private:
 
-        HANDLE m_FenceEvent;
+        HANDLE m_FenceEvent = nullptr;
         ComPointer<ID3D12Fence> m_Fence;
         uint64 m_FenceValues[SwapChainBuffers::TOTAL_BUFFERS];
     };

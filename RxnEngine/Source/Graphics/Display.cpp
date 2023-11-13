@@ -4,24 +4,23 @@
 namespace Rxn::Graphics
 {
     Display::Display(int32 width, int32 height)
-        : m_Width(width)
+        : m_Viewport(0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height))
+        , m_ScissorRect(0, 0, static_cast<uint_word>(width), static_cast<uint_word>(height))
+        , m_Width(width)
         , m_Height(height)
         , m_SwapChain(width, height)
-        , m_Fov(0.8f)
-        , m_Viewport(0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height))
-        , m_ScissorRect(0, 0, static_cast<uint64>(width), static_cast<uint64>(height))
     {
         m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
     };
 
     Display::~Display() = default;
 
-    const uint32 Display::GetHeight()
+    uint32 Display::GetHeight() const
     {
         return m_Height;
     }
 
-    const uint32 Display::GetWidth()
+    uint32 Display::GetWidth() const
     {
         return m_Width;
     }
@@ -41,9 +40,9 @@ namespace Rxn::Graphics
         m_Height = newHeight;
         m_Width = newWidth;
 
-        float32 viewWidthRatio = static_cast<float32>(m_Resolutions[1].Width) / m_Width;
-        float32 viewHeightRatio = static_cast<float32>(m_Resolutions[1].Height) / m_Height;
-        m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
+        float32 viewWidthRatio = static_cast<float32>(m_Resolutions[1].Width) / static_cast<float32>(m_Width);
+        float32 viewHeightRatio = static_cast<float32>(m_Resolutions[1].Height) / static_cast<float32>(m_Height);
+        m_AspectRatio = static_cast<float32>(m_Width) / static_cast<float32>(m_Height);
 
         float32 x = 1.0f;
         float32 y = 1.0f;
@@ -61,10 +60,10 @@ namespace Rxn::Graphics
             y = viewHeightRatio / viewWidthRatio;
         }
 
-        m_Viewport.TopLeftX = m_Width * (1.0f - x) / 2.0f;
-        m_Viewport.TopLeftY = m_Height * (1.0f - y) / 2.0f;
-        m_Viewport.Width = x * m_Width;
-        m_Viewport.Height = y * m_Height;
+        m_Viewport.TopLeftX = static_cast<float32>(m_Width) * (1.0f - x) / 2.0f;
+        m_Viewport.TopLeftY = static_cast<float32>(m_Height) * (1.0f - y) / 2.0f;
+        m_Viewport.Width = x * static_cast<float32>(m_Width);
+        m_Viewport.Height = y * static_cast<float32>(m_Height);
 
         m_ScissorRect.right = m_Width;
         m_ScissorRect.bottom = m_Height;
@@ -73,7 +72,7 @@ namespace Rxn::Graphics
         TurnOverSwapChainBuffer();
     }
 
-    const uint32 Display::GetFrameIndex()
+    uint32 Display::GetFrameIndex() const
     {
         return m_FrameIndex;
     }
@@ -103,7 +102,7 @@ namespace Rxn::Graphics
         return m_ScissorRect;
     }
 
-    const DirectX::XMMATRIX & Display::GetProjectionMatrix()
+    const DirectX::XMMATRIX & Display::GetProjectionMatrix() const
     {
         return m_ProjectionMatrix;
     }

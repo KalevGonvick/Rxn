@@ -5,10 +5,10 @@ namespace Rxn::Graphics::Mapped
 {
     class MemoryMappedPipelineLibrary : public MemoryMappedFile
     {
-    public:
+    public :
 
-        bool Init(ID3D12Device *pDevice, std::wstring filename);
-        void Destroy(bool deleteFile);
+        bool InitPipelineLibrary(ID3D12Device *pDevice, const WString &filename);
+        void DestroyPipelineLibrary(bool deleteFile);
         ID3D12PipelineLibrary *GetPipelineLibrary();
 
     private:

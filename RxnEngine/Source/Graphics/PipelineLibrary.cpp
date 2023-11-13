@@ -4,17 +4,17 @@
 namespace Rxn::Graphics::Mapped
 {
     PipelineLibrary::PipelineLibrary(UINT frameCount, UINT cbvRootSignatureIndex)
-        : m_CBVRootSignatureIndex(cbvRootSignatureIndex)
-        , m_MaxDrawsPerFrame(256)
-        , m_DynamicConstantBuffer(sizeof(UberShaderConstantBuffer), m_MaxDrawsPerFrame, frameCount)
-        , m_FlagsMutex()
+        : m_FlagsMutex()
+        , m_WorkerThreads{}
         , m_UseUberShaders(true)
         , m_UseDiskLibraries(true)
-        , m_PipelineStateObjectCachingMechanism(PSOCachingMechanism::PipelineLibraries)
-        , m_DrawIndex(0)
         , m_CompiledPipelineStateObjectFlags{}
         , m_InflightPipelineStateObjectFlags{}
-        , m_WorkerThreads{}
+        , m_PipelineStateObjectCachingMechanism()
+        , m_CBVRootSignatureIndex(cbvRootSignatureIndex)
+        , m_MaxDrawsPerFrame(256)
+        , m_DrawIndex(0)
+        , m_DynamicConstantBuffer(sizeof(UberShaderConstantBuffer), m_MaxDrawsPerFrame, frameCount)
     {
         WCHAR path[512];
         GetAssetsPath(path, _countof(path));
@@ -29,10 +29,10 @@ namespace Rxn::Graphics::Mapped
 
         for (UINT i = 0; i < EffectPipelineTypeCount; i++)
         {
-            m_DiskCaches[i].Destroy(false);
+            m_DiskCaches[i].DestroyCache(false);
         }
 
-        m_PipelineLibrary.Destroy(false);
+        m_PipelineLibrary.DestroyPipelineLibrary(false);
     }
 
     void PipelineLibrary::WaitForThreads()
@@ -54,11 +54,11 @@ namespace Rxn::Graphics::Mapped
         RXN_LOGGER::Debug(L"Building new pipeline cache.");
 
         RXN_LOGGER::Debug(L"Initialize all cache file mappings (file may be empty).");
-        m_PipelineLibrariesSupported = m_PipelineLibrary.Init(pDevice, m_CachePath + g_cPipelineLibraryFileName);
+        m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + g_cPipelineLibraryFileName);
         for (UINT i = 0; i < EffectPipelineTypeCount; i++)
         {
             RXN_LOGGER::Debug(L"Initializeing cache file mapping for shader: [%d]", i);
-            m_DiskCaches[i].Init(m_CachePath + g_cCacheFileNames[i]);
+            m_DiskCaches[i].InitObjectCache(m_CachePath + g_cCacheFileNames[i]);
         }
 
         if (!m_PipelineLibrariesSupported)
@@ -312,10 +312,10 @@ namespace Rxn::Graphics::Mapped
         RXN_LOGGER::Debug(L"Clear the disk caches.");
         for (size_t i = 0; i < EffectPipelineTypeCount; i++)
         {
-            m_DiskCaches[i].Destroy(true);
+            m_DiskCaches[i].DestroyCache(true);
         }
 
-        m_PipelineLibrary.Destroy(true);
+        m_PipelineLibrary.DestroyPipelineLibrary(true);
     }
 
     void PipelineLibrary::ToggleUberShader()
@@ -367,17 +367,17 @@ namespace Rxn::Graphics::Mapped
         }
     }
 
-    bool PipelineLibrary::UberShadersEnabled()
+    bool PipelineLibrary::UberShadersEnabled() const
     {
         return m_UseUberShaders;
     }
 
-    bool PipelineLibrary::DiskCacheEnabled()
+    bool PipelineLibrary::DiskCacheEnabled() const
     {
         return m_UseDiskLibraries;
     }
 
-    PSOCachingMechanism PipelineLibrary::GetPSOCachingMechanism()
+    PSOCachingMechanism PipelineLibrary::GetPSOCachingMechanism() const
     {
         return m_PipelineStateObjectCachingMechanism;
     }

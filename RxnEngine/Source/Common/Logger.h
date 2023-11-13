@@ -175,7 +175,7 @@ namespace Rxn::Common
     private:
 
         class LoggerImpl;
-        std::unique_ptr<LoggerImpl> m_LoggerImpl;
+        std::unique_ptr<LoggerImpl> m_LoggerImpl = std::make_unique<LoggerImpl>();
 
     };
 

@@ -125,6 +125,12 @@
     <Filter Include="Source\Graphics\Classes\GPU">
       <UniqueIdentifier>{df01d010-c343-46ef-811c-07333da558eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Graphics\Classes\Pooled">
+      <UniqueIdentifier>{f22d3619-5772-4e42-b37d-46e0f12db39a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Pooled">
+      <UniqueIdentifier>{ae26f3db-5d7d-4af7-9fd1-dc679120b240}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -258,6 +264,9 @@
     </ClCompile>
     <ClCompile Include="Source\Graphics\Scene.cpp">
       <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandAllocatorPool.cpp">
+      <Filter>Source\Graphics\Private\Pooled</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -449,6 +458,9 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\Scene.h">
       <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandAllocatorPool.h">
+      <Filter>Source\Graphics\Classes\Pooled</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

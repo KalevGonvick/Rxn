@@ -227,9 +227,9 @@ namespace Rxn::Graphics::Mapped
         void SwitchPSOCachingMechanism();
         void DestroyShader(EffectPipelineType type);
 
-        bool UberShadersEnabled();
-        bool DiskCacheEnabled();
-        PSOCachingMechanism GetPSOCachingMechanism();
+        bool UberShadersEnabled() const;
+        bool DiskCacheEnabled() const;
+        PSOCachingMechanism GetPSOCachingMechanism() const;
 
     private:
 
@@ -273,12 +273,12 @@ namespace Rxn::Graphics::Mapped
         bool m_CompiledPipelineStateObjectFlags[EffectPipelineTypeCount];
         bool m_InflightPipelineStateObjectFlags[EffectPipelineTypeCount];
 
-        PSOCachingMechanism m_PipelineStateObjectCachingMechanism;
+        PSOCachingMechanism m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::PipelineLibraries;
 
         WString m_CachePath;
 
         UINT m_CBVRootSignatureIndex;
-        UINT m_MaxDrawsPerFrame;
+        UINT m_MaxDrawsPerFrame = 256;
         UINT m_DrawIndex;
 
         Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;

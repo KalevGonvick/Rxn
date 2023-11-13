@@ -7,8 +7,8 @@ namespace Rxn::Graphics::Mapped
     {
     public:
 
-        void Init(std::wstring filename);
-        void Destroy(bool deleteFile);
+        void InitObjectCache(const WString &filename);
+        void DestroyCache(bool deleteFile);
         void Update(ID3DBlob *pBlob);
 
         size_t GetCachedBlobSize() const;

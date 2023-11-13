@@ -17,12 +17,12 @@ namespace Rxn::Graphics::Buffer
 
     private:
 
-        ComPointer<ID3D12Resource> m_ConstantBuffer;
-        void *m_MappedConstantBuffer;
+        ComPointer<ID3D12Resource> m_ConstantBuffer = nullptr;
+        void *m_MappedConstantBuffer = nullptr;
         UINT  m_AlignedPerDrawConstantBufferSize;
         UINT  m_PerFrameConstantBufferSize;
 
         UINT m_FrameCount;
-        UINT m_MaxDrawsPerFrame;
+        UINT m_MaxDrawsPerFrame = 256;
     };
 }

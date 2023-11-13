@@ -13,12 +13,13 @@
 #include "Renderable.h"
 #include "Core/Span.h"
 #include <DirectXCollision.h>
+#include <algorithm>
 
 namespace Rxn::Graphics::Basic
 {
     struct Attribute
     {
-        enum EType : unsigned int
+        enum EType : uint32
         {
             Position,
             Normal,
@@ -65,7 +66,7 @@ namespace Rxn::Graphics::Basic
     struct CullData
     {
         DirectX::XMFLOAT4 BoundingSphere; // xyz = center, w = radius
-        unsigned char           NormalCone[4];  // xyz = axis, w = -cos(a + 90)
+        unsigned char     NormalCone[4];  // xyz = axis, w = -cos(a + 90)
         float             ApexOffset;     // apex = center - axis * offset
     };
 

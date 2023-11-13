@@ -3,14 +3,8 @@
 namespace Rxn::Engine
 {
 
-    RxnEngine::RxnEngine()
-        : m_uEngineMode(EngineRuntimeMode::NONE)
-    {
-    }
-
-    RxnEngine::~RxnEngine()
-    {
-    }
+    RxnEngine::RxnEngine() = default;
+    RxnEngine::~RxnEngine() = default;
 
     void RxnEngine::SetMode(EngineRuntimeMode mode)
     {

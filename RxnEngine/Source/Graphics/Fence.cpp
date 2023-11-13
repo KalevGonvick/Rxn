@@ -3,10 +3,7 @@
 
 namespace Rxn::Graphics::GPU
 {
-    Fence::Fence()
-    {
-
-    }
+    Fence::Fence() = default;
 
     Fence::~Fence()
     {
@@ -23,7 +20,7 @@ namespace Rxn::Graphics::GPU
         return m_Fence;
     }
 
-    UINT64 Fence::GetFenceValue(uint64 index)
+    uint64 Fence::GetFenceValue(uint64 index) const
     {
         return m_FenceValues[index];
     }

@@ -16,25 +16,27 @@ namespace Rxn::Graphics::Mapped
 
     protected:
 
-        void Init(std::wstring filename, UINT filesize = DefaultFileSize);
-        void Destroy(bool deleteFile);
-        void GrowMapping(UINT size);
-        void SetSize(UINT size);
+        void InitFile(const WString &fileName, uint32 filesize = DefaultFileSize);
+        void DestroyFile(bool deleteFile);
+        void GrowMapping(uint32 size);
+        void SetSize(uint32 size);
 
-        // TODO: change all the void* s in mapped caching to unsigned char* s
         void *GetData();
-        UINT GetSize() const;
+        uint32 GetSize() const;
 
-    protected:
+        uint32 GetCurrentFileSize() const;
 
-        static const UINT DefaultFileSize = 64;
 
-        HANDLE m_MapFile;
-        HANDLE m_File;
+    private:
 
-        LPVOID m_MapAddress;
+        static const uint32 DefaultFileSize = 64;
+
+        HANDLE m_MapFile = INVALID_HANDLE_VALUE;
+        HANDLE m_File = INVALID_HANDLE_VALUE;
+
+        LPVOID m_MapAddress = nullptr;
 
         WString m_Filename;
-        UINT m_currentFileSize;
+        uint32 m_currentFileSize = 0;
     };
 }

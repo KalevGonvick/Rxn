@@ -65,7 +65,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\RxnEngine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251</DisableSpecificWarnings>
       <WarningLevel>Level3</WarningLevel>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
@@ -87,6 +87,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Rxn.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -110,6 +111,7 @@
     <ClCompile Include="Source\Engine\RxnEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime.cpp" />
     <ClCompile Include="Source\Graphics\Camera.cpp" />
+    <ClCompile Include="Source\Graphics\CommandAllocatorPool.cpp" />
     <ClCompile Include="Source\Graphics\CommandListManager.cpp" />
     <ClCompile Include="Source\Graphics\CommandQueueManager.cpp" />
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp" />
@@ -173,6 +175,7 @@
     <ClInclude Include="Source\Engine\RxnEngine.h" />
     <ClInclude Include="Source\Engine\Runtime.h" />
     <ClInclude Include="Source\Graphics\Camera.h" />
+    <ClInclude Include="Source\Graphics\CommandAllocatorPool.h" />
     <ClInclude Include="Source\Graphics\CommandListManager.h" />
     <ClInclude Include="Source\Graphics\CommandQueueManager.h" />
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h" />

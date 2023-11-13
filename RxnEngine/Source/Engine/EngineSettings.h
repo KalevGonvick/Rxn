@@ -26,33 +26,33 @@ namespace Rxn::Engine
         void SetLogLevel(const Common::LogLevel &level);
 
         /* - Getters - */
-        const wchar_t *GetGameName();
-        const wchar_t *GetGameShortName();
-        const wchar_t *GetGameVersion();
-        const wchar_t *GetBootTime();
-        const wchar_t *GetSplashScreenURL();
-        const wchar_t *GetMainIconURL();
+        const wchar_t *GetGameName() const;
+        const wchar_t *GetGameShortName() const;
+        const wchar_t *GetGameVersion() const;
+        const wchar_t *GetBootTime() const;
+        const wchar_t *GetSplashScreenURL() const;
+        const wchar_t *GetMainIconURL() const;
 
-        const bool &GetLogWriteToConsole();
-        const bool &GetLogWriteToFile();
+        bool GetLogWriteToConsole() const;
+        bool GetLogWriteToFile() const;
 
-        const Common::LogLevel GetLogLevel();
+        Common::LogLevel GetLogLevel() const;
 
     private:
 
         /* - Settings - */
-        WString m_wcharGameName;
+        WString m_wcharGameName = L"undefined";
         WString m_wcharGameVersion;
-        WString m_wcharBootTime;
-        WString m_wcharGameShortName;
+        WString m_wcharBootTime = L"undefined";
+        WString m_wcharGameShortName = L"undefined";
 
         WString m_wcharSplashScreenURL;
         WString m_wcharMainIconURL;
 
-        bool m_bLogWriteToConsole;
-        bool m_bLogWriteToFile;
+        bool m_bLogWriteToConsole = true;
+        bool m_bLogWriteToFile = true;
 
-        Common::LogLevel m_LogLevel;
+        Common::LogLevel m_LogLevel = Common::LogLevel::RXN_TRACE;
 
 
     };

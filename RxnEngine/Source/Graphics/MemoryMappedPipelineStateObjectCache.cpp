@@ -3,14 +3,14 @@
 
 namespace Rxn::Graphics::Mapped
 {
-    void MemoryMappedPipelineStateObjectCache::Init(std::wstring filename)
+    void MemoryMappedPipelineStateObjectCache::InitObjectCache(const WString &filename)
     {
-        MemoryMappedFile::Init(filename);
+        InitFile(filename);
     }
 
-    void MemoryMappedPipelineStateObjectCache::Destroy(bool deleteFile)
+    void MemoryMappedPipelineStateObjectCache::DestroyCache(bool deleteFile)
     {
-        MemoryMappedFile::Destroy(deleteFile);
+        DestroyFile(deleteFile);
     }
 
     void MemoryMappedPipelineStateObjectCache::Update(ID3DBlob *pBlob)
@@ -18,18 +18,18 @@ namespace Rxn::Graphics::Mapped
         if (pBlob)
         {
             assert(pBlob->GetBufferSize() <= UINT_MAX);    // Code below casts to UINT.
-            const UINT blobSize = static_cast<UINT>(pBlob->GetBufferSize());
+            const auto blobSize = static_cast<uint32>(pBlob->GetBufferSize());
             if (blobSize > 0)
             {
                 // Grow the file if needed.
-                const size_t neededSize = sizeof(UINT) + blobSize;
-                if (neededSize > m_currentFileSize)
+                const size_t neededSize = sizeof(uint32) + blobSize;
+                if (neededSize > GetCurrentFileSize())
                 {
                     MemoryMappedFile::GrowMapping(blobSize);
                 }
 
                 // Save the size of the blob, and then the blob itself.
-                assert(neededSize <= m_currentFileSize);
+                assert(neededSize <= GetCurrentFileSize());
                 MemoryMappedFile::SetSize(blobSize);
                 memcpy(GetCachedBlob(), pBlob->GetBufferPointer(), pBlob->GetBufferSize());
             }

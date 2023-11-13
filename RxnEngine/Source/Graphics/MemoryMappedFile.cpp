@@ -3,12 +3,7 @@
 
 namespace Rxn::Graphics::Mapped
 {
-    MemoryMappedFile::MemoryMappedFile()
-        : m_MapFile(INVALID_HANDLE_VALUE)
-        , m_File(INVALID_HANDLE_VALUE)
-        , m_MapAddress(nullptr)
-        , m_currentFileSize(0)
-    {}
+    MemoryMappedFile::MemoryMappedFile() = default;
 
     bool MemoryMappedFile::IsMapped() const
     {
@@ -17,7 +12,7 @@ namespace Rxn::Graphics::Mapped
 
     MemoryMappedFile::~MemoryMappedFile() = default;
 
-    void MemoryMappedFile::Init(std::wstring fileName, UINT fileSize)
+    void MemoryMappedFile::InitFile(const WString &fileName, uint32 fileSize)
     {
         m_Filename = fileName;
 
@@ -30,16 +25,15 @@ namespace Rxn::Graphics::Mapped
             FindClose(handle);
         }
 
-        m_File = CreateFile2(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, (found) ? OPEN_EXISTING : CREATE_NEW, nullptr);
+        m_File = CreateFile2(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, found ? OPEN_EXISTING : CREATE_NEW, nullptr);
         if (m_File == INVALID_HANDLE_VALUE)
         {
-            std::cerr << (L"m_file is invalid. Error %ld.\n", GetLastError());
+            RXN_LOGGER::Error(L"Create file error: %d", GetLastError());
             return;
         }
 
         LARGE_INTEGER realFileSize = {};
-        int flag = GetFileSizeEx(m_File, &realFileSize);
-        if (!flag)
+        if (!GetFileSizeEx(m_File, &realFileSize))
         {
             RXN_LOGGER::Error(L"\nError %ld occurred in GetFileSizeEx!", GetLastError());
             assert(false);
@@ -77,12 +71,12 @@ namespace Rxn::Graphics::Mapped
             return;
         }
     }
-    void MemoryMappedFile::Destroy(bool deleteFile)
+    void MemoryMappedFile::DestroyFile(bool deleteFile)
     {
         if (m_MapAddress)
         {
-            BOOL flag = UnmapViewOfFile(m_MapAddress);
-            if (!flag)
+
+            if (!UnmapViewOfFile(m_MapAddress))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred unmapping the view!", GetLastError());
                 assert(false);
@@ -90,15 +84,14 @@ namespace Rxn::Graphics::Mapped
 
             m_MapAddress = nullptr;
 
-            flag = CloseHandle(m_MapFile);
-            if (!flag)
+
+            if (!CloseHandle(m_MapFile))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred closing the mapping object!", GetLastError());
                 assert(false);
             }
 
-            flag = CloseHandle(m_File);
-            if (!flag)
+            if (!CloseHandle(m_File))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred closing the file!", GetLastError());
                 assert(false);
@@ -111,41 +104,45 @@ namespace Rxn::Graphics::Mapped
         }
     }
 
-    void MemoryMappedFile::GrowMapping(UINT size)
+    void MemoryMappedFile::GrowMapping(uint32 size)
     {
-        size += sizeof(UINT);
+        size += sizeof(uint32);
         if (size <= m_currentFileSize)
         {
             return;
         }
 
-        int flag = FlushViewOfFile(m_MapAddress, 0);
-        if (!flag)
+        if (!FlushViewOfFile(m_MapAddress, 0))
         {
             RXN_LOGGER::Error(L"Error %ld occurred flushing the mapping object!", GetLastError());
             assert(false);
         }
 
-        Destroy(false);
+        DestroyFile(false);
         m_currentFileSize = size;
-        Init(m_Filename, m_currentFileSize);
+        InitFile(m_Filename, m_currentFileSize);
     }
 
-    UINT MemoryMappedFile::GetSize() const
+    uint32 MemoryMappedFile::GetSize() const
     {
         if (m_MapAddress)
         {
-            return static_cast<UINT *>(m_MapAddress)[0];
+            return static_cast<uint32 *>(m_MapAddress)[0];
         }
 
         return 0;
     }
 
-    void MemoryMappedFile::SetSize(UINT size)
+    uint32 MemoryMappedFile::GetCurrentFileSize() const
+    {
+        return m_currentFileSize;
+    }
+
+    void MemoryMappedFile::SetSize(uint32 size)
     {
         if (m_MapAddress)
         {
-            static_cast<UINT *>(m_MapAddress)[0] = size;
+            static_cast<uint32 *>(m_MapAddress)[0] = size;
         }
     }
 
@@ -153,7 +150,7 @@ namespace Rxn::Graphics::Mapped
     {
         if (m_MapAddress)
         {
-            return &static_cast<UINT *>(m_MapAddress)[1];
+            return &static_cast<uint32 *>(m_MapAddress)[1];
         }
         return nullptr;
     }

@@ -161,9 +161,9 @@ namespace Rxn::Core::Math
     // check for this, but I'm just going to assume people playing with
     // DirectX 12 on Windows 10 have fairly recent machines.
 #ifdef _M_X64
-#define ENABLE_SSE_CRC32 1
+    constexpr int ENABLE_SSE_CRC32 = 1;
 #else
-#define ENABLE_SSE_CRC32 0
+    constexpr int ENABLE_SSE_CRC32 = 0;
 #endif
 
 #if ENABLE_SSE_CRC32

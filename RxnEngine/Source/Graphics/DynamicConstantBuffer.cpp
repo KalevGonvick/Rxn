@@ -5,9 +5,8 @@ namespace Rxn::Graphics::Buffer
 {
     DynamicConstantBuffer::DynamicConstantBuffer(UINT constantSize, UINT maxDrawsPerFrame, UINT frameCount)
         : m_AlignedPerDrawConstantBufferSize(Align(constantSize))
-        , m_MaxDrawsPerFrame(maxDrawsPerFrame)
         , m_FrameCount(frameCount)
-        , m_ConstantBuffer(nullptr)
+        , m_MaxDrawsPerFrame(maxDrawsPerFrame)
     {
         m_PerFrameConstantBufferSize = m_AlignedPerDrawConstantBufferSize * m_MaxDrawsPerFrame;
     }

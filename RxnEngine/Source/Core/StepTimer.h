@@ -25,7 +25,6 @@ namespace Rxn::Core
             m_framesPerSecond(0),
             m_framesThisSecond(0),
             m_qpcSecondCounter(0),
-            m_isFixedTimeStep(false),
             m_targetElapsedTicks(TicksPerSecond / 60)
         {
             QueryPerformanceFrequency(&m_qpcFrequency);
@@ -36,31 +35,31 @@ namespace Rxn::Core
         }
 
         // Get elapsed time since the previous Update call.
-        UINT64 GetElapsedTicks() const { return m_elapsedTicks; }
-        double GetElapsedSeconds() const { return TicksToSeconds(m_elapsedTicks); }
+        uint64 GetElapsedTicks() const { return m_elapsedTicks; }
+        float64 GetElapsedSeconds() const { return TicksToSeconds(m_elapsedTicks); }
 
         // Get total time since the start of the program.
-        UINT64 GetTotalTicks() const { return m_totalTicks; }
-        double GetTotalSeconds() const { return TicksToSeconds(m_totalTicks); }
+        uint64 GetTotalTicks() const { return m_totalTicks; }
+        float64 GetTotalSeconds() const { return TicksToSeconds(m_totalTicks); }
 
         // Get total number of updates since start of the program.
-        UINT32 GetFrameCount() const { return m_frameCount; }
+        uint64 GetFrameCount() const { return m_frameCount; }
 
         // Get the current framerate.
-        UINT32 GetFramesPerSecond() const { return m_framesPerSecond; }
+        uint64 GetFramesPerSecond() const { return m_framesPerSecond; }
 
         // Set whether to use fixed or variable timestep mode.
         void SetFixedTimeStep(bool isFixedTimestep) { m_isFixedTimeStep = isFixedTimestep; }
 
         // Set how often to call Update when in fixed timestep mode.
-        void SetTargetElapsedTicks(UINT64 targetElapsed) { m_targetElapsedTicks = targetElapsed; }
-        void SetTargetElapsedSeconds(double targetElapsed) { m_targetElapsedTicks = SecondsToTicks(targetElapsed); }
+        void SetTargetElapsedTicks(uint64 targetElapsed) { m_targetElapsedTicks = targetElapsed; }
+        void SetTargetElapsedSeconds(float64 targetElapsed) { m_targetElapsedTicks = SecondsToTicks(targetElapsed); }
 
         // Integer format represents time using 10,000,000 ticks per second.
-        static const UINT64 TicksPerSecond = 10000000;
+        static const uint64 TicksPerSecond = 10000000;
 
-        static double TicksToSeconds(UINT64 ticks) { return static_cast<double>(ticks) / TicksPerSecond; }
-        static UINT64 SecondsToTicks(double seconds) { return static_cast<UINT64>(seconds * TicksPerSecond); }
+        static float64 TicksToSeconds(uint64 ticks) { return static_cast<float64>(ticks) / TicksPerSecond; }
+        static uint64 SecondsToTicks(float64 seconds) { return static_cast<uint64>(seconds * TicksPerSecond); }
 
         // After an intentional timing discontinuity (for instance a blocking IO operation)
         // call this to avoid having the fixed timestep logic attempt a set of catch-up 
@@ -76,17 +75,15 @@ namespace Rxn::Core
             m_qpcSecondCounter = 0;
         }
 
-        typedef void(*LPUPDATEFUNC) (void);
-
         // Update timer state, calling the specified Update function the appropriate number of times.
-        void Tick(LPUPDATEFUNC update = nullptr)
+        void Tick(std::function<void()> func)
         {
             // Query the current time.
             LARGE_INTEGER currentTime;
 
             QueryPerformanceCounter(&currentTime);
 
-            UINT64 timeDelta = currentTime.QuadPart - m_qpcLastTime.QuadPart;
+            uint64 timeDelta = currentTime.QuadPart - m_qpcLastTime.QuadPart;
 
             m_qpcLastTime = currentTime;
             m_qpcSecondCounter += timeDelta;
@@ -101,7 +98,7 @@ namespace Rxn::Core
             timeDelta *= TicksPerSecond;
             timeDelta /= m_qpcFrequency.QuadPart;
 
-            UINT32 lastFrameCount = m_frameCount;
+            uint64 lastFrameCount = m_frameCount;
 
             if (m_isFixedTimeStep)
             {
@@ -114,7 +111,7 @@ namespace Rxn::Core
                 // accumulate enough tiny errors that it would drop a frame. It is better to just round 
                 // small deviations down to zero to leave things running smoothly.
 
-                if (std::abs(static_cast<int>(timeDelta - m_targetElapsedTicks)) < TicksPerSecond / 4000)
+                if (std::abs(static_cast<int32>(static_cast<uint64>(timeDelta) - m_targetElapsedTicks)) < TicksPerSecond / 4000)
                 {
                     timeDelta = m_targetElapsedTicks;
                 }
@@ -128,9 +125,9 @@ namespace Rxn::Core
                     m_leftOverTicks -= m_targetElapsedTicks;
                     m_frameCount++;
 
-                    if (update)
+                    if (func)
                     {
-                        update();
+                        func();
                     }
                 }
             }
@@ -142,9 +139,9 @@ namespace Rxn::Core
                 m_leftOverTicks = 0;
                 m_frameCount++;
 
-                if (update)
+                if (func)
                 {
-                    update();
+                    func();
                 }
             }
 
@@ -154,7 +151,7 @@ namespace Rxn::Core
                 m_framesThisSecond++;
             }
 
-            if (m_qpcSecondCounter >= static_cast<UINT64>(m_qpcFrequency.QuadPart))
+            if (m_qpcSecondCounter >= static_cast<uint64>(m_qpcFrequency.QuadPart))
             {
                 m_framesPerSecond = m_framesThisSecond;
                 m_framesThisSecond = 0;
@@ -166,22 +163,22 @@ namespace Rxn::Core
         // Source timing data uses QPC units.
         LARGE_INTEGER m_qpcFrequency;
         LARGE_INTEGER m_qpcLastTime;
-        UINT64 m_qpcMaxDelta;
+        uint64 m_qpcMaxDelta;
 
         // Derived timing data uses a canonical tick format.
-        UINT64 m_elapsedTicks;
-        UINT64 m_totalTicks;
-        UINT64 m_leftOverTicks;
+        uint64 m_elapsedTicks;
+        uint64 m_totalTicks;
+        uint64 m_leftOverTicks;
 
         // Members for tracking the framerate.
-        UINT32 m_frameCount;
-        UINT32 m_framesPerSecond;
-        UINT32 m_framesThisSecond;
-        UINT64 m_qpcSecondCounter;
+        uint64 m_frameCount;
+        uint64 m_framesPerSecond;
+        uint64 m_framesThisSecond;
+        uint64 m_qpcSecondCounter;
 
         // Members for configuring fixed timestep mode.
-        bool m_isFixedTimeStep;
-        UINT64 m_targetElapsedTicks;
+        bool m_isFixedTimeStep = false;
+        uint64 m_targetElapsedTicks;
     };
 }
 

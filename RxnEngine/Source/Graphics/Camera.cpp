@@ -3,16 +3,8 @@
 
 namespace Rxn::Graphics
 {
-    Camera::Camera() :
-        m_initialPosition(0, 0, 0),
-        m_position(m_initialPosition),
-        m_yaw(DirectX::XM_PI),
-        m_pitch(0.0f),
-        m_lookDirection(0, 0, -1),
-        m_upDirection(0, 1, 0),
-        m_moveSpeed(20.0f),
-        m_turnSpeed(DirectX::XM_PIDIV2),
-        m_keysPressed{}
+    Camera::Camera() 
+        : m_position(m_initialPosition)
     {
     }
 
@@ -37,7 +29,7 @@ namespace Rxn::Graphics
         m_position = m_initialPosition;
         m_yaw = DirectX::XM_PI;
         m_pitch = 0.0f;
-        m_lookDirection = { 0, 0, -1 };
+        m_lookDirection = { 0.0f, 0.0f, -1.0f };
     }
 
     void Camera::Update(float elapsedSeconds)
@@ -74,8 +66,8 @@ namespace Rxn::Graphics
             m_pitch -= rotateInterval;
 
         // Prevent looking too far up or down.
-        m_pitch = std::min(m_pitch, DirectX::XM_PIDIV4);
-        m_pitch = std::max(-DirectX::XM_PIDIV4, m_pitch);
+        //m_pitch = std::min(m_pitch, DirectX::XM_PIDIV4);
+        //m_pitch = std::max(-DirectX::XM_PIDIV4, m_pitch);
 
         // Move the camera in model space.
         float x = move.x * -cosf(m_yaw) - move.z * sinf(m_yaw);
@@ -131,6 +123,8 @@ namespace Rxn::Graphics
         case VK_ESCAPE:
             Reset();
             break;
+        default:
+            break;
         }
     }
 
@@ -161,6 +155,8 @@ namespace Rxn::Graphics
             break;
         case VK_DOWN:
             m_keysPressed.down = false;
+            break;
+        default:
             break;
         }
     }

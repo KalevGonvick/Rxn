@@ -49,12 +49,6 @@
 #define HInstance() GetModuleHandle(NULL)
 #define WM_OUTPUTMESSAGE (WM_USER + 0x0001)
 
-#ifndef DCX_USESTYLE
-
-#define DCX_USESTYLE 0x00010000
-
-#endif
-
 #pragma endregion // WindowsDefinitions
 /* -------------------------------------------------------- */
 
@@ -94,6 +88,8 @@ using String = std::string;
 using WString = std::wstring;
 
 /* Numbers */
+using int_word = long;
+using uint_word = unsigned long;
 using int64 = long long;
 using int32 = int;
 using int16 = short;
@@ -117,6 +113,12 @@ using uint8_fast = unsigned char;
 using float128 = long double;
 using float64 = double;
 using float32 = float;
+
+#ifndef DCX_USESTYLE
+
+constexpr int DCX_USESTYLE = 0x00010000;
+
+#endif
 
 /* Vectors */
 using Vector2 = struct

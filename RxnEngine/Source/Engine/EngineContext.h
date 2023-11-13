@@ -16,12 +16,12 @@ namespace Rxn::Engine
         static EngineSettings &GetEngineSettings();
 
         static void Tick();
-        static uint64 GetElapsedTicks();
+        static float64 GetElapsedTicks();
         static float64 GetElapsedSeconds();
         static uint64 GetTotalTicks();
         static float64 GetTotalSeconds();
-        static uint32 GetFrameCount();
-        static uint32 GetFramesPerSecond();
+        static uint64 GetFrameCount();
+        static uint64 GetFramesPerSecond();
         static void SetFixedTimeStep(bool isFixedTimestep);
         static void SetTargetElapsedTicks(uint64 tickrate);
 

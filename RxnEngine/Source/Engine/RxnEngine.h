@@ -31,7 +31,7 @@ namespace Rxn::Engine
 
     private:
 
-        EngineRuntimeMode m_uEngineMode;
+        EngineRuntimeMode m_uEngineMode = EngineRuntimeMode::NONE;
         std::shared_ptr<EngineSettings> m_pEngineSettings;
     };
 

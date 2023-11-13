@@ -29,7 +29,7 @@ namespace Rxn::Graphics
         AddressW = AddressMode;
     }
 
-    void SamplerDesc::SetBorderColour(Core::Math::FVector4D<float> colour)
+    void SamplerDesc::SetBorderColour(Core::Math::FVector4D<float32> colour)
     {
         BorderColor[0] = colour.x;
         BorderColor[1] = colour.y;
@@ -37,7 +37,7 @@ namespace Rxn::Graphics
         BorderColor[3] = colour.w;
     }
 
-    void SamplerDesc::CreateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE handle)
+    void SamplerDesc::CreateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE handle) const
     {
         if (FAILED(handle.ptr))
         {
@@ -46,20 +46,4 @@ namespace Rxn::Graphics
 
         RenderContext::GetGraphicsDevice()->CreateSampler(this, handle);
     }
-
-    //D3D12_CPU_DESCRIPTOR_HANDLE SamplerDesc::CreateDescriptor()
-    //{
-    //    size_t hashValue = Core::Math::HashState(this);
-    //    auto iter = s_SamplerCache.find(hashValue);
-    //    if (iter != s_SamplerCache.end())
-    //    {
-    //        return iter->second;
-    //    }
-
-    //    D3D12_CPU_DESCRIPTOR_HANDLE Handle = AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-    //    RenderContext::GetGraphicsDevice()->CreateSampler(this, Handle);
-    //    return Handle;
-    //}
-
-
 }

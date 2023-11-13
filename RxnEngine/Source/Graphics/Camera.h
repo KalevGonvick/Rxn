@@ -33,15 +33,15 @@ namespace Rxn::Graphics
             bool down;
         };
 
-        DirectX::XMFLOAT3 m_initialPosition;
+        DirectX::XMFLOAT3 m_initialPosition = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
         DirectX::XMFLOAT3 m_position;
-        float m_yaw;                // Relative to the +z axis.
-        float m_pitch;                // Relative to the xz plane.
-        DirectX::XMFLOAT3 m_lookDirection;
-        DirectX::XMFLOAT3 m_upDirection;
-        float m_moveSpeed;            // Speed at which the camera moves, in units per second.
-        float m_turnSpeed;            // Speed at which the camera turns, in radians per second.
+        float m_yaw = DirectX::XM_PI;                // Relative to the +z axis.
+        float m_pitch = 0.0f;                // Relative to the xz plane.
+        DirectX::XMFLOAT3 m_lookDirection = DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f);
+        DirectX::XMFLOAT3 m_upDirection = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+        float m_moveSpeed = 20.0f;            // Speed at which the camera moves, in units per second.
+        float m_turnSpeed = DirectX::XM_PIDIV2;            // Speed at which the camera turns, in radians per second.
 
-        KeysPressed m_keysPressed;
+        KeysPressed m_keysPressed = {};
     };
 }

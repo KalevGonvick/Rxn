@@ -37,10 +37,10 @@ namespace Rxn::Graphics::Basic
 
     protected:
 
-        HRESULT CreateCommittedBufferDestinationResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size);
-        HRESULT CreateCommittedUploadBufferResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size);
+        HRESULT CreateCommittedBufferDestinationResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const;
+        HRESULT CreateCommittedUploadBufferResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const;
 
-        void AddCopyRegionTransition(ID3D12GraphicsCommandList *cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer);
+        void AddCopyRegionTransition(ID3D12GraphicsCommandList *cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer) const;
 
         uint8 *MapAndGetHeapLocationFromBuffer(ComPointer<ID3D12Resource> &buffer);
 

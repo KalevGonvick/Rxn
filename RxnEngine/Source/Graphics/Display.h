@@ -13,9 +13,9 @@ namespace Rxn::Graphics
 
     public:
 
-        const uint32 GetHeight();
-        const uint32 GetWidth();
-        const uint32 GetFrameIndex();
+        uint32 GetHeight() const;
+        uint32 GetWidth() const;
+        uint32 GetFrameIndex() const;
 
         void SetWidth(uint32 width);
         void SetHeight(uint32 height);
@@ -28,7 +28,7 @@ namespace Rxn::Graphics
 
         CD3DX12_VIEWPORT &GetViewPort();
         CD3DX12_RECT &GetScissorRect();
-        const DirectX::XMMATRIX &GetProjectionMatrix();
+        const DirectX::XMMATRIX &GetProjectionMatrix() const;
 
     private:
 
@@ -38,12 +38,16 @@ namespace Rxn::Graphics
 
         uint32 m_Width;
         uint32 m_Height;
-        uint32 m_FrameIndex;
+        uint32 m_FrameIndex = 0;
 
-        float32 m_Fov;
+        float32 m_Fov = 0.8f;
         float32 m_AspectRatio;
 
         GPU::SwapChain m_SwapChain;
-        std::array<Resolution, 2> const m_Resolutions = { { { 1280U, 720U }, { 1920U, 1080U } } };
+        std::array<Resolution, 2> const m_Resolutions = { 
+            { 
+                { 1280U, 720U }, { 1920U, 1080U } 
+            } 
+        };
     };
 }
