@@ -4,19 +4,13 @@
 namespace Rxn::Graphics
 {
     Renderer::Renderer(int32 width, int32 height)
-        : m_CommandQueueManager(RenderContext::GetGraphicsDevice())
-        , m_CommandListManager(RenderContext::GetGraphicsDevice())
-        , m_AllocatorPool(D3D12_COMMAND_LIST_TYPE_DIRECT)
-        , m_Display(width, height)
-        , m_PipelineLibrary(SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB)
-        , m_Fence()
-        , m_Initialized(false)
+        : m_Display(width, height)
     {
+        
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
         m_AssetsPath = assetsPath;
         
-        //memset(m_EnabledEffects, true, sizeof(m_EnabledEffects));
         for (int x = 0; x < Mapped::EffectPipelineTypeCount; x++)
         {
             m_EnabledEffects.push_back(true);
@@ -101,11 +95,78 @@ namespace Rxn::Graphics
         m_EnabledEffects[type] = !m_EnabledEffects[type];
     }
 
+    Scene &Renderer::GetScene()
+    {
+        return m_Scene;
+    }
 
+    GPU::Fence &Renderer::GetFence()
+    {
+        return m_Fence;
+    }
 
+    Display &Renderer::GetDisplay()
+    {
+        return m_Display;
+    }
 
+    Manager::CommandQueueManager &Renderer::GetCommandQueueManager()
+    {
+        return m_CommandQueueManager;
+    }
 
+    Manager::CommandListManager &Renderer::GetCommandListManager()
+    {
+        return m_CommandListManager;
+    }
 
+    ComPointer<ID3D12CommandAllocator> &Renderer::GetCommandAllocator(const uint32 frameIndex)
+    {
+        return m_CommandAllocators[frameIndex];
+    }
 
+    Pooled::CommandAllocatorPool &Renderer::GetCommandAllocatorPool()
+    {
+        return m_AllocatorPool;
+    }
+
+    Mapped::PipelineLibrary &Renderer::GetPipelineLibrary()
+    {
+        return m_PipelineLibrary;
+    }
+
+    const uint32 &Renderer::GetDrawIndex() const
+    {
+        return m_DrawIndex;
+    }
+
+    void Renderer::IncrementDrawIndex()
+    {
+        m_DrawIndex++;
+    }
+
+    void Renderer::ResetDrawIndex()
+    {
+        m_DrawIndex = 0;
+    }
+
+    void Renderer::CreateAllocatorPool()
+    {
+        m_AllocatorPool.Create(RenderContext::GetGraphicsDevice());
+    }
+
+    void Renderer::InitDisplay()
+    {
+        GetDisplay().GetSwapChain().SetTearingSupport(m_HasTearingSupport);
+        GetDisplay().GetSwapChain().CreateSwapChain(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY));
+        GetDisplay().TurnOverSwapChainBuffer();
+    }
+
+    void Renderer::InitCommandAllocators() 
+    {
+        GetCommandAllocatorPool().Create(RenderContext::GetGraphicsDevice());
+        m_CommandAllocators[SwapChainBuffers::BUFFER_ONE] = GetCommandAllocatorPool().RequestAllocator(SwapChainBuffers::BUFFER_ONE);
+        m_CommandAllocators[SwapChainBuffers::BUFFER_TWO] = GetCommandAllocatorPool().RequestAllocator(SwapChainBuffers::BUFFER_TWO);
+    }
 
 }

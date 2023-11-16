@@ -23,8 +23,8 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
     auto entry = EntryApplication();
 
     entry->SetupEngineConfigurations();
-    Rxn::Engine::EngineContext::SetFixedTimeStep(false);
-    Rxn::Engine::EngineContext::SetTargetElapsedTicks(333333);
+    Rxn::Engine::EngineContext::GetTimer().SetFixedTimeStep(true);
+    Rxn::Engine::EngineContext::GetTimer().SetTargetElapsedTicks(3);
     Rxn::Graphics::RenderContext::InitRenderContext();
 
     entry->InitializeEngineSystems();

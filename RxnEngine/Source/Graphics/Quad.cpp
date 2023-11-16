@@ -50,4 +50,11 @@ namespace Rxn::Graphics::Basic
 
         return S_OK;
     }
+
+    void Quad::DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount)
+    {
+        frameCmdList->IASetVertexBuffers(0, 1, &m_QuadBufferView);
+        frameCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        frameCmdList->DrawInstanced(static_cast<uint32>(m_Quads.size()), 1, 0, 0);
+    }
 }

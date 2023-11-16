@@ -4,11 +4,7 @@
 namespace Rxn::Graphics::GPU
 {
     Fence::Fence() = default;
-
-    Fence::~Fence()
-    {
-        Shutdown();
-    }
+    Fence::~Fence() = default;
 
     HANDLE Fence::GetFenceEvent()
     {
@@ -63,10 +59,6 @@ namespace Rxn::Graphics::GPU
         }
     }
 
-    void Fence::Shutdown()
-    {
-        CloseHandle(m_FenceEvent);
-    }
 
     void Fence::WaitInfinite(const uint32 frameIndex)
     {
@@ -84,6 +76,14 @@ namespace Rxn::Graphics::GPU
             ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[frameIndex], m_FenceEvent));
             WaitForSingleObjectEx(m_FenceEvent, ms, FALSE);
         }
+    }
+
+    void Fence::ShutdownFence(ComPointer<ID3D12CommandQueue> cmdQueue, const uint32 frameIndex) 
+    {
+        SignalFence(cmdQueue, frameIndex);
+        WaitInfinite(frameIndex);
+        IncrementFenceValue(frameIndex);
+        CloseHandle(m_FenceEvent);
     }
 
     void Fence::MoveFenceMarker(ID3D12CommandQueue * cmdQueue, const uint32 frameIndex, uint32 nextFrameIndex)

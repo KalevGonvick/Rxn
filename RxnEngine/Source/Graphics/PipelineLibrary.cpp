@@ -82,7 +82,7 @@ namespace Rxn::Graphics::Mapped
     }
 
 
-    void PipelineLibrary::SetPipelineState(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex)
+    void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex)
     {
         assert(m_DrawIndex < m_MaxDrawsPerFrame);
 
@@ -108,7 +108,7 @@ namespace Rxn::Graphics::Mapped
                 // We don't want to double compile
                 if (!isInFlight)
                 {
-                    m_WorkerThreads[type].pDevice = pDevice;
+                    m_WorkerThreads[type].pDevice = RenderContext::GetGraphicsDevice().Get();
                     m_WorkerThreads[type].pRootSignature = pRootSignature;
                     m_WorkerThreads[type].type = type;
                     m_WorkerThreads[type].pLibrary = this;
@@ -141,7 +141,7 @@ namespace Rxn::Graphics::Mapped
             else if (!isBuilt && !m_UseUberShaders)
             {
                 RXN_LOGGER::Debug(L"Not using ubershaders... This will take a long time and cause a hitch as the CPU is stalled!");
-                m_WorkerThreads[type].pDevice = pDevice;
+                m_WorkerThreads[type].pDevice = RenderContext::GetGraphicsDevice().Get();
                 m_WorkerThreads[type].pRootSignature = pRootSignature;
                 m_WorkerThreads[type].type = type;
                 m_WorkerThreads[type].pLibrary = this;

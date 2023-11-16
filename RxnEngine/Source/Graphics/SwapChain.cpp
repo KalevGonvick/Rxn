@@ -4,8 +4,6 @@
 namespace Rxn::Graphics::GPU
 {
     SwapChain::SwapChain(int width, int height)
-        : m_Initialized(false)
-        , m_SwapChainDesc{}
     {
         m_SwapChainDesc.BufferCount = SwapChainBuffers::TOTAL_BUFFERS;
         m_SwapChainDesc.Width = width;
@@ -16,9 +14,7 @@ namespace Rxn::Graphics::GPU
         m_SwapChainDesc.SampleDesc.Count = 1;
     }
 
-    SwapChain::~SwapChain()
-    {
-    }
+    SwapChain::~SwapChain() = default;
 
     void SwapChain::SetTearingSupport(bool tearingSupport)
     {

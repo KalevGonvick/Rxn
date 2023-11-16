@@ -115,6 +115,37 @@ namespace Rxn::Graphics
         CreateIntermediateRenderTarget(frameIndex, rtvHandle);
     }
 
+    void Scene::SetDynamicConstantBufferByIndex(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex, uint32 drawIndex)
+    {
+        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(), SwapChainBuffers::TOTAL_BUFFERS, GetRtvDescriptorHeapSize());
+        frameCmdList->SetGraphicsRootConstantBufferView(RootParameterCB, GetDynamicConstantBuffer().GetGpuVirtualAddress(drawIndex, frameIndex));
+        frameCmdList->OMSetRenderTargets(1, &intermediateRtvHandle, FALSE, nullptr);
+        frameCmdList->ClearRenderTargetView(intermediateRtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+    }
+
+    void Scene::ClearOutputMergerRenderTarget(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex)
+    {
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(), frameIndex, GetRtvDescriptorHeapSize());
+        frameCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+        frameCmdList->ClearRenderTargetView(rtvHandle, INTERMEDIATE_CLEAR_COLOUR, 0, nullptr);
+    }
+
+    void Scene::SetShaderResourceViewDescriptorHeap(ComPointer<ID3D12GraphicsCommandList> frameCmdList)
+    {
+        frameCmdList->SetGraphicsRootSignature(GetRootSignature().Get());
+        ID3D12DescriptorHeap *ppHeaps[] = { GetSrvHeap().Get() };
+        frameCmdList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+        frameCmdList->SetGraphicsRootDescriptorTable(RootParameterSRV, GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
+    }
+
+    void Scene::UpdateConstantBufferByIndex(const DirectX::XMMATRIX &projMat, const uint32 frameIndex, const uint32 drawIndex)
+    {
+        static float rot = 0.0f;
+        auto *drawCB = (DrawConstantBuffer *)GetDynamicConstantBuffer().GetMappedMemory(drawIndex, frameIndex);
+        drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * GetCamera().GetViewMatrix() * projMat);
+        rot += 0.01f;
+    }
+
     DrawConstantBuffer *Scene::GetConstantBuffer(const uint32 drawIndex, const uint32 frameIndex)
     {
         return  (DrawConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(drawIndex, frameIndex);

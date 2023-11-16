@@ -10,15 +10,15 @@ namespace Rxn::Graphics::Manager
 
     CommandListManager::~CommandListManager() = default;
 
-    void CommandListManager::CreateCommandList(const String listName, ComPointer<ID3D12CommandAllocator> &cmdAlloc, bool autoClose)
+    void CommandListManager::CreateCommandList(const String &listName, ComPointer<ID3D12CommandAllocator> &cmdAlloc, bool autoClose)
     {
         ComPointer<ID3D12GraphicsCommandList> commandList;
         const uint8_t *p = reinterpret_cast<const uint8_t *>(listName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());
 
-        if (m_CommandLists.find(hash) != m_CommandLists.end())
+        if (m_CommandLists.contains(hash))
         {
-            RXN_LOGGER::Error(L"Command list '%s' already exists", listName);
+            RXN_LOGGER::Error(L"Command list '%s' already exists", listName.c_str());
             return;
         }
 
@@ -33,21 +33,26 @@ namespace Rxn::Graphics::Manager
         }
     }
 
-    ComPointer<ID3D12GraphicsCommandList> &CommandListManager::GetCommandList(String listName)
+    ComPointer<ID3D12GraphicsCommandList> &CommandListManager::GetCommandList(const String &listName)
     {
-        const uint8_t *p = reinterpret_cast<const uint8_t *>(listName.c_str());
+        const uint8 * p = reinterpret_cast<const uint8 *>(listName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());
         return m_CommandLists.at(hash);
     }
 
-    void CommandListManager::ExecuteCommandList(String listName, ComPointer<ID3D12CommandQueue> cmdQueue)
+    void CommandListManager::ExecuteCommandList(const String &listName, ComPointer<ID3D12CommandQueue> cmdQueue)
     {
         ID3D12CommandList *ppCommandLists[] = { GetCommandList(listName).Get() };
         cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
     }
 
-    void CommandListManager::CloseCommandList(String listName)
+    void CommandListManager::CloseCommandList(const String &listName)
     {
         ThrowIfFailed(GetCommandList(listName)->Close());
+    }
+    void CommandListManager::CloseAndExecuteCommandList(const String &listName, ComPointer<ID3D12CommandQueue> cmdQueue)
+    {
+        CloseCommandList(listName);
+        ExecuteCommandList(listName, cmdQueue);
     }
 }

@@ -25,11 +25,11 @@ namespace Rxn::Graphics::GPU
         void CreateFenceEvent();
         void CreateFence(uint32 frameIndex);
         void IncrementFenceValue(uint32 frameIndex);
-        void Shutdown();
         void SignalFence(ID3D12CommandQueue *cmdQueue, uint32 frameIndex);
         void WaitInfinite(uint32 frameIndex);
         void Wait(const uint32 frameIndex, uint64 ms);
         void MoveFenceMarker(ID3D12CommandQueue *cmdQueue, uint32 frameIndex, uint32 nextFrameIndex);
+        void ShutdownFence(ComPointer<ID3D12CommandQueue> cmdQueue, const uint32 frameIndex);
 
     private:
 

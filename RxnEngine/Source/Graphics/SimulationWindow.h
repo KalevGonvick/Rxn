@@ -33,14 +33,13 @@ namespace Rxn::Graphics
          */
         LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
 
-        virtual void SetupWindow() override;
+        void SetupWindow() override;
 
         void UpdateSimulation();
-        virtual void InitializeRender() override;
-        virtual void ShutdownRender() override;
-        virtual void RenderPass() override;
-        virtual void PreRenderPass() override;
-        virtual void PostRenderPass() override;
+        void InitializeRender() override;
+        void ShutdownRender() override;
+        void RenderPass() override;
+        void PreRenderPass() override;
 
 
     protected:
@@ -50,22 +49,27 @@ namespace Rxn::Graphics
          *
          * \param key - key code.
          */
-        virtual void HandleKeyDown(uint8 key) override;
+        void HandleKeyDown(uint8 key) override;
 
         /**
          * Handles key up events.
          *
          * \param key - key code.
          */
-        virtual void HandleKeyUp(uint8 key) override;
+        void HandleKeyUp(uint8 key) override;
 
     private:
 
         void OnSizeChange();
+        void DestroySwapChainResources();
+        void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> frameCmdList, ComPointer<ID3D12CommandAllocator> frameCmdAllocator) const;
+        void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
+        uint32 GetFPS() const;
+
+    private:
+
         float64 m_LastDrawTime = 0;
         uint32 m_FrameCount = 0;
-        void DestroySwapChainResources();
-        uint32 GetFPS();
 
     };
 }
