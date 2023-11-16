@@ -11,7 +11,7 @@ namespace Rxn::Graphics::Buffer
 
     public:
 
-        void Init(ID3D12Device *pDevice);
+        void Create(ID3D12Device *pDevice);
         void *GetMappedMemory(UINT drawIndex, UINT frameIndex);
         D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(UINT drawIndex, UINT frameIndex);
 

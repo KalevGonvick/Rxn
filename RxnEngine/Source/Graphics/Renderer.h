@@ -43,38 +43,57 @@ namespace Rxn::Graphics
         virtual void ShutdownRender() = 0;
         virtual void RenderPass() = 0;
         virtual void PreRenderPass() = 0;
-        virtual void PostRenderPass() = 0;
+
+        std::vector<uint8> GenerateTextureData() const;
+        Scene &GetScene();
+        GPU::Fence &GetFence();
+        Display &GetDisplay();
+        
+        Manager::CommandQueueManager &GetCommandQueueManager();
+        Manager::CommandListManager &GetCommandListManager();
+        Mapped::PipelineLibrary &GetPipelineLibrary();
+
+        ComPointer<ID3D12CommandAllocator> &GetCommandAllocator(const uint32 frameIndex);
+        Pooled::CommandAllocatorPool &GetCommandAllocatorPool();
+        
+        const uint32 &GetDrawIndex() const;
 
         void CreateVertexBufferResource();
         void CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
-
-        std::vector<uint8> GenerateTextureData() const;
-
         void ToggleEffect(Mapped::EffectPipelineType type);
+        void IncrementDrawIndex();
+        void ResetDrawIndex();
+        void CreateAllocatorPool();
+        void InitDisplay();
+        void InitScene();
+        void InitCommandQueues();
+        void InitCommandLists();
+        void InitCachedPipeline();
+        void InitCommandAllocators();
+        void InitGpuFence();
+
+    private:
 
         bool m_UseWarpDevice = false;
         bool m_HasTearingSupport = false;
 
         uint32 m_DrawIndex = 0;
 
-        Manager::CommandQueueManager m_CommandQueueManager;
-        Manager::CommandListManager m_CommandListManager;
-        
-        Pooled::CommandAllocatorPool m_AllocatorPool;
+        Manager::CommandQueueManager m_CommandQueueManager { RenderContext::GetGraphicsDevice() };
+        Manager::CommandListManager m_CommandListManager { RenderContext::GetGraphicsDevice() };
+
+        Pooled::CommandAllocatorPool m_AllocatorPool { D3D12_COMMAND_LIST_TYPE_DIRECT };
         ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
-        
+
         Scene m_Scene;
         WString m_AssetsPath;
         Display m_Display;
-        
-        Mapped::PipelineLibrary m_PipelineLibrary;
+
+        Mapped::PipelineLibrary m_PipelineLibrary { SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB };
 
         GPU::Fence m_Fence;
 
-        bool m_Initialized;
         std::vector<bool> m_EnabledEffects;
-
-    private:
 
         static const uint32 MaxDrawsPerFrame = 256;
         static const uint32 TextureWidth = 256;

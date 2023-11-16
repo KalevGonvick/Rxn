@@ -14,8 +14,9 @@ namespace Rxn::Graphics::Basic
 
         void ReadDataFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices);
 
-        virtual HRESULT LoadFromFile(const wchar_t *filename) override;
-        virtual HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) override;
+        HRESULT LoadFromFile(const wchar_t *filename) override;
+        HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) override;
+        void DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount) override;
 
         std::vector<VertexPositionColour> m_Vertices;
         std::vector<uint32> m_Indices;

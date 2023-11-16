@@ -4,6 +4,7 @@
 #include "Shape.h"
 #include "Quad.h"
 #include "SwapChain.h"
+#include "Display.h"
 
 namespace Rxn::Graphics
 {
@@ -26,8 +27,11 @@ namespace Rxn::Graphics
 
 
         void ReleaseResourceViews();
-
         void InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain swapChain);
+        void SetDynamicConstantBufferByIndex(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex, uint32 drawIndex);
+        void ClearOutputMergerRenderTarget(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
+        void SetShaderResourceViewDescriptorHeap(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
+        void UpdateConstantBufferByIndex(const DirectX::XMMATRIX & projMat, const uint32 frameIndex, const uint32 drawIndex);
 
         /* Getters */
         DrawConstantBuffer *GetConstantBuffer(const uint32 drawIndex, const uint32 frameIndex);

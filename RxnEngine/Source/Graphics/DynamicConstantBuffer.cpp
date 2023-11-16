@@ -16,7 +16,7 @@ namespace Rxn::Graphics::Buffer
         m_ConstantBuffer->Unmap(0, nullptr);
     }
 
-    void DynamicConstantBuffer::Init(ID3D12Device *pDevice)
+    void DynamicConstantBuffer::Create(ID3D12Device *pDevice)
     {
         const UINT bufferSize = m_PerFrameConstantBufferSize * m_FrameCount;
         const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -37,12 +37,12 @@ namespace Rxn::Graphics::Buffer
         ThrowIfFailed(m_ConstantBuffer->Map(0, &readRange, reinterpret_cast<void **>(&m_MappedConstantBuffer)));
     }
 
-    void *DynamicConstantBuffer::GetMappedMemory(UINT drawIndex, UINT frameIndex)
+    void * DynamicConstantBuffer::GetMappedMemory(uint32 drawIndex, uint32 frameIndex)
     {
         assert(drawIndex < m_MaxDrawsPerFrame);
-        UINT constantBufferOffset = (frameIndex * m_PerFrameConstantBufferSize) + (drawIndex * m_AlignedPerDrawConstantBufferSize);
+        uint32 constantBufferOffset = (frameIndex * m_PerFrameConstantBufferSize) + (drawIndex * m_AlignedPerDrawConstantBufferSize);
 
-        UINT8 *temp = reinterpret_cast<UINT8 *>(m_MappedConstantBuffer);
+        uint8 *temp = reinterpret_cast<uint8 *>(m_MappedConstantBuffer);
         temp += constantBufferOffset;
 
         return temp;

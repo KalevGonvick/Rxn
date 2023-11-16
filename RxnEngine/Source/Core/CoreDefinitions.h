@@ -47,6 +47,7 @@
 #endif // WIN32_LEAN_AND_MEAN
 
 #define HInstance() GetModuleHandle(NULL)
+
 #define WM_OUTPUTMESSAGE (WM_USER + 0x0001)
 
 #pragma endregion // WindowsDefinitions

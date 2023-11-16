@@ -62,9 +62,12 @@ void BlankProject::UpdateEngine()
 {
     auto win = std::dynamic_pointer_cast<Rxn::Graphics::SimulationWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY));
     win->UpdateSimulation();
+
+    // Scene setup
     win->PreRenderPass();
+
+    // present the frame
     win->RenderPass();
-    win->PostRenderPass();
 
 }
 

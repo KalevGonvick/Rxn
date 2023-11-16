@@ -7,7 +7,7 @@ namespace Rxn::Platform::Win32
         : SubComponent(className, 0)
         , m_TitleName(title)
         , m_Active(0)
-        , m_WindowStyle(WindowStyle::RESIZEABLE)
+        , m_WindowStyle(WindowStyle::STATIC)
         , m_Size(SIZE(Constants::Win32::DEFAULT_WINDOW_WIDTH, Constants::Win32::DEFAULT_WINDOW_HEIGHT))
         , m_WindowBackgroundColour(RGB(36, 36, 36))
         , m_WindowBorderColour(RGB(46, 46, 46))

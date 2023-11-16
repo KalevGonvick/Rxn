@@ -49,14 +49,10 @@ namespace Rxn::Graphics
 
         if (viewWidthRatio < viewHeightRatio)
         {
-            // The scaled image's height will fit to the viewport's height and 
-            // its width will be smaller than the viewport's width.
             x = viewWidthRatio / viewHeightRatio;
         }
         else
         {
-            // The scaled image's width will fit to the viewport's width and 
-            // its height may be smaller than the viewport's height.
             y = viewHeightRatio / viewWidthRatio;
         }
 
@@ -105,5 +101,11 @@ namespace Rxn::Graphics
     const DirectX::XMMATRIX & Display::GetProjectionMatrix() const
     {
         return m_ProjectionMatrix;
+    }
+
+    void Display::SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList)
+    {
+        frameCmdList->RSSetViewports(1, &GetViewPort());
+        frameCmdList->RSSetScissorRects(1, &GetScissorRect());
     }
 }

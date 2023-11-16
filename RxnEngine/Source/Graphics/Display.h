@@ -30,6 +30,8 @@ namespace Rxn::Graphics
         CD3DX12_RECT &GetScissorRect();
         const DirectX::XMMATRIX &GetProjectionMatrix() const;
 
+        void SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
+
     private:
 
         CD3DX12_VIEWPORT m_Viewport;

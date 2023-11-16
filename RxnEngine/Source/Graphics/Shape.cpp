@@ -44,4 +44,12 @@ namespace Rxn::Graphics::Basic
 
         return S_OK;
     }
+
+    void Shape::DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount)
+    {
+        frameCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        frameCmdList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
+        frameCmdList->IASetIndexBuffer(&m_IndexBufferView);
+        frameCmdList->DrawIndexedInstanced(static_cast<uint32>(m_Indices.size()), instanceCount, 0, 0, 0);
+    }
 }
