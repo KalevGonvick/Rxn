@@ -39,17 +39,24 @@ namespace Rxn::Graphics
         NAME_D3D12_OBJECT(m_RootSignature);
     }
 
-    void Scene::AddShapeFromRaw(std::vector<VertexPositionColour> vertices, std::vector<UINT> indices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList)
+    void Scene::AddShapeFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList)
     {
-        m_Shape.ReadDataFromRaw(vertices, indices);
-        HRESULT result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
+        auto shape = std::make_shared<Basic::Shape>();
+        shape->ReadDataFromRaw(vertices, indices);
+        HRESULT result = shape->UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
+
+        //m_Shape.ReadDataFromRaw(vertices, indices);
+        //HRESULT result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
+            return;
         }
+
+        m_SceneShapes.push_back(std::move(shape));
     }
 
-    void Scene::AddQuadFromRaw(std::vector<VertexPositionUV> quadVertices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList)
+    void Scene::AddQuadFromRaw(const std::vector<VertexPositionUV> &quadVertices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList)
     {
         m_Quad.ReadDataFromRaw(quadVertices);
 
@@ -166,11 +173,6 @@ namespace Rxn::Graphics
         return m_RootSignature;
     }
 
-    Basic::Shape & Scene::GetShape()
-    {
-        return m_Shape;
-    }
-
     Basic::Quad & Scene::GetQuad()
     {
         return m_Quad;
@@ -204,6 +206,14 @@ namespace Rxn::Graphics
     const uint32 Scene::GetSrvDescriptorHeapSize()
     {
         return m_SRVDescriptorSize;
+    }
+
+    void Scene::DrawSceneShapes(ComPointer<ID3D12GraphicsCommandList> cmdList) const
+    {
+        for (const auto &shape : m_SceneShapes)
+        {
+            shape->DrawInstanced(cmdList, 1);
+        }
     }
 
     void Scene::CreateRenderTargets(GPU::SwapChain &swapChain, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle)

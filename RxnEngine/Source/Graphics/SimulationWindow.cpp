@@ -349,7 +349,8 @@ namespace Rxn::Graphics
         GetPipelineLibrary().SetPipelineState(frameRootSignature, frameCmdList, Mapped::BaseNormal3DRender, currentFrameIndex);
         
         // TODO - make this more dynamic (1)
-        GetScene().GetShape().DrawInstanced(frameCmdList, 1);
+        //GetScene().GetShape().DrawInstanced(frameCmdList, 1);
+        GetScene().DrawSceneShapes(frameCmdList);
 
         // TODO - make barriers a class (1)
         D3D12_RESOURCE_BARRIER barriers[2] = {};

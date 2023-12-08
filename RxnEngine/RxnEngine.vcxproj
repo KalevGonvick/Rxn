@@ -201,6 +201,7 @@
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Graphics\SplashScreen.h" />
     <ClInclude Include="Source\Graphics\SwapChain.h" />
+    <ClInclude Include="Source\Graphics\TempData.h" />
     <ClInclude Include="Source\Graphics\VertexBuffer.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />

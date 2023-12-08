@@ -5,6 +5,7 @@
 #include "Quad.h"
 #include "SwapChain.h"
 #include "Display.h"
+#include "Renderable.h"
 
 namespace Rxn::Graphics
 {
@@ -20,8 +21,8 @@ namespace Rxn::Graphics
         void SetSerializedRootSignature(CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc);
         
         /* -------------< temp functions >------------- */
-        void AddShapeFromRaw(std::vector<VertexPositionColour> vertices, std::vector<UINT> indices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList);
-        void AddQuadFromRaw(std::vector<VertexPositionUV> quadVertices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList);
+        void AddShapeFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList);
+        void AddQuadFromRaw(const std::vector<VertexPositionUV> &quadVertices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList);
         void AddTexture(ComPointer<ID3D12Resource> &textureUploadHeap, D3D12_RESOURCE_DESC textureDesc, ID3D12GraphicsCommandList *cmdList, D3D12_SUBRESOURCE_DATA textureData);
         void InitHeaps();
 
@@ -39,7 +40,6 @@ namespace Rxn::Graphics
         Camera & GetCamera();
         ComPointer<ID3D12RootSignature> & GetRootSignature();
         
-        Basic::Shape & GetShape();
         Basic::Quad & GetQuad();
         ComPointer<ID3D12Resource> & GetRenderTarget(const uint32 index);
         
@@ -50,6 +50,8 @@ namespace Rxn::Graphics
         const uint32 GetRtvDescriptorHeapSize();
         const uint32 GetSrvDescriptorHeapSize();
 
+        void DrawSceneShapes(ComPointer<ID3D12GraphicsCommandList> cmdList) const;
+
     private:
 
         void CreateRenderTargets(GPU::SwapChain &swapChain, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle);
@@ -59,8 +61,8 @@ namespace Rxn::Graphics
     private:
 
         ComPointer<ID3D12Resource> m_Texture;
-        Basic::Shape m_Shape;
         Basic::Quad m_Quad;
+        std::vector<std::shared_ptr<Basic::Shape>> m_SceneShapes;
 
         Camera m_Camera;
         Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;

@@ -462,6 +462,9 @@
     <ClInclude Include="Source\Graphics\CommandAllocatorPool.h">
       <Filter>Source\Graphics\Classes\Pooled</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\TempData.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
