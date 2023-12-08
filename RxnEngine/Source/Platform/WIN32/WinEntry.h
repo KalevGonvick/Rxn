@@ -1,21 +1,35 @@
 #include "Rxn.h"
-
 #include "IApplication.h"
-#include "Common/Logger.h"
-#include "Common/CommandLine.h"
-
 
 extern std::unique_ptr<Rxn::Platform::Win32::IApplication> EntryApplication();
+
+FILE *CreateConsole()
+{
+    AllocConsole();
+    FILE *pStreamOut = nullptr;
+    _wfreopen_s(&pStreamOut, L"CONOUT$", L"w", stdout);
+    return pStreamOut;
+}
+
+void DestroyConsole(FILE *pStream)
+{
+    fclose(pStream);
+    FreeConsole();
+}
 
 _Use_decl_annotations_
 int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
 {
     auto entry = EntryApplication();
 
-    entry->ConfigureEngine();
-    entry->PreInitialize();
-    entry->Initialize();
+    entry->SetupEngineConfigurations();
+    Rxn::Engine::EngineContext::GetTimer().SetFixedTimeStep(true);
+    Rxn::Engine::EngineContext::GetTimer().SetTargetElapsedTicks(3);
+    Rxn::Graphics::RenderContext::InitRenderContext();
 
+    entry->InitializeEngineSystems();
+    entry->InitializeRuntime();
+    FILE *fStreamOut = CreateConsole();
     MSG msg = { 0 };
     while (msg.message != WM_QUIT)
     {
@@ -26,11 +40,10 @@ int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, INT)
         }
         else
         {
-            entry->Update();
+            entry->UpdateEngine();
         }
     }
-
     entry->OnDestroy();
-
+    DestroyConsole(fStreamOut);
     return static_cast<char>(msg.wParam);
 }

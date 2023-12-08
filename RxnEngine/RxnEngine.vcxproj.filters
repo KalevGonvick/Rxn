@@ -80,6 +80,57 @@
     <Filter Include="Source\Graphics\Private">
       <UniqueIdentifier>{992335a4-dce5-4289-9812-564d93f2dd8a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Graphics\Private\Mapped">
+      <UniqueIdentifier>{738bb568-cdb9-484a-8287-74c630f6af4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders">
+      <UniqueIdentifier>{448acccd-a781-459a-b883-6731afb82ed1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\ShaderHeaders">
+      <UniqueIdentifier>{b161cf97-b88d-4984-8107-c19b37ee78b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Buffer">
+      <UniqueIdentifier>{6cf07c61-eb32-4762-a9ee-ae3099594696}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Public\Buffer">
+      <UniqueIdentifier>{2153841d-5f3a-42e8-b782-008a489810da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Public\Mapped">
+      <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Mapped">
+      <UniqueIdentifier>{38eafad3-ca64-4d3c-b413-a1cd60f67c3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Basic">
+      <UniqueIdentifier>{89977db9-edd0-45fd-b6a0-7f29667e1080}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Basic">
+      <UniqueIdentifier>{2b0fb3d6-4c6e-4156-bc1a-122d63c6236d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Manager">
+      <UniqueIdentifier>{aea49325-4cad-4cac-890a-3823c589b72d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Manager">
+      <UniqueIdentifier>{ece2941f-e3b6-4e41-b6e0-1f96532e9ad4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Descriptor">
+      <UniqueIdentifier>{b9c2f916-ac51-4b37-8a2e-32b30de2a598}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Descriptor">
+      <UniqueIdentifier>{25c20569-51d6-4a49-84a5-cd03c3b6b15a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\GPU">
+      <UniqueIdentifier>{6dfc8b3e-7fbd-42d0-996f-d2c3a2223cd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\GPU">
+      <UniqueIdentifier>{df01d010-c343-46ef-811c-07333da558eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Pooled">
+      <UniqueIdentifier>{f22d3619-5772-4e42-b37d-46e0f12db39a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Private\Pooled">
+      <UniqueIdentifier>{ae26f3db-5d7d-4af7-9fd1-dc679120b240}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\Core.cpp">
@@ -115,9 +166,6 @@
     <ClCompile Include="Source\Common\CommandLine.cpp">
       <Filter>Source\Common\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SplashScreen.cpp">
-      <Filter>Source\Engine\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Platform\WIN32\Window.cpp">
       <Filter>Source\Platform\Win32\Private</Filter>
     </ClCompile>
@@ -148,8 +196,77 @@
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\RenderFramework.cpp">
+    <ClCompile Include="Source\Graphics\Renderer.cpp">
       <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedFile.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedPipelineLibrary.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\PipelineLibrary.cpp">
+      <Filter>Source\Graphics\Private\Mapped</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
+      <Filter>Source\Graphics\Private\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\VertexBuffer.cpp">
+      <Filter>Source\Graphics\Private\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\RenderContext.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Quad.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Model.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Renderable.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Shape.cpp">
+      <Filter>Source\Graphics\Private\Basic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandListManager.cpp">
+      <Filter>Source\Graphics\Private\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandQueueManager.cpp">
+      <Filter>Source\Graphics\Private\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp">
+      <Filter>Source\Graphics\Private\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\SamplerDesc.cpp">
+      <Filter>Source\Graphics\Private\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\SwapChain.cpp">
+      <Filter>Source\Graphics\Private\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Fence.cpp">
+      <Filter>Source\Graphics\Private\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\GraphicsCommon.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Camera.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\SplashScreen.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Display.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Scene.cpp">
+      <Filter>Source\Graphics\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandAllocatorPool.cpp">
+      <Filter>Source\Graphics\Private\Pooled</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -213,9 +330,6 @@
     <ClInclude Include="Source\Platform\WIN32\WindowManager.h">
       <Filter>Source\Platform\Win32\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SplashScreen.h">
-      <Filter>Source\Engine\Classes</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Graphics\ComPointer.h">
       <Filter>Source\Graphics\Public</Filter>
     </ClInclude>
@@ -228,8 +342,172 @@
     <ClInclude Include="Source\Graphics\SimulationWindow.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\RenderFramework.h">
+    <ClInclude Include="Source\Graphics\Renderer.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
+      <Filter>Source\Graphics\Public\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h">
+      <Filter>Source\Graphics\Public\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
+      <Filter>Source\Graphics\Public\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\BlurPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\DistortPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\EdgeDetectPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\GrayScalePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\InvertPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\PixelatePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\QuadVertexShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\SimplePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\SimpleVertexShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\UberPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\WarpPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\WavePixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\StepTimer.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
+      <Filter>Source\Graphics\Public\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\VertexBuffer.h">
+      <Filter>Source\Graphics\Public\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Span.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Shaders\AdditionalPixelShader.hlsl.h">
+      <Filter>Resources\ShaderHeaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\RenderContext.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\PipelineLibrary.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Quad.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Renderable.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Shape.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Model.h">
+      <Filter>Source\Graphics\Classes\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandListManager.h">
+      <Filter>Source\Graphics\Classes\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandQueueManager.h">
+      <Filter>Source\Graphics\Classes\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h">
+      <Filter>Source\Graphics\Classes\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SamplerDesc.h">
+      <Filter>Source\Graphics\Classes\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Fence.h">
+      <Filter>Source\Graphics\Classes\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SwapChain.h">
+      <Filter>Source\Graphics\Classes\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\GraphicsCommon.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Camera.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\SplashScreen.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Display.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Scene.h">
+      <Filter>Source\Graphics\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandAllocatorPool.h">
+      <Filter>Source\Graphics\Classes\Pooled</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\TempData.h">
+      <Filter>Source\Graphics\Public</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\BlurPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\DistortPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\EdgeDetectPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\GrayScalePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\InvertPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\PixelatePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\QuadVertexShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\SimplePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\SimpleVertexShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\UberPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\WarpPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\WavePixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\AdditionalPixelShader.hlsl">
+      <Filter>Resources\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -6,10 +6,11 @@ namespace Rxn::Platform::Win32
     SubComponent::SubComponent(WString className, HICON icon)
         : m_ClassName(className)
         , m_isInitialized(false)
+        , m_IsInteractive(true)
         , m_ChildComponents()
         , m_Parent(nullptr)
         , m_Icon(icon)
-        , m_pHWnd(nullptr)
+        , m_HWnd(nullptr)
     {
     }
 
@@ -46,7 +47,7 @@ namespace Rxn::Platform::Win32
     {
         if (GetParent() != nullptr)
         {
-            return GetParent()->m_pHWnd;
+            return GetParent()->m_HWnd;
         }
         else
         {
@@ -71,7 +72,7 @@ namespace Rxn::Platform::Win32
             SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
             SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&AssignMessageHandler));
 
-            pWnd->m_pHWnd = hWnd;
+            pWnd->m_HWnd = hWnd;
             pWnd->m_isInitialized = true;
             pWnd->InitializeChildren();
 

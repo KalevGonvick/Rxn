@@ -1,16 +1,26 @@
+/*****************************************************************//**
+ * \file   SimulationWindow.h
+ * \brief
+ *
+ * \author kalev
+ * \date   July 2023
+ *********************************************************************/
 #pragma once
+
+#include "Renderer.h"
 
 namespace Rxn::Graphics
 {
     class RXN_ENGINE_API SimulationWindow
-        : public RenderFramework
+        : public Renderer
         , public Platform::Win32::Window
     {
     public:
-        SimulationWindow(WString windowTitle, WString windowClass, int width, int height);
+
+        SimulationWindow(const WString &windowTitle, const WString &windowClass, int width, int height);
         ~SimulationWindow();
 
-        virtual void Render() override;
+    public:
 
         /**
          * MessageHandler - Handles WIN32 messages.
@@ -21,19 +31,45 @@ namespace Rxn::Graphics
          * \param lParam    - additional lparam from msg (optional)
          * \return
          */
-        LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
+        LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
+
+        void SetupWindow() override;
+
+        void UpdateSimulation();
+        void InitializeRender() override;
+        void LoadSceneData();
+        void ShutdownRender() override;
+        void RenderPass() override;
+        void PreRenderPass() override;
 
 
-        virtual void SetupWindow() override;
+    protected:
 
+        /**
+         * Handles key down events.
+         *
+         * \param key - key code.
+         */
+        void HandleKeyDown(uint8 key) override;
 
-        HRESULT CreatePipelineSwapChain();
-        HRESULT CreateSwapChainResource();
+        /**
+         * Handles key up events.
+         *
+         * \param key - key code.
+         */
+        void HandleKeyUp(uint8 key) override;
+
+    private:
+        void OnSizeChange();
         void DestroySwapChainResources();
+        void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> frameCmdList, ComPointer<ID3D12CommandAllocator> frameCmdAllocator) const;
+        void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
+        uint32 GetFPS() const;
 
+    private:
 
-        HRESULT OnSizeChange();
-
+        float64 m_LastDrawTime = 0;
+        uint32 m_FrameCount = 0;
 
     };
 }

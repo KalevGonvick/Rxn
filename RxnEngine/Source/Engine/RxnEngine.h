@@ -1,10 +1,8 @@
 #pragma once
-#include <memory>
+#include "EngineSettings.h"
 
 namespace Rxn::Engine
 {
-    class RXN_ENGINE_API EngineSettings;
-    class RXN_ENGINE_API RxnEngine;
 
     enum class EngineRuntimeMode
     {
@@ -23,6 +21,7 @@ namespace Rxn::Engine
         ~RxnEngine();
 
     public:
+
         void InitializeEngineSettings(std::shared_ptr<EngineSettings> settings);
         void SetMode(EngineRuntimeMode mode);
 
@@ -30,10 +29,9 @@ namespace Rxn::Engine
         std::shared_ptr<EngineSettings> GetSettings();
 
 
-
     private:
-        EngineRuntimeMode m_uEngineMode;
 
+        EngineRuntimeMode m_uEngineMode = EngineRuntimeMode::NONE;
         std::shared_ptr<EngineSettings> m_pEngineSettings;
     };
 

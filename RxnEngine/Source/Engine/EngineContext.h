@@ -1,5 +1,6 @@
 #pragma once
 #include "EngineSettings.h"
+#include "Core/StepTimer.h"
 
 namespace Rxn::Engine
 {
@@ -12,11 +13,13 @@ namespace Rxn::Engine
 
     public:
 
-        static EngineSettings& GetEngineSettings();
+        static EngineSettings &GetEngineSettings();
+        static Core::StepTimer &GetTimer();
 
     private:
-        
+
         EngineSettings m_EngineSettings;
+        Core::StepTimer m_Timer;
 
     };
 }

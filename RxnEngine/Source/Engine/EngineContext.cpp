@@ -3,23 +3,20 @@
 
 namespace Rxn::Engine
 {
-	static EngineContext& GetContext()
-	{
-		static EngineContext inst;
-		return inst;
-	}
+    inline EngineContext g_EngineContext;
 
-	EngineContext::EngineContext()
-		: m_EngineSettings()
-	{
-	}
+    EngineContext::EngineContext() = default;
+    EngineContext::~EngineContext() = default;
 
-	EngineContext::~EngineContext() = default;
+    EngineSettings &EngineContext::GetEngineSettings()
+    {
+        return g_EngineContext.m_EngineSettings;
+    }
 
-	EngineSettings& EngineContext::GetEngineSettings()
-	{
-		return GetContext().m_EngineSettings;
-	}
+    Core::StepTimer &EngineContext::GetTimer()
+    {
+        return g_EngineContext.m_Timer;
+    }
 
 
 }

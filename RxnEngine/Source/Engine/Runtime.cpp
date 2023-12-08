@@ -1,7 +1,7 @@
 #include "Rxn.h"
 #include "Engine/Runtime.h"
 
-#include "Engine/SplashScreen.h"
+#include "Graphics/SplashScreen.h"
 #include "Graphics/SimulationWindow.h"
 
 
@@ -13,13 +13,12 @@ namespace Rxn::Engine
 
     Runtime::~Runtime() = default;
 
-    void Runtime::PreInitialize()
+    void Runtime::InitializeEngineSystems()
     {
-        this->m_Engine = std::make_shared<RxnEngine>();
-        this->m_WindowManager = std::make_shared<Platform::Win32::WindowManager>();
 
+        m_Engine = std::make_shared<RxnEngine>();
+        m_WindowManager = std::make_shared<Platform::Win32::WindowManager>();
         SetupLogger();
-        //SetupPlatformGUI();
     }
 
     void Runtime::SetMode(EngineRuntimeMode mode)
@@ -66,21 +65,6 @@ namespace Rxn::Engine
         //Core::RxnBinaryHandler::ReadRxnFile();
 
         RXN_LOGGER::Info(L"Loaded up... %s", Engine::EngineContext::GetEngineSettings().GetGameName());
-    }
-
-    const void Runtime::SetupPlatformGUI()
-    {
-        RXN_LOGGER::Info(L"Creating window classes");
-
-        auto splash = std::make_shared<SplashWindow>(Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, Constants::Win32::SPLASH_SCREEN_WINDOW_KEY);
-        splash->SetupWindow();
-        m_WindowManager->AddWindow(splash);
-
-        auto mainsim = std::make_shared<Graphics::SimulationWindow>(Constants::Win32::RENDER_VIEW_WINDOW_KEY, Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1280, 720);
-        mainsim->SetupWindow();
-        m_WindowManager->AddWindow(mainsim);
-
-
     }
 
 

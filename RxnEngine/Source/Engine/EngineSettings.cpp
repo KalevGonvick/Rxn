@@ -1,17 +1,10 @@
 #include "Rxn.h"
+#include "EngineSettings.h"
 
 namespace Rxn::Engine
 {
 
-    EngineSettings::EngineSettings()
-        : m_wcharBootTime(L"undefined")
-        , m_wcharGameName(L"undefined")
-        , m_wcharGameShortName(L"undefined")
-        , m_LogLevel(Common::LogLevel::RXN_TRACE)
-        , m_bLogWriteToConsole(true)
-        , m_bLogWriteToFile(true)
-    {}
-
+    EngineSettings::EngineSettings() = default;
     EngineSettings::~EngineSettings() = default;
 
     void EngineSettings::SetGameName(const wchar_t *name)
@@ -61,47 +54,47 @@ namespace Rxn::Engine
 
 
     /* - Getters - */
-    const wchar_t *EngineSettings::GetGameName()
+    const wchar_t *EngineSettings::GetGameName() const
     {
         return this->m_wcharGameName.c_str();
     }
 
-    const wchar_t *EngineSettings::GetGameShortName()
+    const wchar_t *EngineSettings::GetGameShortName() const
     {
         return this->m_wcharGameShortName.c_str();
     }
 
-    const wchar_t *EngineSettings::GetGameVersion()
+    const wchar_t *EngineSettings::GetGameVersion() const
     {
         return this->m_wcharGameVersion.c_str();
     }
 
-    const wchar_t *EngineSettings::GetBootTime()
+    const wchar_t *EngineSettings::GetBootTime() const
     {
         return this->m_wcharBootTime.c_str();
     }
 
-    const Common::LogLevel EngineSettings::GetLogLevel()
+    Common::LogLevel EngineSettings::GetLogLevel() const
     {
         return this->m_LogLevel;
     }
 
-    const bool &EngineSettings::GetLogWriteToConsole()
+    bool EngineSettings::GetLogWriteToConsole() const
     {
         return this->m_bLogWriteToConsole;
     }
 
-    const bool &EngineSettings::GetLogWriteToFile()
+    bool EngineSettings::GetLogWriteToFile() const
     {
         return this->m_bLogWriteToFile;
     }
 
-    const wchar_t *EngineSettings::GetSplashScreenURL()
+    const wchar_t *EngineSettings::GetSplashScreenURL() const
     {
         return this->m_wcharSplashScreenURL.c_str();
     }
 
-    const wchar_t *EngineSettings::GetMainIconURL()
+    const wchar_t *EngineSettings::GetMainIconURL() const
     {
         return this->m_wcharMainIconURL.c_str();
     }

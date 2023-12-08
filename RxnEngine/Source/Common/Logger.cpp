@@ -11,27 +11,17 @@ namespace Rxn::Common
     /* -------------------------------------------------------- */
 #pragma region LoggerImpl
 
-    Logger::LoggerImpl::LoggerImpl()
-        : m_bWriteToConsole(true)
-        , m_bWriteToFile(true)
-        , m_uLevel(LogLevel::RXN_ERROR)
-        , m_wOutputLogDir(L"")
-        , m_bLogFileCreated(false)
-    {
-    }
+    Logger::LoggerImpl::LoggerImpl() = default;
+    Logger::LoggerImpl::~LoggerImpl() = default;
 
-    Logger::LoggerImpl::~LoggerImpl()
+    WString Logger::LoggerImpl::GetLogDirectory()
     {
-    }
-
-    std::wstring Logger::LoggerImpl::GetLogDirectory()
-    {
-        if (this->m_bLogFileCreated)
+        if (this->m_LogFileCreated)
         {
-            return this->m_wOutputLogDir;
+            return this->m_OutputLogDir;
         }
 
-        std::wstring path = L"";
+        WString path = L"";
         wchar_t *appDataLocal;
 
         SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &appDataLocal);
@@ -39,57 +29,58 @@ namespace Rxn::Common
         path.append(appDataLocal);
         path.append(L"\\");
         path.append(Engine::EngineContext::GetEngineSettings().GetGameName());
-        CreateDirectory(path.c_str(), 0);
+        CreateDirectory(path.c_str(), nullptr);
 
         path.append(L"\\Log");
-        CreateDirectory(path.c_str(), 0);
+        CreateDirectory(path.c_str(), nullptr);
 
-        this->m_wOutputLogDir = path;
-        this->m_bLogFileCreated = true;
+        m_OutputLogDir = path;
+        m_LogFileCreated = true;
 
         return path;
     }
 
     void Logger::LoggerImpl::SetLogLevel(LogLevel level)
     {
-        this->m_uLevel = level;
+        this->m_Level = level;
     }
 
     void Logger::LoggerImpl::SetWriteToFile(bool writeToFile)
     {
-        this->m_bWriteToFile = writeToFile;
+        this->m_WriteToFile = writeToFile;
     }
 
     void Logger::LoggerImpl::SetWriteToConsole(bool writeToConsole)
     {
-        this->m_bWriteToConsole = writeToConsole;
+        this->m_WriteToConsole = writeToConsole;
     }
 
     void Logger::LoggerImpl::PrintLn(const LogLevel &level, const wchar_t *b)
     {
         std::wfstream outfile;
-        outfile.open(std::wstring(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
-        std::wstring sev;
+        outfile.open(WString(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
+        WString sev;
+
         switch (level)
         {
         case LogLevel::RXN_DEBUG:
-            sev = m_kpszDebugSeverity;
+            sev = m_DebugSeverity;
             break;
 
         case LogLevel::RXN_ERROR:
-            sev = m_kpszErrorSeverity;
+            sev = m_ErrorSeverity;
             break;
 
         case LogLevel::RXN_INFO:
-            sev = m_kpszInfoSeverity;
+            sev = m_InfoSeverity;
             break;
 
         case LogLevel::RXN_TRACE:
-            sev = m_kpszTraceSeverity;
+            sev = m_TraceSeverity;
             break;
 
         case LogLevel::RXN_WARN:
-            sev = m_kpszWarningSeverity;
+            sev = m_WarningSeverity;
             break;
 
         default:
@@ -98,27 +89,26 @@ namespace Rxn::Common
 
         if (outfile.is_open())
         {
-            std::wstring s = L"\n" + Time::GetDateTimeString() + L" " + sev + L" " + b;
+            WString s = L"\n" + Time::GetDateTimeString() + L" " + sev + L" " + b;
             outfile << s;
             outfile.close();
-            OutputDebugString(s.c_str());
+            fwprintf_s(stdout, s.c_str());
         }
         else
         {
-            MessageBox(0, L"Unable to open log file...", L"Log Error", MB_OK);
+            MessageBox(nullptr, L"Unable to open log file...", L"Log Error", MB_OK);
         }
     }
 
     void Logger::LoggerImpl::PrintLnSeperator()
     {
-        const int knMaxHeaderLineLen = 100;
-        std::wstring s = L"";
+        const int32_fast knMaxHeaderLineLen = 100;
+        WString s = L"";
         s.append(L"\n");
-        for (int x = 0; x < knMaxHeaderLineLen; x++)
+        for (int32_fast x = 0; x < knMaxHeaderLineLen; x++)
         {
             s.append(L"-");
         }
-        //s.append(L"\n");
 
         std::wfstream outfile;
         outfile.open(std::wstring(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
@@ -130,23 +120,23 @@ namespace Rxn::Common
         }
         else
         {
-            MessageBox(0, L"Unable to open log file...", L"Log Error", MB_OK);
+            MessageBox(nullptr, L"Unable to open log file...", L"Log Error", MB_OK);
         }
     }
 
     void Logger::LoggerImpl::PrintLnHeader(const wchar_t *fmt)
     {
-        const int knMaxHeaderLineLen = 100;
-        const int knHeaderPadding = 4;
+        const int32_fast knMaxHeaderLineLen = 100;
+        const int32_fast knHeaderPadding = 4;
 
         size_t titleLen = std::char_traits<wchar_t>::length(fmt);
 
         size_t remainingLength = knMaxHeaderLineLen - knHeaderPadding - titleLen - knHeaderPadding;
         size_t oneSideLength = remainingLength / 2;
 
-        std::wstring s = L"\n";
+        WString s = L"\n";
 
-        for (int x = 0; x < oneSideLength; x++)
+        for (size_t x = 0; x < oneSideLength; x++)
         {
             s.append(L"-");
         }
@@ -161,7 +151,7 @@ namespace Rxn::Common
         }
 
         std::wfstream outfile;
-        outfile.open(std::wstring(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
+        outfile.open(WString(GetLogDirectory() + L"\\" + GetLogFileName()), std::ios_base::app);
 
         if (outfile.is_open())
         {
@@ -170,12 +160,12 @@ namespace Rxn::Common
         }
         else
         {
-            MessageBox(0, L"Unable to open log file...", L"Log Error", MB_OK);
+            MessageBox(nullptr, L"Unable to open log file...", L"Log Error", MB_OK);
         }
 
     }
 
-    bool Logger::LoggerImpl::IsMTailRunning()
+    bool Logger::LoggerImpl::IsMTailRunning() const
     {
         bool exists = false;
         PROCESSENTRY32 en;
@@ -211,50 +201,50 @@ namespace Rxn::Common
 
         GetCurrentDirectoryW(kMaxPathLen, path);
 
-        std::wstring url = path + std::wstring(L"/mTail.exe");
-        std::wstring params = L" \"" + GetLogDirectory() + L"/" + GetLogFileName() + L"\" /start";
+        WString url = path + WString(L"/mTail.exe");
+        WString params = L" \"" + GetLogDirectory() + L"/" + GetLogFileName() + L"\" /start";
 
-        ShellExecute(0, 0, url.c_str(), params.c_str(), 0, SW_SHOWDEFAULT);
+        ShellExecute(nullptr, nullptr, url.c_str(), params.c_str(), nullptr, SW_SHOWDEFAULT);
 
         return true;
     }
 
-    std::wstring Logger::LoggerImpl::GetLogFileName()
+    WString Logger::LoggerImpl::GetLogFileName() const
     {
-        std::wstring file = Engine::EngineContext::GetEngineSettings().GetGameName();
+        WString file = Engine::EngineContext::GetEngineSettings().GetGameName();
         file.append(Engine::EngineContext::GetEngineSettings().GetBootTime());
         file.append(L".log");
         return file;
     }
 
-    bool Logger::LoggerImpl::IsInfoEnabled()
+    bool Logger::LoggerImpl::IsInfoEnabled() const
     {
         return IsLevelEnabled(LogLevel::RXN_INFO);
     }
 
-    bool Logger::LoggerImpl::IsWarnEnabled()
+    bool Logger::LoggerImpl::IsWarnEnabled() const
     {
         return IsLevelEnabled(LogLevel::RXN_WARN);
     }
 
-    bool Logger::LoggerImpl::IsErrorEnabled()
+    bool Logger::LoggerImpl::IsErrorEnabled() const
     {
         return IsLevelEnabled(LogLevel::RXN_ERROR);
     }
 
-    bool Logger::LoggerImpl::IsDebugEnabled()
+    bool Logger::LoggerImpl::IsDebugEnabled() const
     {
         return IsLevelEnabled(LogLevel::RXN_DEBUG);
     }
 
-    bool Logger::LoggerImpl::IsTraceEnabled()
+    bool Logger::LoggerImpl::IsTraceEnabled() const
     {
         return IsLevelEnabled(LogLevel::RXN_TRACE);
     }
 
-    bool Logger::LoggerImpl::IsLevelEnabled(LogLevel level)
+    bool Logger::LoggerImpl::IsLevelEnabled(LogLevel level) const
     {
-        return this->m_uLevel >= level;
+        return m_Level >= level;
     }
 
     void Logger::LoggerImpl::Info(const wchar_t *fmt, char *args)
@@ -266,22 +256,20 @@ namespace Rxn::Common
 
         wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
-        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_INFO, b);
-        this->PrintLn(LogLevel::RXN_INFO, b);
+        PrintLn(LogLevel::RXN_INFO, b);
 
     }
 
     void Logger::LoggerImpl::Debug(const wchar_t *fmt, char *args)
     {
-        if (!this->IsDebugEnabled())
+        if (!IsDebugEnabled())
         {
             return;
         }
 
         wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
-        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_DEBUG, b);
-        this->PrintLn(LogLevel::RXN_DEBUG, b);
+        PrintLn(LogLevel::RXN_DEBUG, b);
     }
 
     void Logger::LoggerImpl::Warn(const wchar_t *fmt, char *args)
@@ -293,7 +281,6 @@ namespace Rxn::Common
 
         wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
-        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_WARN, b);
         this->PrintLn(LogLevel::RXN_WARN, b);
     }
 
@@ -306,7 +293,6 @@ namespace Rxn::Common
 
         wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
-        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_ERROR, b);
         this->PrintLn(LogLevel::RXN_ERROR, b);
     }
 
@@ -319,7 +305,6 @@ namespace Rxn::Common
 
         wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
         vswprintf_s(b, fmt, args);
-        //std::async(&LoggerImpl::PrintLn, this, LogLevel::RXN_TRACE, b);
         this->PrintLn(LogLevel::RXN_TRACE, b);
     }
 
@@ -332,45 +317,35 @@ namespace Rxn::Common
     /* -------------------------------------------------------- */
 #pragma region Logger
 
-    static Logger &Instance()
-    {
-        static Logger inst;
-        return inst;
-    }
-
-    Logger::Logger()
-        : m_pLoggerImpl(new LoggerImpl())
-    {
-    }
-
+    inline const Logger Instance;
+    Logger::Logger() = default;
     Logger::~Logger() = default;
 
-    std::wstring Logger::GetLogDirectory()
+    WString Logger::GetLogDirectory()
     {
-        return Instance().m_pLoggerImpl->GetLogDirectory();
+        return Instance.m_LoggerImpl->GetLogDirectory();
     }
-
 
     void Logger::SetLogLevel(const LogLevel &level)
     {
-        Instance().m_pLoggerImpl->SetLogLevel(level);
+        Instance.m_LoggerImpl->SetLogLevel(level);
     }
 
     void Logger::SetWriteToFile(const bool &writeToFile)
     {
-        Instance().m_pLoggerImpl->SetWriteToFile(writeToFile);
+        Instance.m_LoggerImpl->SetWriteToFile(writeToFile);
     }
 
     void Logger::SetWriteToConsole(const bool &writeToConsole)
     {
-        Instance().m_pLoggerImpl->SetWriteToConsole(writeToConsole);
+        Instance.m_LoggerImpl->SetWriteToConsole(writeToConsole);
     }
 
     void Logger::Info(const wchar_t *fmt...)
     {
         va_list args;
         va_start(args, fmt);
-        Instance().m_pLoggerImpl->Info(fmt, args);
+        Instance.m_LoggerImpl->Info(fmt, args);
         va_end(args);
     }
 
@@ -378,7 +353,7 @@ namespace Rxn::Common
     {
         va_list args;
         va_start(args, fmt);
-        Instance().m_pLoggerImpl->Warn(fmt, args);
+        Instance.m_LoggerImpl->Warn(fmt, args);
         va_end(args);
     }
 
@@ -386,7 +361,7 @@ namespace Rxn::Common
     {
         va_list args;
         va_start(args, fmt);
-        Instance().m_pLoggerImpl->Error(fmt, args);
+        Instance.m_LoggerImpl->Error(fmt, args);
         va_end(args);
     }
 
@@ -394,7 +369,7 @@ namespace Rxn::Common
     {
         va_list args;
         va_start(args, fmt);
-        Instance().m_pLoggerImpl->Debug(fmt, args);
+        Instance.m_LoggerImpl->Debug(fmt, args);
         va_end(args);
     }
 
@@ -403,63 +378,63 @@ namespace Rxn::Common
 
         va_list args;
         va_start(args, fmt);
-        Instance().m_pLoggerImpl->Trace(fmt, args);
+        Instance.m_LoggerImpl->Trace(fmt, args);
         va_end(args);
     }
 
     void Logger::PrintLnSeperator()
     {
-        Instance().m_pLoggerImpl->PrintLnSeperator();
+        Instance.m_LoggerImpl->PrintLnSeperator();
     }
 
     void Logger::PrintLnHeader(const wchar_t *fmt)
     {
-        Instance().m_pLoggerImpl->PrintLnHeader(fmt);
+        Instance.m_LoggerImpl->PrintLnHeader(fmt);
     }
 
     bool Logger::IsMTailRunning()
     {
-        return Instance().m_pLoggerImpl->IsMTailRunning();
+        return Instance.m_LoggerImpl->IsMTailRunning();
     }
 
     bool Logger::StartMTail()
     {
-        return Instance().m_pLoggerImpl->StartMTail();
+        return Instance.m_LoggerImpl->StartMTail();
     }
 
-    std::wstring Logger::GetLogFileName()
+    WString Logger::GetLogFileName()
     {
-        return Instance().m_pLoggerImpl->GetLogFileName();
+        return Instance.m_LoggerImpl->GetLogFileName();
     }
 
     bool Logger::IsInfoEnabled()
     {
-        return Instance().m_pLoggerImpl->IsLevelEnabled(LogLevel::RXN_INFO);
+        return Instance.m_LoggerImpl->IsLevelEnabled(LogLevel::RXN_INFO);
     }
 
     bool Logger::IsWarnEnabled()
     {
-        return Instance().m_pLoggerImpl->IsLevelEnabled(LogLevel::RXN_WARN);
+        return Instance.m_LoggerImpl->IsLevelEnabled(LogLevel::RXN_WARN);
     }
 
     bool Logger::IsErrorEnabled()
     {
-        return Instance().m_pLoggerImpl->IsLevelEnabled(LogLevel::RXN_ERROR);
+        return Instance.m_LoggerImpl->IsLevelEnabled(LogLevel::RXN_ERROR);
     }
 
     bool Logger::IsDebugEnabled()
     {
-        return Instance().m_pLoggerImpl->IsLevelEnabled(LogLevel::RXN_DEBUG);
+        return Instance.m_LoggerImpl->IsLevelEnabled(LogLevel::RXN_DEBUG);
     }
 
     bool Logger::IsTraceEnabled()
     {
-        return Instance().m_pLoggerImpl->IsLevelEnabled(LogLevel::RXN_TRACE);
+        return Instance.m_LoggerImpl->IsLevelEnabled(LogLevel::RXN_TRACE);
     }
 
-    LogLevel Logger::LoggerImpl::GetLogLevel()
+    LogLevel Logger::LoggerImpl::GetLogLevel() const
     {
-        return this->m_uLevel;
+        return m_Level;
     }
 
 #pragma endregion // Logger

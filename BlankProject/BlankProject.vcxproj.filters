@@ -50,7 +50,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\Shaders\shaders.hlsl">
+    <FxCompile Include="..\Build\Rxn\Debug\shaders.hlsl">
       <Filter>Resources\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
