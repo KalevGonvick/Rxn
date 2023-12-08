@@ -3,14 +3,7 @@
 
 namespace Rxn::Platform::Win32
 {
-    IApplication::IApplication()
-    {
-
-    }
-
-    IApplication::~IApplication()
-    {
-
-    }
+    IApplication::IApplication() = default;
+    IApplication::~IApplication() = default;
 
 } // Rxn::Platform::Win32

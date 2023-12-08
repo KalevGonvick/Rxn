@@ -60,11 +60,11 @@ namespace Rxn::Platform::Win32
          */
         void AddWindow(std::shared_ptr<Window> window);
 
-        ManagedWindows m_ManagedWindows;
+        ManagedWindows m_ManagedWindows{};
 
     private:
 
-        unsigned int m_WindowCounter;
+        unsigned int m_WindowCounter = 0;
 
     };
 }

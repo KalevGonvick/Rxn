@@ -3,20 +3,15 @@
 
 namespace Rxn::Platform::Win32
 {
-    SubComponent::SubComponent(WString className, HICON icon)
+    SubComponent::SubComponent(const WString &className, HICON icon)
         : m_ClassName(className)
-        , m_isInitialized(false)
-        , m_IsInteractive(true)
-        , m_ChildComponents()
-        , m_Parent(nullptr)
         , m_Icon(icon)
-        , m_HWnd(nullptr)
     {
     }
 
     SubComponent::~SubComponent() = default;
 
-    const WString SubComponent::GetClass()
+    const WString &SubComponent::GetClass() const
     {
         return m_ClassName;
     }
@@ -43,7 +38,7 @@ namespace Rxn::Platform::Win32
         return m_Icon;
     }
 
-    const HWND SubComponent::GetParentHandle()
+    HWND SubComponent::GetParentHandle()
     {
         if (GetParent() != nullptr)
         {
@@ -55,7 +50,7 @@ namespace Rxn::Platform::Win32
         }
     }
 
-    const std::shared_ptr<SubComponent> SubComponent::GetParent()
+    std::shared_ptr<SubComponent> SubComponent::GetParent()
     {
         return m_Parent;
     }
@@ -67,7 +62,7 @@ namespace Rxn::Platform::Win32
         {
             const CREATESTRUCTW *const pCreate = reinterpret_cast<CREATESTRUCTW *>(lParam);
 
-            Win32::SubComponent *const pWnd = static_cast<Win32::SubComponent *>(pCreate->lpCreateParams);
+            auto const pWnd = static_cast<Win32::SubComponent *>(pCreate->lpCreateParams);
 
             SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
             SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&AssignMessageHandler));
@@ -82,9 +77,9 @@ namespace Rxn::Platform::Win32
         return DefWindowProcW(hWnd, msg, wParam, lParam);
     }
 
-    void SubComponent::InitializeChildren()
+    void SubComponent::InitializeChildren() const
     {
-        for (auto &child : m_ChildComponents)
+        for (const auto &child : m_ChildComponents)
         {
             child->RegisterComponentClass();
             child->InitializeWin32();
@@ -93,7 +88,7 @@ namespace Rxn::Platform::Win32
 
     LRESULT SubComponent::AssignMessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        Win32::SubComponent *const pWnd = reinterpret_cast<SubComponent *>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+        auto const pWnd = reinterpret_cast<SubComponent *>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
         return pWnd->MessageHandler(hWnd, msg, wParam, lParam);
     }
 

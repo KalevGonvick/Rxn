@@ -11,7 +11,7 @@ namespace Rxn::Engine
         m_uEngineMode = mode;
     }
 
-    EngineRuntimeMode RxnEngine::GetMode()
+    EngineRuntimeMode RxnEngine::GetMode() const
     {
         return m_uEngineMode;
     }

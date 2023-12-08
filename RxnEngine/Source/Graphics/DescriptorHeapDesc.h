@@ -14,8 +14,8 @@ namespace Rxn::Graphics
         void SetMask(uint32 mask);
         void CreateRTVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &rtvDescriptorHeap);
         void CreateSRVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &srvDescriptorHeap);
-        void CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &dsvDescriptorHeap);
-        void CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &samplerDescriptorHeap);
+        void CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> dsvDescriptorHeap) const;
+        void CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> samplerDescriptorHeap) const;
 
     };
 }

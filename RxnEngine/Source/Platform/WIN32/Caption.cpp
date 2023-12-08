@@ -3,25 +3,20 @@
 
 namespace Rxn::Platform::Win32
 {
-    Caption::Caption()
-        : m_ShowTitle(1)
-    {
-    }
-
+    Caption::Caption() = default;
     Caption::~Caption() = default;
-
 
     void Caption::AddButton(const WString &text, const Command &command, int32 width)
     {
         int32 newButtonOffset = 0;
 
-        for (auto &existingBtn : m_Buttons)
+        for (const auto &existingBtn : m_Buttons)
         {
             newButtonOffset += existingBtn->width;
         }
 
-        int32 newId = m_Buttons.size() + 1;
-        std::shared_ptr<Caption::Button> newButton = std::make_shared<Caption::Button>(newId, text, command, newButtonOffset, width);
+        int32 newId = static_cast<int32>(m_Buttons.size()) + 1;
+        auto newButton = std::make_shared<Caption::Button>(newId, text, command, newButtonOffset, width);
         m_Buttons.push_back(newButton);
     }
 

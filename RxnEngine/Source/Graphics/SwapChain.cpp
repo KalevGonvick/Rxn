@@ -48,7 +48,7 @@ namespace Rxn::Graphics::GPU
         return m_SwapChain->GetBuffer(bufferNum, IID_PPV_ARGS(&bufferResource));
     }
 
-    HRESULT SwapChain::ResizeBuffers(uint32 totalBuffers, int width, int height)
+    HRESULT SwapChain::ResizeBuffers(int width, int height)
     {
         return m_SwapChain->ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
     }

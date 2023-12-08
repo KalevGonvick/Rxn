@@ -141,7 +141,7 @@ namespace Rxn::Graphics::Basic
     {
     public:
         virtual HRESULT LoadFromFile(const wchar_t *filename) override;
-        virtual HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) override;
+        virtual HRESULT UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList) override;
 
         unsigned int GetMeshCount() const { return static_cast<unsigned int>(m_meshes.size()); }
         const Mesh &GetMesh(unsigned int i) const { return m_meshes[i]; }

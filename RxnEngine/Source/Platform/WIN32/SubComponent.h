@@ -15,7 +15,7 @@ namespace Rxn::Platform::Win32
     {
     public:
 
-        SubComponent(WString className, HICON icon);
+        SubComponent(const WString &className, HICON icon);
         ~SubComponent();
 
     public:
@@ -37,14 +37,14 @@ namespace Rxn::Platform::Win32
          *
          * \return
          */
-        const HWND GetParentHandle();
+        HWND GetParentHandle();
 
         /**
          * .
          *
          * \return
          */
-        const std::shared_ptr<SubComponent> GetParent();
+        std::shared_ptr<SubComponent> GetParent();
 
         /**
          * .
@@ -58,7 +58,7 @@ namespace Rxn::Platform::Win32
          *
          * \return
          */
-        const WString GetClass();
+        const WString &GetClass() const;
 
         /**
          * .
@@ -67,15 +67,8 @@ namespace Rxn::Platform::Win32
          */
         void AddChildComponent(std::shared_ptr<SubComponent> child);
 
-        /**
-         * .
-         */
-        bool m_IsInteractive;
-
-        /**
-         * .
-         */
-        HWND m_HWnd;
+        bool m_IsInteractive = true;
+        HWND m_HWnd = nullptr;
 
     protected:
 
@@ -83,7 +76,7 @@ namespace Rxn::Platform::Win32
          * .
          *
          */
-        void InitializeChildren();
+        void InitializeChildren() const;
 
         /**
          * .
@@ -119,9 +112,9 @@ namespace Rxn::Platform::Win32
         virtual LRESULT MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-        std::list<std::shared_ptr<SubComponent>> m_ChildComponents;
-        std::shared_ptr<SubComponent> m_Parent;
-        bool m_isInitialized;
+        std::list<std::shared_ptr<SubComponent>> m_ChildComponents{};
+        std::shared_ptr<SubComponent> m_Parent = nullptr;
+        bool m_isInitialized = false;
         WString m_ClassName;
         HICON m_Icon;
 
