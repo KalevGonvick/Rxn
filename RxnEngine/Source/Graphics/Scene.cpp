@@ -44,9 +44,6 @@ namespace Rxn::Graphics
         auto shape = std::make_shared<Basic::Shape>();
         shape->ReadDataFromRaw(vertices, indices);
         HRESULT result = shape->UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
-
-        //m_Shape.ReadDataFromRaw(vertices, indices);
-        //HRESULT result = m_Shape.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
@@ -67,7 +64,7 @@ namespace Rxn::Graphics
         }
     }
 
-    void Scene::AddTexture(ComPointer<ID3D12Resource> &textureUploadHeap, D3D12_RESOURCE_DESC textureDesc, ID3D12GraphicsCommandList *cmdList, D3D12_SUBRESOURCE_DATA textureData)
+    void Scene::AddTexture(ComPointer<ID3D12Resource> &textureUploadHeap, const D3D12_RESOURCE_DESC &textureDesc, ID3D12GraphicsCommandList *cmdList, D3D12_SUBRESOURCE_DATA textureData)
     {
         const auto heapTextureProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 

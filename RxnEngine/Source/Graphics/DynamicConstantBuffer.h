@@ -6,23 +6,23 @@ namespace Rxn::Graphics::Buffer
     {
     public:
 
-        DynamicConstantBuffer(UINT constantSize, UINT maxDrawsPerFrame, UINT frameCount);
+        DynamicConstantBuffer(uint32 constantSize, uint32 maxDrawsPerFrame, uint32 frameCount);
         ~DynamicConstantBuffer();
 
     public:
 
         void Create(ID3D12Device *pDevice);
-        void *GetMappedMemory(UINT drawIndex, UINT frameIndex);
-        D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(UINT drawIndex, UINT frameIndex);
+        void *GetMappedMemory(uint32 drawIndex, uint32 frameIndex);
+        D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(uint32 drawIndex, uint32 frameIndex);
 
     private:
 
         ComPointer<ID3D12Resource> m_ConstantBuffer = nullptr;
         void *m_MappedConstantBuffer = nullptr;
-        UINT  m_AlignedPerDrawConstantBufferSize;
-        UINT  m_PerFrameConstantBufferSize;
+        uint32  m_AlignedPerDrawConstantBufferSize;
+        uint32  m_PerFrameConstantBufferSize;
 
-        UINT m_FrameCount;
-        UINT m_MaxDrawsPerFrame = 256;
+        uint32 m_FrameCount;
+        uint32 m_MaxDrawsPerFrame = 256;
     };
 }
