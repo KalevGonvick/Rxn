@@ -159,6 +159,7 @@ namespace Rxn::Graphics::Mapped
         m_DrawIndex++;
     }
 
+    // TODO - This function is nonsense. Move this function to the modern world with std::thread instead.
     void PipelineLibrary::CompilePipelineStateObject(CompilePipelineStateObjectThreadData *pDataPackage)
     {
         PipelineLibrary *pLibrary = pDataPackage->pLibrary;

@@ -40,15 +40,15 @@ namespace Rxn::Platform::Win32
 
             Button(const int &btnId, const WString &btnTxt, const Command &btnCmd, const int &btnOffset, int btnWidth)
                 : txt(btnTxt)
-                , cmd(btnCmd)
-                , width(btnWidth)
-                , offset(btnOffset)
                 , id(btnId)
+                , cmd(btnCmd)
+                , offset(btnOffset)
+                , width(btnWidth)
                 , rect{}
             {}
         };
 
-        int m_ShowTitle;
+        int32 m_ShowTitle = 1;
 
         /**
          * .
@@ -57,14 +57,14 @@ namespace Rxn::Platform::Win32
          * \param command
          * \param width
          */
-        void AddButton(const WString &text, const Command &command, int width = 50);
+        void AddButton(const WString &text, const Command &command, int32 width = 50);
 
         /**
          * .
          *
          * \param id
          */
-        void RemoveButton(const int &id);
+        void RemoveButton(const int32 &id);
 
         /**
          * .

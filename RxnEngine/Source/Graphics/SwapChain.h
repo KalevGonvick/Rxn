@@ -18,7 +18,7 @@ namespace Rxn::Graphics::GPU
         uint32 GetCurrentBackBufferIndex();
         HANDLE GetFrameLatencyWaitableObject();
         HRESULT GetBuffer(uint32 bufferNum, ComPointer<ID3D12Resource> &bufferResource);
-        HRESULT ResizeBuffers(uint32 totalBuffers, int width, int height);
+        HRESULT ResizeBuffers(int width, int height);
         HRESULT Present(uint32 syncInterval, uint32 flags);
 
     private:

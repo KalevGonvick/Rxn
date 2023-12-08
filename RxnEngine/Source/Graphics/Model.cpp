@@ -322,7 +322,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Model::UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList)
+    HRESULT Model::UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList)
     {
         for (uint32_t i = 0; i < m_meshes.size(); ++i)
         {

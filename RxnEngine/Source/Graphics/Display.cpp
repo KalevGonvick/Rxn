@@ -64,7 +64,7 @@ namespace Rxn::Graphics
         m_ScissorRect.right = m_Width;
         m_ScissorRect.bottom = m_Height;
 
-        ThrowIfFailed(m_SwapChain.ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, newWidth, newHeight));
+        ThrowIfFailed(m_SwapChain.ResizeBuffers(newWidth, newHeight));
         TurnOverSwapChainBuffer();
     }
 

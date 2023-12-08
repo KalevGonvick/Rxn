@@ -25,7 +25,7 @@ namespace Rxn::Engine
         void InitializeEngineSettings(std::shared_ptr<EngineSettings> settings);
         void SetMode(EngineRuntimeMode mode);
 
-        EngineRuntimeMode GetMode();
+        EngineRuntimeMode GetMode() const;
         std::shared_ptr<EngineSettings> GetSettings();
 
 

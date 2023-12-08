@@ -9,7 +9,7 @@ namespace Rxn::Graphics::Manager
 
     CommandQueueManager::~CommandQueueManager() = default;
 
-    void CommandQueueManager::CreateCommandQueue(String queueName)
+    void CommandQueueManager::CreateCommandQueue(const String &queueName)
     {
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -30,7 +30,7 @@ namespace Rxn::Graphics::Manager
 
     }
 
-    ComPointer<ID3D12CommandQueue> &CommandQueueManager::GetCommandQueue(String queueName)
+    ComPointer<ID3D12CommandQueue> &CommandQueueManager::GetCommandQueue(const String &queueName)
     {
         const uint8_t *p = reinterpret_cast<const uint8_t *>(queueName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());

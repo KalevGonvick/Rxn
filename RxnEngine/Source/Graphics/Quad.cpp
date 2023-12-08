@@ -18,7 +18,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Quad::UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList)
+    HRESULT Quad::UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList)
     {
         HRESULT result;
 

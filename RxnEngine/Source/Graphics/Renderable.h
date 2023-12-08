@@ -12,7 +12,7 @@ namespace Rxn::Graphics::Basic
     public:
 
         virtual HRESULT LoadFromFile(const wchar_t *filename) = 0;
-        virtual HRESULT UploadGpuResources(ID3D12Device *device, ID3D12CommandQueue *cmdQueue, ID3D12CommandAllocator *cmdAlloc, ID3D12GraphicsCommandList *cmdList) = 0;
+        virtual HRESULT UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList) = 0;
         virtual void DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount) = 0;
 
 

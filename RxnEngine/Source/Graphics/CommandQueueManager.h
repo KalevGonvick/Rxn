@@ -9,8 +9,8 @@ namespace Rxn::Graphics::Manager
         CommandQueueManager(ComPointer<ID3D12Device> device);
         ~CommandQueueManager();
 
-        void CreateCommandQueue(String queueName);
-        ComPointer<ID3D12CommandQueue> &GetCommandQueue(String queueName);
+        void CreateCommandQueue(const String &queueName);
+        ComPointer<ID3D12CommandQueue> &GetCommandQueue(const String &queueName);
 
     private:
         ComPointer<ID3D12Device> m_Device;

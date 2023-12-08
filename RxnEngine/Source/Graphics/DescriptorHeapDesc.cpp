@@ -30,12 +30,12 @@ namespace Rxn::Graphics
         RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(&srvDescriptorHeap));
     }
 
-    void DescriptorHeapDesc::CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &dsvDescriptorHeap)
+    void DescriptorHeapDesc::CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> dsvDescriptorHeap) const
     {
         // TODO
     }
 
-    void DescriptorHeapDesc::CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &samplerDescriptorHeap)
+    void DescriptorHeapDesc::CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> samplerDescriptorHeap) const
     {
         // TODO
     }
