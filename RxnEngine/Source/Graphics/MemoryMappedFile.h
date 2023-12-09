@@ -21,7 +21,7 @@ namespace Rxn::Graphics::Mapped
         void GrowMapping(uint32 size);
         void SetSize(uint32 size);
 
-        void *GetData();
+        uint32 *GetData();
         uint32 GetSize() const;
 
         uint32 GetCurrentFileSize() const;

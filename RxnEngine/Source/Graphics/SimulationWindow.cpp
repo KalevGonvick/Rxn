@@ -23,7 +23,7 @@ namespace Rxn::Graphics
 
 
     
-    uint32 SimulationWindow::GetFPS() const
+    uint64 SimulationWindow::GetFPS() const
     {
         return Engine::EngineContext::GetTimer().GetFramesPerSecond();
     }

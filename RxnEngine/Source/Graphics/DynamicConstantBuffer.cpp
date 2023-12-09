@@ -3,7 +3,7 @@
 
 namespace Rxn::Graphics::Buffer
 {
-    DynamicConstantBuffer::DynamicConstantBuffer(UINT constantSize, UINT maxDrawsPerFrame, UINT frameCount)
+    DynamicConstantBuffer::DynamicConstantBuffer(uint32 constantSize, uint32 maxDrawsPerFrame, uint32 frameCount)
         : m_AlignedPerDrawConstantBufferSize(Align(constantSize))
         , m_FrameCount(frameCount)
         , m_MaxDrawsPerFrame(maxDrawsPerFrame)
@@ -18,7 +18,7 @@ namespace Rxn::Graphics::Buffer
 
     void DynamicConstantBuffer::Create(ID3D12Device *pDevice)
     {
-        const UINT bufferSize = m_PerFrameConstantBufferSize * m_FrameCount;
+        const uint32 bufferSize = m_PerFrameConstantBufferSize * m_FrameCount;
         const auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
         const auto buf = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
 
@@ -37,20 +37,20 @@ namespace Rxn::Graphics::Buffer
         ThrowIfFailed(m_ConstantBuffer->Map(0, &readRange, reinterpret_cast<void **>(&m_MappedConstantBuffer)));
     }
 
-    void * DynamicConstantBuffer::GetMappedMemory(uint32 drawIndex, uint32 frameIndex)
+    uint8 * DynamicConstantBuffer::GetMappedMemory(uint32 drawIndex, uint32 frameIndex)
     {
         assert(drawIndex < m_MaxDrawsPerFrame);
         uint32 constantBufferOffset = (frameIndex * m_PerFrameConstantBufferSize) + (drawIndex * m_AlignedPerDrawConstantBufferSize);
 
-        uint8 *temp = reinterpret_cast<uint8 *>(m_MappedConstantBuffer);
+        auto temp = reinterpret_cast<uint8 *>(m_MappedConstantBuffer);
         temp += constantBufferOffset;
 
         return temp;
     }
 
-    D3D12_GPU_VIRTUAL_ADDRESS DynamicConstantBuffer::GetGpuVirtualAddress(UINT drawIndex, UINT frameIndex)
+    D3D12_GPU_VIRTUAL_ADDRESS DynamicConstantBuffer::GetGpuVirtualAddress(uint32 drawIndex, uint32 frameIndex)
     {
-        UINT constantBufferOffset = (frameIndex * m_PerFrameConstantBufferSize) + (drawIndex * m_AlignedPerDrawConstantBufferSize);
+        uint32 constantBufferOffset = (frameIndex * m_PerFrameConstantBufferSize) + (drawIndex * m_AlignedPerDrawConstantBufferSize);
         return m_ConstantBuffer->GetGPUVirtualAddress() + constantBufferOffset;
     }
 }

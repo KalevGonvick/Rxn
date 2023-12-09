@@ -3,31 +3,20 @@
 
 namespace Rxn::Graphics::Mapped
 {
-    PipelineLibrary::PipelineLibrary(UINT frameCount, UINT cbvRootSignatureIndex)
-        : m_FlagsMutex()
-        , m_WorkerThreads{}
-        , m_UseUberShaders(true)
-        , m_UseDiskLibraries(true)
-        , m_CompiledPipelineStateObjectFlags{}
-        , m_InflightPipelineStateObjectFlags{}
-        , m_PipelineStateObjectCachingMechanism()
-        , m_CBVRootSignatureIndex(cbvRootSignatureIndex)
-        , m_MaxDrawsPerFrame(256)
-        , m_DrawIndex(0)
+    PipelineLibrary::PipelineLibrary(uint32 frameCount, uint32 cbvRootSignatureIndex)
+        : m_CBVRootSignatureIndex(cbvRootSignatureIndex)
         , m_DynamicConstantBuffer(sizeof(UberShaderConstantBuffer), m_MaxDrawsPerFrame, frameCount)
     {
         WCHAR path[512];
         GetAssetsPath(path, _countof(path));
         m_CachePath = path;
-
-        m_FlagsMutex = CreateMutex(nullptr, FALSE, nullptr);
     }
 
     PipelineLibrary::~PipelineLibrary()
     {
         WaitForThreads();
 
-        for (UINT i = 0; i < EffectPipelineTypeCount; i++)
+        for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
             m_DiskCaches[i].DestroyCache(false);
         }
@@ -55,7 +44,7 @@ namespace Rxn::Graphics::Mapped
 
         RXN_LOGGER::Debug(L"Initialize all cache file mappings (file may be empty).");
         m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + g_cPipelineLibraryFileName);
-        for (UINT i = 0; i < EffectPipelineTypeCount; i++)
+        for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
             RXN_LOGGER::Debug(L"Initializeing cache file mapping for shader: [%d]", i);
             m_DiskCaches[i].InitObjectCache(m_CachePath + g_cCacheFileNames[i]);
@@ -67,7 +56,7 @@ namespace Rxn::Graphics::Mapped
             m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::CachedBlobs;
         }
 
-        for (UINT i = 0; i < BaseEffectCount; i++)
+        for (uint32 i = 0; i < BaseEffectCount; i++)
         {
             RXN_LOGGER::Debug(L" Compiling the 3D & 'Ubershader'.");
             m_WorkerThreads[i].pDevice = pDevice;
@@ -81,16 +70,17 @@ namespace Rxn::Graphics::Mapped
         RXN_LOGGER::PrintLnSeperator();
     }
 
-
-    void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex)
+    
+    void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, uint32 frameIndex)
     {
         assert(m_DrawIndex < m_MaxDrawsPerFrame);
+        //assert(m_WorkerThreads[type].threadHandle != 0);
 
         bool isBuilt = false;
         bool isInFlight = false;
 
         {
-            auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(m_FlagsMutex);
+            auto lock = std::scoped_lock(m_FlagsMutex);
 
             isBuilt = m_CompiledPipelineStateObjectFlags[type];
             isInFlight = m_InflightPipelineStateObjectFlags[type];
@@ -101,7 +91,7 @@ namespace Rxn::Graphics::Mapped
             if (!isBuilt && m_UseUberShaders)
             {
                 RXN_LOGGER::Debug(L"Ubershader using effect: %d", type);
-                UberShaderConstantBuffer *constantData = (UberShaderConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, frameIndex);
+                auto constantData = (UberShaderConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, frameIndex);
                 constantData->effectIndex = type;
                 pCommandList->SetGraphicsRootConstantBufferView(m_CBVRootSignatureIndex, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, frameIndex));
 
@@ -130,7 +120,7 @@ namespace Rxn::Graphics::Mapped
                     ResumeThread(m_WorkerThreads[type].threadHandle);
 
                     {
-                        auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(m_FlagsMutex);
+                        auto lock = std::scoped_lock(m_FlagsMutex);
 
                         m_InflightPipelineStateObjectFlags[type] = true;
                     }
@@ -166,15 +156,8 @@ namespace Rxn::Graphics::Mapped
         ID3D12Device *pDevice = pDataPackage->pDevice;
         ID3D12RootSignature *pRootSignature = pDataPackage->pRootSignature;
         EffectPipelineType type = pDataPackage->type;
-        bool useCache = false;
-        bool sleepToEmulateComplexCreatePSO = false;
 
-        {
-            auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(pLibrary->m_FlagsMutex);
-
-            RXN_LOGGER::Debug(L"When using the disk cache compilation should be extremely quick so don't sleep.");
-            useCache = pLibrary->m_UseDiskLibraries;
-        }
+        bool useCache = CompileCacheCheck(pDataPackage);
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc = {};
         baseDesc.pRootSignature = pRootSignature;
@@ -211,15 +194,13 @@ namespace Rxn::Graphics::Mapped
                 hr = pPipelineLibrary->StorePipeline(g_cEffectNames[type], pLibrary->m_PipelineStates[type].Get());
                 if (E_INVALIDARG == hr)
                 {
-                    RXN_LOGGER::Debug(L"A PSO with the specified name already exists in the library.");
-                    RXN_LOGGER::Debug(L"This shouldn't happen in this sample, but depending on how you name the PSOs collisions are possible.");
+                    RXN_LOGGER::Debug(L"A PSO with the specified name '%s' already exists in the library.", g_cEffectNames[type]);
+                    throw std::runtime_error("A PSO with the specified name already exists in the library.");
                 }
                 else
                 {
                     ThrowIfFailed(hr);
                 }
-
-                sleepToEmulateComplexCreatePSO = true;
             }
             else
             {
@@ -232,18 +213,16 @@ namespace Rxn::Graphics::Mapped
             size_t size = pLibrary->m_DiskCaches[type].GetCachedBlobSize();
             if (size == 0)
             {
-                RXN_LOGGER::Debug(L"File size is 0... The disk cache needs to be refreshed...");
+                RXN_LOGGER::Trace(L"File size is 0... The disk cache needs to be refreshed...");
                 ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
 
                 ComPointer<ID3DBlob> blob;
                 pLibrary->m_PipelineStates[type]->GetCachedBlob(&blob);
                 pLibrary->m_DiskCaches[type].Update(blob.Get());
-
-                sleepToEmulateComplexCreatePSO = true;
             }
             else
             {
-                RXN_LOGGER::Debug(L"Reading the blob data from disk instead of re-compiling shaders!");
+                RXN_LOGGER::Trace(L"Reading the blob data from disk instead of re-compiling shaders!");
                 baseDesc.CachedPSO.pCachedBlob = pLibrary->m_DiskCaches[type].GetCachedBlob();
                 baseDesc.CachedPSO.CachedBlobSizeInBytes = pLibrary->m_DiskCaches[type].GetCachedBlobSize();
 
@@ -252,29 +231,19 @@ namespace Rxn::Graphics::Mapped
 
                 if (FAILED(hr))
                 {
-                    RXN_LOGGER::Debug(L"Compilation failed.... The cache is probably stale. (old drivers etc.)");
+                    RXN_LOGGER::Trace(L"Compilation failed.... The cache is probably stale. (old drivers etc.)");
                     baseDesc.CachedPSO = {};
                     ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
 
                     ComPointer<ID3DBlob> blob;
                     pLibrary->m_PipelineStates[type]->GetCachedBlob(&blob);
                     pLibrary->m_DiskCaches[type].Update(blob.Get());
-
-                    sleepToEmulateComplexCreatePSO = true;
                 }
             }
         }
         else
         {
             ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
-            sleepToEmulateComplexCreatePSO = true;
-        }
-
-        if (sleepToEmulateComplexCreatePSO && type > BaseUberShader)
-        {
-            RXN_LOGGER::Debug(L"The effects are very simple and should compile quickly so we'll sleep to emulate something more complex.");
-            RXN_LOGGER::Debug(L"Sleeping...");
-            Sleep(500);
         }
 
         WCHAR name[50];
@@ -283,12 +252,23 @@ namespace Rxn::Graphics::Mapped
             SetName(pLibrary->m_PipelineStates[type].Get(), name);
         }
 
-        {
-            auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(pLibrary->m_FlagsMutex);
+        SetThreadCompileFinishFlags(pDataPackage);
+    }
 
-            pLibrary->m_CompiledPipelineStateObjectFlags[type] = true;
-            pLibrary->m_InflightPipelineStateObjectFlags[type] = false;
-        }
+    bool PipelineLibrary::CompileCacheCheck(CompilePipelineStateObjectThreadData *pDataPackage)
+    {
+        
+        auto lock = std::scoped_lock(pDataPackage->pLibrary->m_FlagsMutex);
+        return pDataPackage->pLibrary->m_UseDiskLibraries;
+        
+    }
+
+    void PipelineLibrary::SetThreadCompileFinishFlags(CompilePipelineStateObjectThreadData *pDataPackage)
+    {
+        auto lock = std::scoped_lock(pDataPackage->pLibrary->m_FlagsMutex);
+
+        pDataPackage->pLibrary->m_CompiledPipelineStateObjectFlags[pDataPackage->type] = true;
+        pDataPackage->pLibrary->m_InflightPipelineStateObjectFlags[pDataPackage->type] = false;
     }
 
     void PipelineLibrary::EndFrame()
@@ -327,7 +307,7 @@ namespace Rxn::Graphics::Mapped
     void PipelineLibrary::ToggleDiskLibrary()
     {
         {
-            auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(m_FlagsMutex);
+            auto lock = std::scoped_lock(m_FlagsMutex);
 
             m_UseDiskLibraries = !m_UseDiskLibraries;
         }
@@ -338,9 +318,9 @@ namespace Rxn::Graphics::Mapped
     void PipelineLibrary::SwitchPSOCachingMechanism()
     {
         {
-            auto lock = Microsoft::WRL::Wrappers::Mutex::Lock(m_FlagsMutex);
+            auto lock = std::scoped_lock(m_FlagsMutex);
 
-            UINT newMechanism = static_cast<UINT>(m_PipelineStateObjectCachingMechanism) + 1;
+            uint32 newMechanism = static_cast<uint32>(m_PipelineStateObjectCachingMechanism) + 1;
             newMechanism = newMechanism % PSOCachingMechanism::PSOCachingMechanismCount;
 
             RXN_LOGGER::Debug(L"Don't allow Pipeline Libraries if they're not available.");
