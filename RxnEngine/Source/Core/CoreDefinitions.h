@@ -59,7 +59,7 @@
 #pragma region ExternalLibs
 
 #include <windowsx.h>
-#include <windows.h>
+#include <Windows.h>
 #include <string>
 #include <memory>
 #include <unordered_map>

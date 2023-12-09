@@ -64,7 +64,7 @@ namespace Rxn::Graphics
         void DestroySwapChainResources();
         void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> frameCmdList, ComPointer<ID3D12CommandAllocator> frameCmdAllocator) const;
         void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
-        uint32 GetFPS() const;
+        uint64 GetFPS() const;
 
     private:
 

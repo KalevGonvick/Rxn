@@ -146,7 +146,7 @@ namespace Rxn::Graphics::Mapped
         }
     }
 
-    void *MemoryMappedFile::GetData()
+    uint32 *MemoryMappedFile::GetData()
     {
         if (m_MapAddress)
         {

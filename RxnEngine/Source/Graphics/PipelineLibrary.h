@@ -29,7 +29,7 @@ namespace Rxn::Graphics::Mapped
         PSOCachingMechanismCount
     };
 
-    enum EffectPipelineType : UINT
+    enum EffectPipelineType : uint32
     {
         // These always get compiled at startup.
         BaseNormal3DRender,
@@ -212,13 +212,13 @@ namespace Rxn::Graphics::Mapped
     {
     public:
 
-        PipelineLibrary(UINT frameCount, UINT cbvRootSignatureIndex);
+        PipelineLibrary(uint32 frameCount, uint32 cbvRootSignatureIndex);
         ~PipelineLibrary();
 
     public:
 
         void Build(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature);
-        void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, UINT frameIndex);
+        void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, uint32 frameIndex);
 
         void EndFrame();
         void ClearPSOCache();
@@ -246,40 +246,43 @@ namespace Rxn::Graphics::Mapped
         // This will be used to tell the uber shader which effect to use.
         struct UberShaderConstantBuffer
         {
-            UINT32 effectIndex;
+            uint32 effectIndex;
         };
 
     private:
 
         static void CompilePipelineStateObject(CompilePipelineStateObjectThreadData *pDataPackage);
+        static bool CompileCacheCheck(CompilePipelineStateObjectThreadData *pDataPackage);
+        static void SetThreadCompileFinishFlags(CompilePipelineStateObjectThreadData *pDataPackage);
         void WaitForThreads();
 
     private:
 
-        static const UINT BaseEffectCount = 2;
+        
 
         ComPointer<ID3D12PipelineState> m_PipelineStates[EffectPipelineTypeCount];
 
         MemoryMappedPipelineStateObjectCache m_DiskCaches[EffectPipelineTypeCount];     // Cached blobs.
         MemoryMappedPipelineLibrary m_PipelineLibrary;                                  // Pipeline Library.
 
-        HANDLE m_FlagsMutex;
+        //HANDLE m_FlagsMutex;
+        std::mutex m_FlagsMutex;
 
-        CompilePipelineStateObjectThreadData m_WorkerThreads[EffectPipelineTypeCount];
+        CompilePipelineStateObjectThreadData m_WorkerThreads[EffectPipelineTypeCount]{};
 
-        bool m_UseUberShaders;
-        bool m_UseDiskLibraries;
+        bool m_UseUberShaders = true;
+        bool m_UseDiskLibraries = true;
         bool m_PipelineLibrariesSupported;
-        bool m_CompiledPipelineStateObjectFlags[EffectPipelineTypeCount];
-        bool m_InflightPipelineStateObjectFlags[EffectPipelineTypeCount];
+        bool m_CompiledPipelineStateObjectFlags[EffectPipelineTypeCount]{};
+        bool m_InflightPipelineStateObjectFlags[EffectPipelineTypeCount]{};
 
         PSOCachingMechanism m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::PipelineLibraries;
 
         WString m_CachePath;
-
-        UINT m_CBVRootSignatureIndex;
-        UINT m_MaxDrawsPerFrame = 256;
-        UINT m_DrawIndex;
+        static const uint32 BaseEffectCount = 2;
+        uint32 m_CBVRootSignatureIndex = 0;
+        uint32 m_MaxDrawsPerFrame = 256;
+        uint32 m_DrawIndex = 0;
 
         Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
     };
