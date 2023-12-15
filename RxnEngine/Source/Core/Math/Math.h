@@ -126,27 +126,23 @@ namespace Rxn::Core::Math
         uint32 hashResult = seed;
         uint32 inputString;
 
-        /* Read in groups of 4. */
-        for (uint64 i = len >> 2; i; i--) {
-            // Here is a source of differing results across endiannesses.
-            // A swap here has no effects on hash properties though.
+        for (uint64 i = len >> 2; i; i--) 
+        {
             memcpy(&inputString, key, sizeof(uint32));
             key += sizeof(uint32);
             hashResult ^= Murmer32Scramble(inputString);
             hashResult = (hashResult << 13) | (hashResult >> 19);
             hashResult = hashResult * 5 + 0xe6546b64;
         }
-        /* Read the rest. */
+
         inputString = 0;
-        for (uint64 i = len & 3; i; i--) {
+        for (uint64 i = len & 3; i; i--) 
+        {
             inputString <<= 8;
             inputString |= key[i - 1];
         }
-        // A swap is *not* necessary here because the preceding loop already
-        // places the low bytes in the low places according to whatever endianness
-        // we use. Swaps only apply when the memory is copied in a chunk.
+
         hashResult ^= Murmer32Scramble(inputString);
-        /* Finalize. */
         hashResult ^= len;
         hashResult ^= hashResult >> 16;
         hashResult *= 0x85ebca6b;
@@ -156,14 +152,10 @@ namespace Rxn::Core::Math
         return hashResult;
     }
 
-    // This requires SSE4.2 which is present on Intel Nehalem (Nov. 2008)
-    // and AMD Bulldozer (Oct. 2011) processors.  I could put a runtime
-    // check for this, but I'm just going to assume people playing with
-    // DirectX 12 on Windows 10 have fairly recent machines.
 #ifdef _M_X64
-    constexpr int ENABLE_SSE_CRC32 = 1;
+#define ENABLE_SSE_CRC32 1
 #else
-    constexpr int ENABLE_SSE_CRC32 = 0;
+define ENABLE_SSE_CRC32 0
 #endif
 
 #if ENABLE_SSE_CRC32

@@ -9,9 +9,8 @@ namespace Rxn::Engine::SplashScreen
 
 namespace Rxn::Engine
 {
-    SplashWindow::SplashWindow(WString windowTitle, WString windowClass)
-        : Platform::Win32::Window(windowTitle, windowClass)
-        , m_pwOutputMessage(L"...")
+    SplashWindow::SplashWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height)
+        : Platform::Win32::Window(windowTitle, windowClass, width, height)
     {}
 
     SplashWindow::~SplashWindow() = default;
@@ -66,7 +65,6 @@ namespace Rxn::Engine
     void SplashWindow::SetupWindow()
     {
         m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
-        m_Size = SIZE(500, 600);
         m_IsInteractive = false;
 
         RegisterComponentClass();

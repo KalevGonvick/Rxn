@@ -6,7 +6,7 @@ namespace Rxn::Graphics
     {
     public:
 
-        DescriptorHeapDesc(int numDescriptors);
+        explicit DescriptorHeapDesc(int32 numDescriptors);
         ~DescriptorHeapDesc();
 
     public:

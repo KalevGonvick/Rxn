@@ -23,7 +23,7 @@ namespace Rxn::Graphics::GPU
 
     private:
 
-        HANDLE m_SwapChainEvent;
+        HANDLE m_SwapChainEvent = nullptr;
         DXGI_SWAP_CHAIN_DESC1 m_SwapChainDesc{};
         ComPointer<IDXGISwapChain4> m_SwapChain;
         bool m_Initialized = false;

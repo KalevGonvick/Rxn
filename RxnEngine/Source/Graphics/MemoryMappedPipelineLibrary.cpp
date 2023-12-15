@@ -9,7 +9,6 @@ namespace Rxn::Graphics::Mapped
         {
             RXN_LOGGER::Debug(L"Device exists... creating pipeline library device.");
 
-
             // Create the Pipeline Library.
             ComPointer<ID3D12Device1> device1;
             if (SUCCEEDED(pDevice->QueryInterface(IID_PPV_ARGS(&device1))))
@@ -41,11 +40,12 @@ namespace Rxn::Graphics::Mapped
                     ThrowIfFailed(hr);
                 }
                 }
-
+#ifdef _DEBUG
                 if (m_pipelineLibrary)
                 {
                     NAME_D3D12_OBJECT(m_pipelineLibrary);
                 }
+#endif
             }
         }
 
@@ -58,13 +58,12 @@ namespace Rxn::Graphics::Mapped
         if (!deleteFile && m_pipelineLibrary)
         {
             // Important: An ID3D12PipelineLibrary object becomes undefined when the underlying memory, that was used to initalize it, changes.
-
-            assert(m_pipelineLibrary->GetSerializedSize() <= UINT_MAX);    // Code below casts to UINT.
+            assert(m_pipelineLibrary->GetSerializedSize() <= UINT_MAX);
             const auto librarySize = static_cast<uint32>(m_pipelineLibrary->GetSerializedSize());
             if (librarySize > 0)
             {
                 // Grow the file if needed.
-                const size_t neededSize = sizeof(UINT) + librarySize;
+                const size_t neededSize = sizeof(uint32) + librarySize;
                 void *pTempData = new BYTE[librarySize];
                 if (neededSize > GetCurrentFileSize() && pTempData)
                 {
@@ -95,12 +94,12 @@ namespace Rxn::Graphics::Mapped
             }
         }
 
-        DestroyFile(deleteFile);
+        MemoryMappedFile::DestroyFile(deleteFile);
         m_pipelineLibrary = nullptr;
     }
 
-    ID3D12PipelineLibrary *MemoryMappedPipelineLibrary::GetPipelineLibrary()
+    ComPointer<ID3D12PipelineLibrary> MemoryMappedPipelineLibrary::GetPipelineLibrary()
     {
-        return m_pipelineLibrary.Get();
+        return m_pipelineLibrary;
     }
 }

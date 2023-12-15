@@ -17,7 +17,7 @@ namespace Rxn::Platform::Win32
             return;
         }
 
-        auto window = std::make_shared<Window>(windowDesc.windowName, windowDesc.windowClassName);
+        auto window = std::make_shared<Window>(windowDesc.windowName, windowDesc.windowClassName, windowDesc.windowSize.cx, windowDesc.windowSize.cy);
 
         window->m_WindowBackgroundColour = windowDesc.windowBgColour;
         window->m_WindowBorderColour = windowDesc.windowBorderColour;

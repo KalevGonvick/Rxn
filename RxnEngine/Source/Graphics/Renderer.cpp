@@ -10,11 +10,6 @@ namespace Rxn::Graphics
         WCHAR assetsPath[512];
         GetAssetsPath(assetsPath, _countof(assetsPath));
         m_AssetsPath = assetsPath;
-        
-        for (int x = 0; x < Mapped::EffectPipelineTypeCount; x++)
-        {
-            m_EnabledEffects.push_back(true);
-        }
     }
 
     Renderer::~Renderer() = default;
@@ -82,19 +77,6 @@ namespace Rxn::Graphics
         return data;
     }
 
-    void Renderer::ToggleEffect(Mapped::EffectPipelineType type)
-    {
-        if (m_EnabledEffects[type])
-        {
-            m_Fence.SignalFence(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), m_Display.GetFrameIndex());
-            m_Fence.WaitInfinite(m_Display.GetFrameIndex());
-            m_Fence.IncrementFenceValue(m_Display.GetFrameIndex());
-            m_PipelineLibrary.DestroyShader(type);
-        }
-
-        m_EnabledEffects[type] = !m_EnabledEffects[type];
-    }
-
     Scene &Renderer::GetScene()
     {
         return m_Scene;
@@ -155,11 +137,11 @@ namespace Rxn::Graphics
         m_AllocatorPool.Create(RenderContext::GetGraphicsDevice());
     }
 
-    void Renderer::InitDisplay()
+    void Renderer::InitRendererDisplay(Renderer &renderer, const String &cmdQueueHashKey)
     {
-        m_Display.GetSwapChain().SetTearingSupport(m_HasTearingSupport);
-        m_Display.GetSwapChain().CreateSwapChain(m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY));
-        m_Display.TurnOverSwapChainBuffer();
+        renderer.m_Display.GetSwapChain().SetTearingSupport(renderer.m_HasTearingSupport);
+        renderer.m_Display.GetSwapChain().CreateSwapChain(renderer.m_CommandQueueManager.GetCommandQueue(cmdQueueHashKey));
+        renderer.m_Display.TurnOverSwapChainBuffer();
 
     }
 
@@ -203,59 +185,51 @@ namespace Rxn::Graphics
         m_Scene.GetDynamicConstantBuffer().Create(RenderContext::GetGraphicsDevice().Get());
     }
 
-    void Renderer::InitCachedPipeline()
+    void Renderer::InitCachedPipeline(Renderer &renderer, ComPointer<ID3D12Device> device)
     {
-        m_PipelineLibrary.Build(RenderContext::GetGraphicsDevice().Get(), GetScene().GetRootSignature());
+        renderer.GetPipelineLibrary().Build(device, renderer.GetScene().GetRootSignature());
     }
 
-    void Renderer::InitCommandQueues()
+    void Renderer::InitCommandQueues(Renderer &renderer, const String &cmdQueueHashKey)
     {
-        m_CommandQueueManager.CreateCommandQueue(GOHKeys::CmdQueue::PRIMARY);
+        renderer.GetCommandQueueManager().CreateCommandQueue(cmdQueueHashKey);
     }
 
-    void Renderer::InitCommandLists()
+    void Renderer::InitCommandList(Renderer &renderer, const String &cmdQueueHashKey, const String &newCmdListHashKey)
     {
-        auto primaryCommandQueue = m_CommandQueueManager.GetCommandQueue(GOHKeys::CmdQueue::PRIMARY);
-        auto currentCommandAllocator = GetCommandAllocator(GetDisplay().GetFrameIndex());
+        auto primaryCommandQueue = renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey);
+        auto currentCommandAllocator = renderer.GetCommandAllocator(renderer.GetDisplay().GetFrameIndex());
 
-        m_CommandListManager.CreateCommandList(
-            GOHKeys::CmdList::PRIMARY,
-            currentCommandAllocator
+        renderer.GetCommandListManager().CreateCommandList(
+            newCmdListHashKey,
+            currentCommandAllocator,
+            true,
+            D3D12_COMMAND_LIST_TYPE_DIRECT
         );
 
-        m_CommandListManager.CloseAndExecuteCommandList(
-            GOHKeys::CmdList::PRIMARY,
+        //renderer.GetCommandListManager().CloseCommandList(newCmdListHashKey);
+        renderer.GetCommandListManager().ExecuteCommandList(newCmdListHashKey, primaryCommandQueue);
+        /*renderer.GetCommandListManager().CloseAndExecuteCommandList(
+            newCmdListHashKey,
             primaryCommandQueue
-        );
-
-        m_CommandListManager.CreateCommandList(
-            GOHKeys::CmdList::INIT,
-            currentCommandAllocator
-        );
-
-        m_CommandListManager.CloseAndExecuteCommandList(
-            GOHKeys::CmdList::INIT,
-            primaryCommandQueue
-        );
+        );*/
     }
 
-    void Renderer::InitCommandAllocators() 
+    void Renderer::InitCommandAllocator(Renderer &renderer, uint32 bufferIndex)
     {
-        m_AllocatorPool.Create(RenderContext::GetGraphicsDevice());
-        m_CommandAllocators[SwapChainBuffers::BUFFER_ONE] = GetCommandAllocatorPool().RequestAllocator(SwapChainBuffers::BUFFER_ONE);
-        m_CommandAllocators[SwapChainBuffers::BUFFER_TWO] = GetCommandAllocatorPool().RequestAllocator(SwapChainBuffers::BUFFER_TWO);
+        renderer.GetCommandAllocator(bufferIndex) = renderer.GetCommandAllocatorPool().RequestAllocator(bufferIndex);
     }
 
-    void Renderer::InitGpuFence()
+    void Renderer::InitGpuFence(Renderer &renderer, const String &cmdQueueHashKey)
     {
-        m_Fence.CreateFence(GetDisplay().GetFrameIndex());
-        const uint32 nextFrameIndex = GetDisplay().GetSwapChain().GetCurrentBackBufferIndex();
+        renderer.GetFence().CreateFence(renderer.GetDisplay().GetFrameIndex());
+        const uint32 nextFrameIndex = renderer.GetDisplay().GetSwapChain().GetCurrentBackBufferIndex();
 
-        m_Fence.MoveFenceMarker(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), GetDisplay().GetFrameIndex(), nextFrameIndex);
-        m_Display.TurnOverSwapChainBuffer();
-        m_Fence.SignalFence(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), GetDisplay().GetFrameIndex());
-        m_Fence.WaitInfinite(GetDisplay().GetFrameIndex());
-        m_Fence.IncrementFenceValue(GetDisplay().GetFrameIndex());
+        renderer.GetFence().MoveFenceMarker(renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey), renderer.GetDisplay().GetFrameIndex(), nextFrameIndex);
+        renderer.GetDisplay().TurnOverSwapChainBuffer();
+        renderer.GetFence().SignalFence(renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey), renderer.GetDisplay().GetFrameIndex());
+        renderer.GetFence().WaitInfinite(renderer.GetDisplay().GetFrameIndex());
+        renderer.GetFence().IncrementFenceValue(renderer.GetDisplay().GetFrameIndex());
     }
 
    

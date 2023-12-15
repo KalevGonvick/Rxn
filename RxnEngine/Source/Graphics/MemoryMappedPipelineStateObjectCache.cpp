@@ -3,21 +3,17 @@
 
 namespace Rxn::Graphics::Mapped
 {
-    void MemoryMappedPipelineStateObjectCache::InitObjectCache(const WString &filename)
-    {
-        InitFile(filename);
-    }
-
-    void MemoryMappedPipelineStateObjectCache::DestroyCache(bool deleteFile)
-    {
-        DestroyFile(deleteFile);
-    }
-
     void MemoryMappedPipelineStateObjectCache::Update(ID3DBlob *pBlob)
     {
         if (pBlob)
         {
-            assert(pBlob->GetBufferSize() <= UINT_MAX);    // Code below casts to UINT.
+
+            if (pBlob->GetBufferSize() > UINT_MAX)
+            {
+                RXN_LOGGER::Error(L"Current blob buffer size is larger than uint_max (0xffffffff).");
+                throw FileException("Current blob buffer size is larger than uint_max (0xffffffff).");
+            }
+
             const auto blobSize = static_cast<uint32>(pBlob->GetBufferSize());
             if (blobSize > 0)
             {
@@ -29,20 +25,15 @@ namespace Rxn::Graphics::Mapped
                 }
 
                 // Save the size of the blob, and then the blob itself.
-                assert(neededSize <= GetCurrentFileSize());
+                if (neededSize > GetCurrentFileSize())
+                {
+                    RXN_LOGGER::Error(L"Needed size exceeds current file size.");
+                    throw FileException("Needed size exceeds current file size.");
+                }
+
                 MemoryMappedFile::SetSize(blobSize);
-                memcpy(GetCachedBlob(), pBlob->GetBufferPointer(), pBlob->GetBufferSize());
+                memcpy(GetData(), pBlob->GetBufferPointer(), pBlob->GetBufferSize());
             }
         }
-    }
-
-    size_t MemoryMappedPipelineStateObjectCache::GetCachedBlobSize() const
-    {
-        return GetSize();
-    }
-
-    void *MemoryMappedPipelineStateObjectCache::GetCachedBlob()
-    {
-        return GetData();
     }
 }
