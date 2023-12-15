@@ -3,7 +3,7 @@
 
 namespace Rxn::Graphics
 {
-    DescriptorHeapDesc::DescriptorHeapDesc(int numDescriptors)
+    DescriptorHeapDesc::DescriptorHeapDesc(int32 numDescriptors)
     {
         NumDescriptors = numDescriptors;
         NodeMask = 0;

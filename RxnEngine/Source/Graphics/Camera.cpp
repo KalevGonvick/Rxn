@@ -14,12 +14,12 @@ namespace Rxn::Graphics
         Reset();
     }
 
-    void Camera::SetMoveSpeed(float unitsPerSecond)
+    void Camera::SetMoveSpeed(float32 unitsPerSecond)
     {
         m_moveSpeed = unitsPerSecond;
     }
 
-    void Camera::SetTurnSpeed(float radiansPerSecond)
+    void Camera::SetTurnSpeed(float32 radiansPerSecond)
     {
         m_turnSpeed = radiansPerSecond;
     }
@@ -32,7 +32,7 @@ namespace Rxn::Graphics
         m_lookDirection = { 0.0f, 0.0f, -1.0f };
     }
 
-    void Camera::Update(float elapsedSeconds)
+    void Camera::Update(float32 elapsedSeconds)
     {
         // Calculate the move vector in camera space.
         DirectX::XMFLOAT3 move(0, 0, 0);
@@ -53,8 +53,8 @@ namespace Rxn::Graphics
             move.z = DirectX::XMVectorGetZ(vector);
         }
 
-        float moveInterval = m_moveSpeed * elapsedSeconds;
-        float rotateInterval = m_turnSpeed * elapsedSeconds;
+        float32 moveInterval = m_moveSpeed * elapsedSeconds;
+        float32 rotateInterval = m_turnSpeed * elapsedSeconds;
 
         if (m_keysPressed.left)
             m_yaw += rotateInterval;
@@ -66,17 +66,17 @@ namespace Rxn::Graphics
             m_pitch -= rotateInterval;
 
         // Prevent looking too far up or down.
-        //m_pitch = std::min(m_pitch, DirectX::XM_PIDIV4);
-        //m_pitch = std::max(-DirectX::XM_PIDIV4, m_pitch);
+        m_pitch = std::min(m_pitch, DirectX::XM_PIDIV4);
+        m_pitch = std::max(-DirectX::XM_PIDIV4, m_pitch);
 
         // Move the camera in model space.
-        float x = move.x * -cosf(m_yaw) - move.z * sinf(m_yaw);
-        float z = move.x * sinf(m_yaw) - move.z * cosf(m_yaw);
+        float32 x = move.x * -cosf(m_yaw) - move.z * sinf(m_yaw);
+        float32 z = move.x * sinf(m_yaw) - move.z * cosf(m_yaw);
         m_position.x += x * moveInterval;
         m_position.z += z * moveInterval;
 
         // Determine the look direction.
-        float r = cosf(m_pitch);
+        float32 r = cosf(m_pitch);
         m_lookDirection.x = r * sinf(m_yaw);
         m_lookDirection.y = sinf(m_pitch);
         m_lookDirection.z = r * cosf(m_yaw);
@@ -87,7 +87,7 @@ namespace Rxn::Graphics
         return DirectX::XMMatrixLookToRH(XMLoadFloat3(&m_position), XMLoadFloat3(&m_lookDirection), XMLoadFloat3(&m_upDirection));
     }
 
-    DirectX::XMMATRIX Camera::GetProjectionMatrix(float fov, float aspectRatio, float nearPlane, float farPlane)
+    DirectX::XMMATRIX Camera::GetProjectionMatrix(float32 fov, float32 aspectRatio, float32 nearPlane, float32 farPlane)
     {
         return DirectX::XMMatrixPerspectiveFovRH(fov, aspectRatio, nearPlane, farPlane);
     }

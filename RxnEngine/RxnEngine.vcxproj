@@ -136,7 +136,6 @@
     <ClCompile Include="Source\Graphics\SimulationWindow.cpp" />
     <ClCompile Include="Source\Graphics\SplashScreen.cpp" />
     <ClCompile Include="Source\Graphics\SwapChain.cpp" />
-    <ClCompile Include="Source\Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Source\Platform\WIN32\IApplication.cpp" />
     <ClCompile Include="Source\Platform\WIN32\SubComponent.cpp" />
     <ClCompile Include="Source\Platform\WIN32\Caption.cpp" />
@@ -201,8 +200,6 @@
     <ClInclude Include="Source\Graphics\SimulationWindow.h" />
     <ClInclude Include="Source\Graphics\SplashScreen.h" />
     <ClInclude Include="Source\Graphics\SwapChain.h" />
-    <ClInclude Include="Source\Graphics\TempData.h" />
-    <ClInclude Include="Source\Graphics\VertexBuffer.h" />
     <ClInclude Include="Source\Platform\WIN32\IApplication.h" />
     <ClInclude Include="Source\Platform\WIN32\SubComponent.h" />
     <ClInclude Include="Source\Platform\WIN32\Caption.h" />
@@ -433,7 +430,17 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainWave</EntryPointName>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\WinPixEventRuntime.1.0.231030001\build\WinPixEventRuntime.targets" Condition="Exists('..\packages\WinPixEventRuntime.1.0.231030001\build\WinPixEventRuntime.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\WinPixEventRuntime.1.0.231030001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinPixEventRuntime.1.0.231030001\build\WinPixEventRuntime.targets'))" />
+  </Target>
 </Project>

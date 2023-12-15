@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   Scene.h
+ * \brief  
+ * 
+ * \author kalev
+ * \date   December 2023
+ *********************************************************************/
 #pragma once
 #include "Camera.h"
 #include "DynamicConstantBuffer.h"
@@ -6,6 +13,7 @@
 #include "SwapChain.h"
 #include "Display.h"
 #include "Renderable.h"
+#include "DescriptorHeapDesc.h"
 
 namespace Rxn::Graphics
 {
@@ -18,7 +26,7 @@ namespace Rxn::Graphics
 
     public:
 
-        void SetSerializedRootSignature(CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc);
+        void SetSerializedRootSignature(const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC &rootSigDesc);
         
         /* -------------< temp functions >------------- */
         void AddShapeFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList);
@@ -26,13 +34,62 @@ namespace Rxn::Graphics
         void AddTexture(ComPointer<ID3D12Resource> &textureUploadHeap, const D3D12_RESOURCE_DESC &textureDesc, ID3D12GraphicsCommandList *cmdList, D3D12_SUBRESOURCE_DATA textureData);
         void InitHeaps();
 
+        static void InitHeap(uint32 descriptorCount, ComPointer<ID3D12DescriptorHeap> heap, D3D12_DESCRIPTOR_HEAP_TYPE type);
 
+        /**
+         * .
+         * 
+         */
         void ReleaseResourceViews();
-        void InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain swapChain);
+
+        /**
+         * .
+         * 
+         * \param frameIndex
+         * \param swapChain
+         */
+        void InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain &swapChain);
+
+        /**
+         * .
+         * 
+         * \param frameCmdList
+         * \param frameIndex
+         * \param drawIndex
+         */
         void SetDynamicConstantBufferByIndex(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex, uint32 drawIndex);
+
+        /**
+         * .
+         * 
+         * \param frameCmdList
+         * \param frameIndex
+         */
         void ClearOutputMergerRenderTarget(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
+
+        /**
+         * .
+         * 
+         * \param frameCmdList
+         */
         void SetShaderResourceViewDescriptorHeap(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
+
+        /**
+         * .
+         * 
+         * \param projMat
+         * \param frameIndex
+         * \param drawIndex
+         */
         void UpdateConstantBufferByIndex(const DirectX::XMMATRIX & projMat, const uint32 frameIndex, const uint32 drawIndex);
+
+
+        /**
+         * .
+         * 
+         * \param cmdList
+         */
+        void DrawSceneShapes(ComPointer<ID3D12GraphicsCommandList> cmdList) const;
 
         /* Getters */
         DrawConstantBuffer *GetConstantBuffer(const uint32 drawIndex, const uint32 frameIndex);
@@ -47,16 +104,37 @@ namespace Rxn::Graphics
         ComPointer<ID3D12DescriptorHeap> & GetSrvHeap();
         ComPointer<ID3D12Resource> & GetIntermediateRenderTarget();
 
-        const uint32 GetRtvDescriptorHeapSize();
-        const uint32 GetSrvDescriptorHeapSize();
+        uint32 GetRtvDescriptorHeapSize() const;
+        uint32 GetSrvDescriptorHeapSize() const;
 
-        void DrawSceneShapes(ComPointer<ID3D12GraphicsCommandList> cmdList) const;
+       
 
     private:
 
+        /**
+         * .
+         * 
+         * \param swapChain
+         * \param rtvHandle
+         */
         void CreateRenderTargets(GPU::SwapChain &swapChain, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle);
+
+        /**
+         * .
+         * 
+         * \param frameIndex
+         * \param rtvHandle
+         */
         void CreateIntermediateRenderTarget(const uint32 frameIndex, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle);
-        void CreateShaderResourceViewForResource(D3D12_RESOURCE_DESC &resDesc);
+
+        /**
+         * .
+         * 
+         * \param resDesc
+         */
+        void CreateShaderResourceViewForResource(const D3D12_RESOURCE_DESC &resDesc);
+
+        void CreateSrvForResource(const D3D12_RESOURCE_DESC &resourceDesc, ComPointer<ID3D12Resource> resource);
 
     private:
 
@@ -65,19 +143,19 @@ namespace Rxn::Graphics
         std::vector<std::shared_ptr<Basic::Shape>> m_SceneShapes;
 
         Camera m_Camera;
-        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
+        Buffer::DynamicConstantBuffer m_DynamicConstantBuffer{sizeof(DrawConstantBuffer), 256, SwapChainBuffers::TOTAL_BUFFERS};
         
 
         ComPointer<ID3D12Resource> m_RenderTargets[SwapChainBuffers::TOTAL_BUFFERS];
         ComPointer<ID3D12DescriptorHeap> m_RTVHeap;
-        uint32 m_RTVDescriptorSize;
+        uint32 m_RTVDescriptorSize = 0;
 
         ComPointer<ID3D12RootSignature> m_RootSignature;
         
         ComPointer<ID3D12Resource> m_IntermediateRenderTarget;
         
         ComPointer<ID3D12DescriptorHeap> m_SRVHeap;
-        uint32 m_SRVDescriptorSize;
+        uint32 m_SRVDescriptorSize = 0;
 
     };
 }

@@ -214,9 +214,6 @@
     <ClCompile Include="Source\Graphics\DynamicConstantBuffer.cpp">
       <Filter>Source\Graphics\Private\Buffer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\VertexBuffer.cpp">
-      <Filter>Source\Graphics\Private\Buffer</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\RenderContext.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
@@ -399,9 +396,6 @@
     <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
       <Filter>Source\Graphics\Public\Buffer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\VertexBuffer.h">
-      <Filter>Source\Graphics\Public\Buffer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Span.h">
       <Filter>Source\Core\Public</Filter>
     </ClInclude>
@@ -462,9 +456,6 @@
     <ClInclude Include="Source\Graphics\CommandAllocatorPool.h">
       <Filter>Source\Graphics\Classes\Pooled</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\TempData.h">
-      <Filter>Source\Graphics\Public</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Shaders\BlitPixelShader.hlsl">
@@ -509,5 +500,8 @@
     <FxCompile Include="Content\Shaders\AdditionalPixelShader.hlsl">
       <Filter>Resources\Shaders</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

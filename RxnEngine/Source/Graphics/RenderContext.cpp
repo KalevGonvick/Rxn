@@ -67,19 +67,6 @@ namespace Rxn::Graphics
         return GetContext().m_HighestRootSignatureVersion;
     }
 
-    //D3D12_CPU_DESCRIPTOR_HANDLE &RenderContext::GetCachedSampler(uint64 hash)
-    //{
-    //    auto it = GetContext().m_SamplerCache.find(hash);
-    //    if (it != GetContext().m_SamplerCache.end())
-    //    {
-    //        return it->second;
-    //    }
-    //    else
-    //    {
-    //        return NULL;
-    //    }
-    //}
-
     HRESULT RenderContext::CreateIndependantDevice()
     {
         if (m_UseWarpDevice)

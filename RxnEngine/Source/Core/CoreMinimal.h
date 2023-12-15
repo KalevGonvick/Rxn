@@ -61,7 +61,10 @@
 #define RXN_Windows
 
 #ifdef WIN32
-
+#ifdef _DEBUG
+#define USE_PIX
+#include "pix3.h"
+#endif
 #include "Platform/WIN32/SubComponent.h"
 #include "Platform/WIN32/Window.h"
 #include "Platform/WIN32/IApplication.h"

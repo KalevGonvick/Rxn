@@ -19,7 +19,6 @@
 
 namespace Rxn::Graphics
 {
-
     class RXN_ENGINE_API Renderer
     {
     public:
@@ -58,19 +57,23 @@ namespace Rxn::Graphics
         
         const uint32 &GetDrawIndex() const;
 
-        void CreateVertexBufferResource();
         void CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
-        void ToggleEffect(Mapped::EffectPipelineType type);
         void IncrementDrawIndex();
         void ResetDrawIndex();
         void CreateAllocatorPool();
-        void InitDisplay();
+        
         void InitScene();
-        void InitCommandQueues();
-        void InitCommandLists();
-        void InitCachedPipeline();
-        void InitCommandAllocators();
-        void InitGpuFence();
+        
+        
+
+    protected:
+
+        static void InitRendererDisplay(Renderer &renderer, const String &cmdQueueHashKey);
+        static void InitGpuFence(Renderer &renderer, const String &cmdQueueHashKey);
+        static void InitCommandQueues(Renderer &renderer, const String &cmdQueueHashKey);
+        static void InitCommandList(Renderer &renderer, const String &cmdQueueHashKey, const String &newCmdListHashKey);
+        static void InitCachedPipeline(Renderer &renderer, ComPointer<ID3D12Device> device);
+        static void InitCommandAllocator(Renderer &renderer, uint32 bufferIndex);
 
     private:
 
@@ -81,7 +84,7 @@ namespace Rxn::Graphics
 
         Manager::CommandQueueManager m_CommandQueueManager { RenderContext::GetGraphicsDevice() };
         Manager::CommandListManager m_CommandListManager { RenderContext::GetGraphicsDevice() };
-
+        Mapped::PipelineLibrary m_PipelineLibrary { SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB };
         Pooled::CommandAllocatorPool m_AllocatorPool { D3D12_COMMAND_LIST_TYPE_DIRECT };
         ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
 
@@ -89,11 +92,7 @@ namespace Rxn::Graphics
         WString m_AssetsPath;
         Display m_Display;
 
-        Mapped::PipelineLibrary m_PipelineLibrary { SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB };
-
         GPU::Fence m_Fence;
-
-        std::vector<bool> m_EnabledEffects;
 
         static const uint32 MaxDrawsPerFrame = 256;
         static const uint32 TextureWidth = 256;

@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   Display.h
+ * \brief  
+ * 
+ * \author kalev
+ * \date   December 2023
+ *********************************************************************/
 #pragma once
 #include "SwapChain.h"
 #include "Camera.h"
@@ -13,24 +20,43 @@ namespace Rxn::Graphics
 
     public:
 
-        uint32 GetHeight() const;
-        uint32 GetWidth() const;
-        uint32 GetFrameIndex() const;
+        /**
+         * .
+         * 
+         * \param newWidth
+         * \param newHeight
+         */
+        void HandleSizeChange(uint32 newWidth, uint32 newHeight);
+
+        /**
+         * .
+         * 
+         */
+        void TurnOverSwapChainBuffer();
+
+        /**
+         * .
+         * 
+         * \param cam
+         */
+        void UpdateProjectionMatrix(Camera cam);
+
+        /**
+         * .
+         * 
+         * \param frameCmdList
+         */
+        void SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
 
         void SetWidth(uint32 width);
         void SetHeight(uint32 height);
-        void HandleSizeChange(uint32 newWidth, uint32 newHeight);
-
-        void TurnOverSwapChainBuffer();
-        void UpdateProjectionMatrix(Camera cam);
-
+        uint32 GetHeight() const;
+        uint32 GetWidth() const;
+        uint32 GetFrameIndex() const;
         GPU::SwapChain &GetSwapChain();
-
         CD3DX12_VIEWPORT &GetViewPort();
         CD3DX12_RECT &GetScissorRect();
         const DirectX::XMMATRIX &GetProjectionMatrix() const;
-
-        void SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
 
     private:
 

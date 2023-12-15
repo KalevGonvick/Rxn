@@ -7,10 +7,7 @@
 
 namespace Rxn::Engine
 {
-    Runtime::Runtime()
-    {
-    }
-
+    Runtime::Runtime() = default;
     Runtime::~Runtime() = default;
 
     void Runtime::InitializeEngineSystems()

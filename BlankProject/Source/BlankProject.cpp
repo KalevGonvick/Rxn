@@ -12,16 +12,15 @@ class BlankProject : public Rxn::Engine::Runtime
 {
 public:
 
-    BlankProject() {};
-    ~BlankProject() {};
+    BlankProject() = default;
+    ~BlankProject() = default;
 
 public:
 
-
-    virtual void SetupEngineConfigurations() override;
-    virtual void InitializeRuntime() override;
-    virtual void UpdateEngine() override;
-    virtual void OnDestroy() override;
+    void SetupEngineConfigurations() override;
+    void InitializeRuntime() override;
+    void UpdateEngine() override;
+    void OnDestroy() override;
 };
 
 ENTRYAPP(BlankProject)
@@ -47,13 +46,17 @@ void BlankProject::InitializeRuntime()
 {
     RXN_LOGGER::Info(L"Creating window classes");
 
-    auto splash = std::make_shared<Rxn::Engine::SplashWindow>(Rxn::Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, Rxn::Constants::Win32::SPLASH_SCREEN_WINDOW_KEY);
+    auto splash = std::make_shared<Rxn::Engine::SplashWindow>(Rxn::Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, Rxn::Constants::Win32::SPLASH_SCREEN_WINDOW_KEY, 500, 600);
     splash->SetupWindow();
     m_WindowManager->AddWindow(splash);
 
     auto mainsim = std::make_shared<Rxn::Graphics::SimulationWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1920, 1080);
     mainsim->SetupWindow();
     m_WindowManager->AddWindow(mainsim);
+
+    //auto mainsim2 = std::make_shared<Rxn::Graphics::SimulationWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW2_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW2_KEY, 1920, 1080);
+    //mainsim2->SetupWindow();
+    //m_WindowManager->AddWindow(mainsim2);
 }
 
 
@@ -68,6 +71,15 @@ void BlankProject::UpdateEngine()
 
     // present the frame
     win->RenderPass();
+
+    //auto win2 = std::dynamic_pointer_cast<Rxn::Graphics::SimulationWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW2_KEY));
+    //win2->UpdateSimulation();
+
+    //// Scene setup
+    //win2->PreRenderPass();
+
+    //// present the frame
+    //win2->RenderPass();
 
 }
 

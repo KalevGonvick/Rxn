@@ -1,22 +1,17 @@
 #include "Rxn.h"
 #include "Scene.h"
-#include "DescriptorHeapDesc.h"
 
 namespace Rxn::Graphics
 {
     Scene::Scene()
-        : m_RTVDescriptorSize(0)
-        , m_SRVDescriptorSize(0)
-        , m_DynamicConstantBuffer(sizeof(DrawConstantBuffer), 256, SwapChainBuffers::TOTAL_BUFFERS)
     {
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
-        m_Camera.SetMoveSpeed(1.0f);
-        
+        m_Camera.SetMoveSpeed(1.0f); 
     }
 
     Scene::~Scene() = default;
 
-    void Scene::SetSerializedRootSignature(CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc)
+    void Scene::SetSerializedRootSignature(const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC &rootSigDesc)
     {
         ComPointer<ID3DBlob> signature;
         ComPointer<ID3DBlob> error;
@@ -26,6 +21,7 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to serialize root signature descriptor.");
+            throw std::runtime_error("");
             return;
         }
 
@@ -33,6 +29,7 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to declare root signature.");
+            throw std::runtime_error("");
             return;
         }
 
@@ -47,10 +44,10 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
-            return;
+            throw std::runtime_error("");
         }
 
-        m_SceneShapes.push_back(std::move(shape));
+        m_SceneShapes.emplace_back(std::move(shape));
     }
 
     void Scene::AddQuadFromRaw(const std::vector<VertexPositionUV> &quadVertices, ID3D12CommandAllocator *cmdAl, ID3D12CommandQueue *cmdQueue, ID3D12GraphicsCommandList *cmdList)
@@ -61,6 +58,7 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
+            throw std::runtime_error("");
         }
     }
 
@@ -72,7 +70,7 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create committed resource for texture.");
-            return;
+            throw std::runtime_error("");
         }
 
         // Create the GPU upload buffer.
@@ -95,14 +93,39 @@ namespace Rxn::Graphics
 
     void Scene::InitHeaps()
     {
+         //InitHeap(SwapChainBuffers::TOTAL_BUFFERS + 1, m_RTVHeap, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+         //m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+         //InitHeap(1, m_SRVHeap, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+         //m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         DescriptorHeapDesc rtvDesc(SwapChainBuffers::TOTAL_BUFFERS + 1);
         rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
+        m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
         DescriptorHeapDesc srvDesc(1);
         srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
-
-        m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    }
+
+    void Scene::InitHeap(uint32 descriptorCount, ComPointer<ID3D12DescriptorHeap> heap, D3D12_DESCRIPTOR_HEAP_TYPE type)
+    {
+        DescriptorHeapDesc desc(descriptorCount);
+        switch (type)
+        {
+        case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+            desc.CreateSRVDescriptorHeap(heap);
+            break;
+        case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+            desc.CreateSamplerDescriptorHeap(heap);
+            break;
+        case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
+            desc.CreateRTVDescriptorHeap(heap);
+            break;
+        case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+            desc.CreateDSVDescriptorHeap(heap);
+            break;
+        default:
+            throw std::runtime_error("");
+        }
     }
 
     void Scene::ReleaseResourceViews()
@@ -112,7 +135,7 @@ namespace Rxn::Graphics
         m_IntermediateRenderTarget.Release();
     }
 
-    void Scene::InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain swapChain)
+    void Scene::InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain &swapChain)
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
         CreateRenderTargets(swapChain, rtvHandle);
@@ -136,7 +159,7 @@ namespace Rxn::Graphics
 
     void Scene::SetShaderResourceViewDescriptorHeap(ComPointer<ID3D12GraphicsCommandList> frameCmdList)
     {
-        frameCmdList->SetGraphicsRootSignature(GetRootSignature().Get());
+        //frameCmdList->SetGraphicsRootSignature(GetRootSignature().Get());
         ID3D12DescriptorHeap *ppHeaps[] = { GetSrvHeap().Get() };
         frameCmdList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
         frameCmdList->SetGraphicsRootDescriptorTable(RootParameterSRV, GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
@@ -195,12 +218,12 @@ namespace Rxn::Graphics
         return m_IntermediateRenderTarget;
     }
 
-    const uint32 Scene::GetRtvDescriptorHeapSize()
+    uint32 Scene::GetRtvDescriptorHeapSize() const
     {
         return m_RTVDescriptorSize;
     }
 
-    const uint32 Scene::GetSrvDescriptorHeapSize()
+    uint32 Scene::GetSrvDescriptorHeapSize() const
     {
         return m_SRVDescriptorSize;
     }
@@ -242,14 +265,17 @@ namespace Rxn::Graphics
         ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &renderTargetDescCopy, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&m_IntermediateRenderTarget)));
 
 
-        RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget.Get(), nullptr, rtvHandle);
+        RenderContext::GetGraphicsDevice()->CreateRenderTargetView(m_IntermediateRenderTarget, nullptr, rtvHandle);
         rtvHandle.Offset(1, m_RTVDescriptorSize);
         NAME_D3D12_OBJECT(m_IntermediateRenderTarget);
+
+
         CreateShaderResourceViewForResource(renderTargetDescCopy);
     }
 
-    void Scene::CreateShaderResourceViewForResource(D3D12_RESOURCE_DESC &resDesc)
+    void Scene::CreateShaderResourceViewForResource(const D3D12_RESOURCE_DESC &resDesc)
     {
+
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srvDesc.Format = resDesc.Format;
@@ -257,7 +283,19 @@ namespace Rxn::Graphics
         srvDesc.Texture2D.MipLevels = 1;
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
-        RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget.Get(), &srvDesc, srvHandle);
+        RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_IntermediateRenderTarget, &srvDesc, srvHandle);
+    }
+
+    void Scene::CreateSrvForResource(const D3D12_RESOURCE_DESC &resourceDesc, ComPointer<ID3D12Resource> resource)
+    {
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Format = resourceDesc.Format;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
+        RenderContext::GetGraphicsDevice()->CreateShaderResourceView(resource, &srvDesc, srvHandle);
     }
 
 }

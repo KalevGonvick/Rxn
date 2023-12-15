@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   MemoryMappedPipelineStateObjectCache.h
+ * \brief  
+ * 
+ * \author kalev
+ * \date   December 2023
+ *********************************************************************/
 #pragma once
 #include "MemoryMappedFile.h"
 
@@ -7,12 +14,11 @@ namespace Rxn::Graphics::Mapped
     {
     public:
 
-        void InitObjectCache(const WString &filename);
-        void DestroyCache(bool deleteFile);
+        /**
+         * .
+         * 
+         * \param pBlob
+         */
         void Update(ID3DBlob *pBlob);
-
-        size_t GetCachedBlobSize() const;
-
-        void *GetCachedBlob();
     };
 }

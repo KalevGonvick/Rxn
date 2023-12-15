@@ -3,21 +3,10 @@
 
 namespace Rxn::Platform::Win32
 {
-    Window::Window(WString className, WString title)
-        : SubComponent(className, 0)
+    Window::Window(const WString &className, const WString &title, int32 width, int32 height)
+        : SubComponent(className, nullptr)
         , m_TitleName(title)
-        , m_Active(0)
-        , m_WindowStyle(WindowStyle::STATIC)
-        , m_Size(SIZE(Constants::Win32::DEFAULT_WINDOW_WIDTH, Constants::Win32::DEFAULT_WINDOW_HEIGHT))
-        , m_WindowBackgroundColour(RGB(36, 36, 36))
-        , m_WindowBorderColour(RGB(46, 46, 46))
-        , m_WindowActiveBorderHighlightColour(RGB(155, 80, 255))
-        , m_WindowTitleActiveTextColour(RGB(255, 255, 255))
-        , m_WindowTitleInactiveTextColour(RGB(92, 92, 92))
-        , m_AddCloseButton(false)
-        , m_AddMaximizeButton(false)
-        , m_AddMinimizeButton(false)
-        , m_WindowCaption()
+        , m_Size(SIZE(width, height))
     {}
 
     Window::~Window() = default;
@@ -32,7 +21,7 @@ namespace Rxn::Platform::Win32
         wcex.cbClsExtra = 0;
         wcex.cbWndExtra = 0;
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcex.hbrBackground = (HBRUSH)CreateSolidBrush(m_WindowBackgroundColour);
+        wcex.hbrBackground = CreateSolidBrush(m_WindowBackgroundColour);
         wcex.hIcon = GetIcon();
         wcex.hIconSm = GetIcon();
         wcex.lpszClassName = m_ClassName.c_str();
@@ -120,18 +109,20 @@ namespace Rxn::Platform::Win32
             Redraw();
             break;
         }
+        default:
+            break;
         }
 
         return SubComponent::MessageHandler(hWnd, msg, wParam, lParam);
     }
 
-    void Window::ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable)
+    void Window::ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable) const
     {
         DWORD style = GetWindowLong(hWnd, GCL_STYLE);
         SetClassLong(hWnd, GCL_STYLE, (style & ~flagsToDisable) | flagsToEnable);
     }
 
-    void Window::MaximizeWindow(const HWND &hwnd)
+    void Window::MaximizeWindow(const HWND &hwnd) const
     {
         WINDOWPLACEMENT wPos{};
         GetWindowPlacement(hwnd, &wPos);
@@ -152,8 +143,8 @@ namespace Rxn::Platform::Win32
 
         RECT rect;
         GetWindowRect(m_HWnd, &rect);
-        SIZE size = SIZE{ rect.right - rect.left, rect.bottom - rect.top };
-        RECT adjustedRect = RECT{ 0, 0, size.cx, size.cy };
+        auto size = SIZE{ rect.right - rect.left, rect.bottom - rect.top };
+        auto adjustedRect = RECT{ 0, 0, size.cx, size.cy };
 
         PaintWindowBorder(hdc, adjustedRect);
         PaintWindowConditionalHighlight(hdc, adjustedRect);
@@ -174,22 +165,22 @@ namespace Rxn::Platform::Win32
 
         switch (cmd)
         {
-        case Command::CB_CLOSE:
+        using enum Rxn::Platform::Win32::Command;
+        case CB_CLOSE:
         {
             SendMessage(m_HWnd, WM_CLOSE, 0, 0);
             break;
         }
-        case Command::CB_MAXIMIZE:
+        case CB_MAXIMIZE:
         {
             MaximizeWindow(m_HWnd);
             break;
         }
-        case Command::CB_MINIMIZE:
+        case CB_MINIMIZE:
         {
             ShowWindow(m_HWnd, SW_MINIMIZE);
             break;
         }
-        case Command::CB_NOP:
         default:
             break;
         }
@@ -211,14 +202,14 @@ namespace Rxn::Platform::Win32
         EndPaint(m_HWnd, &ps);
     }
 
-    void Window::PaintWindowBorder(const HDC &hdc, const RECT &rect)
+    void Window::PaintWindowBorder(const HDC &hdc, const RECT &rect) const
     {
         HBRUSH brush = CreateSolidBrush(m_WindowBorderColour);
         FillRect(hdc, &rect, brush);
         DeleteObject(brush);
     }
 
-    void Window::PaintWindowConditionalHighlight(const HDC &hdc, const RECT &rect)
+    void Window::PaintWindowConditionalHighlight(const HDC &hdc, const RECT &rect) const
     {
         if (m_Active)
         {
@@ -287,7 +278,7 @@ namespace Rxn::Platform::Win32
         BITMAP qBitmap{};
         HDC hLocalDC = CreateCompatibleDC(hWinDC);
 
-        HBITMAP hBitmap = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        auto hBitmap = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
         if (hBitmap == 0)
         {
@@ -316,23 +307,20 @@ namespace Rxn::Platform::Win32
         this->PaintWindowCaptionButtons(hdc, size);
     }
 
-    void Window::PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size)
+    void Window::PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size) const
     {
         if (m_WindowCaption.m_ShowTitle)
         {
-            RECT adjustedRect = RECT{ 0, 0, size.cx, 30 };
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, m_Active ? m_WindowTitleActiveTextColour : m_WindowTitleInactiveTextColour);
-            //DrawText(hdc, m_TitleName.c_str(), wcslen(m_TitleName.c_str()), &adjustedRect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
 
     void Window::PaintWindowCaptionButtons(const HDC &hdc, const SIZE &size)
     {
-        for (auto &button : m_WindowCaption.GetButtons())
+        for (const auto &button : m_WindowCaption.GetButtons())
         {
             button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
-            //DrawText(hdc, button->txt.c_str(), wcslen(button->txt.c_str()), &button->rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
         }
     }
 

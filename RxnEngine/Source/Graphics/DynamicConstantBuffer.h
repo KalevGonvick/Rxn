@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   DynamicConstantBuffer.h
+ * \brief  
+ * 
+ * \author kalev
+ * \date   December 2023
+ *********************************************************************/
 #pragma once
 
 namespace Rxn::Graphics::Buffer
@@ -11,8 +18,29 @@ namespace Rxn::Graphics::Buffer
 
     public:
 
+        /**
+         * .
+         * 
+         * \param pDevice
+         */
         void Create(ID3D12Device *pDevice);
+
+        /**
+         * .
+         * 
+         * \param drawIndex
+         * \param frameIndex
+         * \return 
+         */
         uint8 *GetMappedMemory(uint32 drawIndex, uint32 frameIndex);
+
+        /**
+         * .
+         * 
+         * \param drawIndex
+         * \param frameIndex
+         * \return 
+         */
         D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(uint32 drawIndex, uint32 frameIndex);
 
     private:

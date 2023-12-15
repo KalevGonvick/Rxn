@@ -25,27 +25,27 @@ namespace Rxn::Platform::Win32
     {
     public:
 
-        Window(WString className, WString title);
+        Window(const WString &className, const WString &title, int32 width, int32 height);
         ~Window();
 
     public:
 
         WString m_TitleName;
-        Caption m_WindowCaption;
+        Caption m_WindowCaption{};
         SIZE m_Size;
-        DWORD m_WindowStyle;
+        DWORD m_WindowStyle = WindowStyle::STATIC;
 
-        COLORREF m_WindowBackgroundColour;
-        COLORREF m_WindowBorderColour;
-        COLORREF m_WindowActiveBorderHighlightColour;
-        COLORREF m_WindowTitleActiveTextColour;
-        COLORREF m_WindowTitleInactiveTextColour;
+        COLORREF m_WindowBackgroundColour = RGB(36, 36, 36);
+        COLORREF m_WindowBorderColour = RGB(46, 46, 46);
+        COLORREF m_WindowActiveBorderHighlightColour = RGB(155, 80, 255);
+        COLORREF m_WindowTitleActiveTextColour = RGB(255, 255, 255);
+        COLORREF m_WindowTitleInactiveTextColour = RGB(92, 92, 92);
 
-        bool m_AddCloseButton;
-        bool m_AddMinimizeButton;
-        bool m_AddMaximizeButton;
+        bool m_AddCloseButton = false;
+        bool m_AddMinimizeButton = false;
+        bool m_AddMaximizeButton = false;
 
-        int m_Active;
+        int m_Active = 0;
 
         /**
          * .
@@ -128,7 +128,7 @@ namespace Rxn::Platform::Win32
          * \param hdc               - hdc handle.
          * \param rect              - rect containing window size information.
          */
-        void PaintWindowBorder(const HDC &hdc, const RECT &rect);
+        void PaintWindowBorder(const HDC &hdc, const RECT &rect) const;
 
         /**
          * Paints the conditional border colour of the window if it is in active state.
@@ -136,7 +136,7 @@ namespace Rxn::Platform::Win32
          * \param hdc               - hdc handle.
          * \param rect              - rect containing window size information.
          */
-        void PaintWindowConditionalHighlight(const HDC &hdc, const RECT &rect);
+        void PaintWindowConditionalHighlight(const HDC &hdc, const RECT &rect) const;
 
         /**
          * Handles the non-client create message.
@@ -176,7 +176,7 @@ namespace Rxn::Platform::Win32
          * \param hdc               - hdc handle.
          * \param size              - size of the window.
          */
-        void PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size);
+        void PaintWindowCaptionTitle(const HDC &hdc, const SIZE &size) const;
 
         /**
          * Paints the buttons in the non-client area.
@@ -193,14 +193,14 @@ namespace Rxn::Platform::Win32
          * \param flagsToDisable    - all flags you want to disable on the window class.
          * \param flagsToEnable     - all flags you want to enable on the window class.
          */
-        void ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable);
+        void ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable) const;
 
         /**
          * Maximizes the window.
          *
          * \param hwnd              - window handle
          */
-        void MaximizeWindow(const HWND &hwnd);
+        void MaximizeWindow(const HWND &hwnd) const;
 
 
     };

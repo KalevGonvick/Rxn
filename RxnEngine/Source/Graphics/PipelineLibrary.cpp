@@ -18,7 +18,7 @@ namespace Rxn::Graphics::Mapped
 
         for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
-            m_DiskCaches[i].DestroyCache(false);
+            m_DiskCaches[i].DestroyFile(false);
         }
 
         m_PipelineLibrary.DestroyPipelineLibrary(false);
@@ -30,6 +30,7 @@ namespace Rxn::Graphics::Mapped
         {
             if (thread.threadHandle)
             {
+                RXN_LOGGER::Trace(L"Waiting on the compile thread to finish for shader effect: '%s'.", g_cEffectNames[thread.type]);
                 WaitForSingleObject(thread.threadHandle, INFINITE);
                 CloseHandle(thread.threadHandle);
             }
@@ -42,23 +43,23 @@ namespace Rxn::Graphics::Mapped
         RXN_LOGGER::PrintLnHeader(L"Pipeline Library - Build Start");
         RXN_LOGGER::Debug(L"Building new pipeline cache.");
 
-        RXN_LOGGER::Debug(L"Initialize all cache file mappings (file may be empty).");
+        RXN_LOGGER::Trace(L"Initialize all cache file mappings (file may be empty).");
         m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + g_cPipelineLibraryFileName);
         for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
-            RXN_LOGGER::Debug(L"Initializeing cache file mapping for shader: [%d]", i);
-            m_DiskCaches[i].InitObjectCache(m_CachePath + g_cCacheFileNames[i]);
+            RXN_LOGGER::Trace(L"Initializeing cache file mapping for shader: [%d]", i);
+            m_DiskCaches[i].InitFile(m_CachePath + g_cCacheFileNames[i]);
         }
 
         if (!m_PipelineLibrariesSupported)
         {
-            RXN_LOGGER::Debug(L"Falling back to cached blobs.");
+            RXN_LOGGER::Trace(L"Falling back to cached blobs.");
             m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::CachedBlobs;
         }
 
         for (uint32 i = 0; i < BaseEffectCount; i++)
         {
-            RXN_LOGGER::Debug(L" Compiling the 3D & 'Ubershader'.");
+            RXN_LOGGER::Trace(L" Compiling the 3D & 'Ubershader'.");
             m_WorkerThreads[i].pDevice = pDevice;
             m_WorkerThreads[i].pRootSignature = pRootSignature;
             m_WorkerThreads[i].type = EffectPipelineType(i);
@@ -157,6 +158,8 @@ namespace Rxn::Graphics::Mapped
         ID3D12RootSignature *pRootSignature = pDataPackage->pRootSignature;
         EffectPipelineType type = pDataPackage->type;
 
+        RXN_LOGGER::Debug(L"Compiling effect: '%s'", g_cEffectNames[type]);
+
         bool useCache = CompileCacheCheck(pDataPackage);
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc = {};
@@ -181,20 +184,19 @@ namespace Rxn::Graphics::Mapped
         if (useCache && (pLibrary->m_PipelineStateObjectCachingMechanism == PSOCachingMechanism::PipelineLibraries))
         {
             assert(pLibrary->m_PipelineLibrary.IsMapped());
-            ID3D12PipelineLibrary *pPipelineLibrary = pLibrary->m_PipelineLibrary.GetPipelineLibrary();
+            ID3D12PipelineLibrary *pPipelineLibrary = pLibrary->m_PipelineLibrary.GetPipelineLibrary().Get();
 
             // Note: Load*Pipeline() will auto-name PSOs for you based on the provided name. However, this sample overrides those names.
             HRESULT hr = pPipelineLibrary->LoadGraphicsPipeline(g_cEffectNames[type], &baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type]));
             if (E_INVALIDARG == hr)
             {
-                RXN_LOGGER::Debug(L"A pipeline state object' with the specified name '%s' does not exist, or the input desc does not match the data in the library.", g_cEffectNames[type]);
-                RXN_LOGGER::Debug(L"Createing the PSO, and storeing it in the library for next time.");
+                RXN_LOGGER::Trace(L"A pipeline state object' with the specified name '%s' does not exist, or the input desc does not match the data in the library.", g_cEffectNames[type]);
                 ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
 
                 hr = pPipelineLibrary->StorePipeline(g_cEffectNames[type], pLibrary->m_PipelineStates[type].Get());
                 if (E_INVALIDARG == hr)
                 {
-                    RXN_LOGGER::Debug(L"A PSO with the specified name '%s' already exists in the library.", g_cEffectNames[type]);
+                    RXN_LOGGER::Error(L"A PSO with the specified name '%s' already exists in the library.", g_cEffectNames[type]);
                     throw std::runtime_error("A PSO with the specified name already exists in the library.");
                 }
                 else
@@ -210,7 +212,7 @@ namespace Rxn::Graphics::Mapped
         else if (useCache && (pLibrary->m_PipelineStateObjectCachingMechanism == PSOCachingMechanism::CachedBlobs))
         {
             assert(pLibrary->m_DiskCaches[type].IsMapped());
-            size_t size = pLibrary->m_DiskCaches[type].GetCachedBlobSize();
+            size_t size = pLibrary->m_DiskCaches[type].GetSize();
             if (size == 0)
             {
                 RXN_LOGGER::Trace(L"File size is 0... The disk cache needs to be refreshed...");
@@ -223,15 +225,15 @@ namespace Rxn::Graphics::Mapped
             else
             {
                 RXN_LOGGER::Trace(L"Reading the blob data from disk instead of re-compiling shaders!");
-                baseDesc.CachedPSO.pCachedBlob = pLibrary->m_DiskCaches[type].GetCachedBlob();
-                baseDesc.CachedPSO.CachedBlobSizeInBytes = pLibrary->m_DiskCaches[type].GetCachedBlobSize();
+                baseDesc.CachedPSO.pCachedBlob = pLibrary->m_DiskCaches[type].GetData();
+                baseDesc.CachedPSO.CachedBlobSizeInBytes = pLibrary->m_DiskCaches[type].GetSize();
 
                 HRESULT hr = pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type]));
 
 
                 if (FAILED(hr))
                 {
-                    RXN_LOGGER::Trace(L"Compilation failed.... The cache is probably stale. (old drivers etc.)");
+                    RXN_LOGGER::Error(L"Compilation failed.... The cache is probably stale. (old drivers etc.)");
                     baseDesc.CachedPSO = {};
                     ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
 
@@ -278,6 +280,7 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::ClearPSOCache()
     {
+        RXN_LOGGER::Debug(L"Clearing pipeline caches...");
         WaitForThreads();
 
         for (size_t i = PostBlit; i < EffectPipelineTypeCount; i++)
@@ -290,10 +293,9 @@ namespace Rxn::Graphics::Mapped
             }
         }
 
-        RXN_LOGGER::Debug(L"Clear the disk caches.");
         for (size_t i = 0; i < EffectPipelineTypeCount; i++)
         {
-            m_DiskCaches[i].DestroyCache(true);
+            m_DiskCaches[i].DestroyFile(true);
         }
 
         m_PipelineLibrary.DestroyPipelineLibrary(true);
@@ -317,13 +319,14 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::SwitchPSOCachingMechanism()
     {
+        RXN_LOGGER::Debug(L"Switching pipeline caching mechanism...");
         {
             auto lock = std::scoped_lock(m_FlagsMutex);
 
             uint32 newMechanism = static_cast<uint32>(m_PipelineStateObjectCachingMechanism) + 1;
             newMechanism = newMechanism % PSOCachingMechanism::PSOCachingMechanismCount;
 
-            RXN_LOGGER::Debug(L"Don't allow Pipeline Libraries if they're not available.");
+            
             if (!m_PipelineLibrariesSupported && (newMechanism == PSOCachingMechanism::PipelineLibraries))
             {
                 newMechanism++;
@@ -338,6 +341,7 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::DestroyShader(EffectPipelineType type)
     {
+        RXN_LOGGER::Debug(L"Destroying shader effect '%s'", g_cEffectNames[type]);
         WaitForThreads();
 
         if (m_PipelineStates[type])

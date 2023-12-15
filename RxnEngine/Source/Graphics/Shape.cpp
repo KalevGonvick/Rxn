@@ -6,7 +6,7 @@ namespace Rxn::Graphics::Basic
     Shape::Shape() = default;
     Shape::~Shape() = default;
 
-    void Shape::ReadDataFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices)
+    void Shape::ReadDataFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<uint32> &indices)
     {
         m_Vertices = vertices;
         m_Indices = indices;

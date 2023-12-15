@@ -17,7 +17,7 @@ namespace Rxn::Graphics
     {
     public:
 
-        SimulationWindow(const WString &windowTitle, const WString &windowClass, int width, int height);
+        SimulationWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height);
         ~SimulationWindow();
 
     public:
@@ -36,8 +36,8 @@ namespace Rxn::Graphics
         void SetupWindow() override;
 
         void UpdateSimulation();
-        void InitializeRender() override;
         void LoadSceneData();
+        void InitializeRender() override;
         void ShutdownRender() override;
         void RenderPass() override;
         void PreRenderPass() override;
@@ -62,8 +62,8 @@ namespace Rxn::Graphics
     private:
         void OnSizeChange();
         void DestroySwapChainResources();
-        void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> frameCmdList, ComPointer<ID3D12CommandAllocator> frameCmdAllocator) const;
-        void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> frameCmdList, const uint32 frameIndex);
+        void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> &frameCmdList, ComPointer<ID3D12CommandAllocator> &frameCmdAllocator) const;
+        void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> &frameCmdList, const uint32 frameIndex);
         uint64 GetFPS() const;
 
     private:

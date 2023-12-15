@@ -164,6 +164,7 @@ namespace Rxn::Graphics
         }
     };
 
+
 #else
     inline void SetName(ID3D12Object *, LPCWSTR) {};
     inline void SetNameIndexed(ID3D12Object *, LPCWSTR, UINT) {};

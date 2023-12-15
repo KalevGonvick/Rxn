@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   PipelineLibrary.h
+ * \brief  
+ * 
+ * \author kalev
+ * \date   October 2023
+ *********************************************************************/
 #pragma once
 #include "DynamicConstantBuffer.h"
 #include "MemoryMappedPipelineLibrary.h"
@@ -217,18 +224,80 @@ namespace Rxn::Graphics::Mapped
 
     public:
 
+        /**
+         * .
+         * 
+         * \param pDevice
+         * \param pRootSignature
+         */
         void Build(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature);
+
+        /**
+         * .
+         * 
+         * \param pRootSignature
+         * \param pCommandList
+         * \param type
+         * \param frameIndex
+         */
         void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, uint32 frameIndex);
 
+        /**
+         * .
+         * 
+         */
         void EndFrame();
+        
+        /**
+         * .
+         * 
+         */
         void ClearPSOCache();
+        
+        /**
+         * .
+         * 
+         */
         void ToggleUberShader();
+
+        /**
+         * .
+         * 
+         */
         void ToggleDiskLibrary();
+        
+        /**
+         * .
+         * 
+         */
         void SwitchPSOCachingMechanism();
+        
+        /**
+         * .
+         * 
+         * \param type
+         */
         void DestroyShader(EffectPipelineType type);
 
+        /**
+         * .
+         * 
+         * \return 
+         */
         bool UberShadersEnabled() const;
+
+        /**
+         * .
+         * 
+         * \return 
+         */
         bool DiskCacheEnabled() const;
+
+        /**
+         * .
+         * 
+         * \return 
+         */
         PSOCachingMechanism GetPSOCachingMechanism() const;
 
     private:
@@ -251,9 +320,32 @@ namespace Rxn::Graphics::Mapped
 
     private:
 
+        /**
+         * .
+         * 
+         * \param pDataPackage
+         */
         static void CompilePipelineStateObject(CompilePipelineStateObjectThreadData *pDataPackage);
+
+        /**
+         * .
+         * 
+         * \param pDataPackage
+         * \return 
+         */
         static bool CompileCacheCheck(CompilePipelineStateObjectThreadData *pDataPackage);
+
+        /**
+         * .
+         * 
+         * \param pDataPackage
+         */
         static void SetThreadCompileFinishFlags(CompilePipelineStateObjectThreadData *pDataPackage);
+
+        /**
+         * .
+         * 
+         */
         void WaitForThreads();
 
     private:
@@ -265,7 +357,6 @@ namespace Rxn::Graphics::Mapped
         MemoryMappedPipelineStateObjectCache m_DiskCaches[EffectPipelineTypeCount];     // Cached blobs.
         MemoryMappedPipelineLibrary m_PipelineLibrary;                                  // Pipeline Library.
 
-        //HANDLE m_FlagsMutex;
         std::mutex m_FlagsMutex;
 
         CompilePipelineStateObjectThreadData m_WorkerThreads[EffectPipelineTypeCount]{};

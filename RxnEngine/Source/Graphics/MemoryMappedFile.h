@@ -3,6 +3,16 @@
 
 namespace Rxn::Graphics::Mapped
 {
+    struct FileException : std::runtime_error
+    {
+        explicit FileException(const String &msg) :runtime_error(msg) {};
+    };
+
+    struct FileMapException : std::runtime_error
+    {
+        explicit FileMapException(const String &msg) : runtime_error(msg) {};
+    };
+
     class MemoryMappedFile
     {
     protected:
@@ -12,24 +22,68 @@ namespace Rxn::Graphics::Mapped
 
     public:
 
+        /**
+         * .
+         * 
+         * \return 
+         */
         bool IsMapped() const;
+
+        /**
+         * .
+         * 
+         * \return 
+         */
+        uint32 *GetData();
+
+        /**
+         * .
+         * 
+         * \return 
+         */
+        uint32 GetCurrentFileSize() const;
+
+        /**
+         * .
+         * 
+         * \return 
+         */
+        uint32 GetSize() const;
+
+        /**
+         * .
+         * 
+         * \param deleteFile
+         */
+        void DestroyFile(bool deleteFile);
+
+        /**
+         * .
+         * 
+         * \param fileName
+         * \param filesize
+         */
+        void InitFile(const WString &fileName, uint32 filesize = DEFAULT_FILE_SIZE);
 
     protected:
 
-        void InitFile(const WString &fileName, uint32 filesize = DefaultFileSize);
-        void DestroyFile(bool deleteFile);
+        /**
+         * .
+         * 
+         * \param size
+         */
         void GrowMapping(uint32 size);
+
+        /**
+         * .
+         * 
+         * \param size
+         */
         void SetSize(uint32 size);
-
-        uint32 *GetData();
-        uint32 GetSize() const;
-
-        uint32 GetCurrentFileSize() const;
-
-
+        
     private:
 
-        static const uint32 DefaultFileSize = 64;
+        static const uint32 DEFAULT_FILE_SIZE = 64;
 
         HANDLE m_MapFile = INVALID_HANDLE_VALUE;
         HANDLE m_File = INVALID_HANDLE_VALUE;
@@ -37,6 +91,6 @@ namespace Rxn::Graphics::Mapped
         LPVOID m_MapAddress = nullptr;
 
         WString m_Filename;
-        uint32 m_currentFileSize = 0;
+        uint32 m_CurrentFileSize = 0;
     };
 }

@@ -6,7 +6,7 @@ namespace Rxn::Engine
     {
     public:
 
-        SplashWindow(WString windowClass, WString windowTitle);
+        SplashWindow(const WString &windowClass, const WString &windowTitle, int32 width, int32 height);
         ~SplashWindow();
 
     public:
@@ -18,7 +18,7 @@ namespace Rxn::Engine
 
     private:
 
-        wchar_t m_pwOutputMessage[Constants::MAX_NAME_STRING_LENGTH];
+        wchar_t m_pwOutputMessage[Constants::MAX_NAME_STRING_LENGTH] = L"...";
     };
 }
 

@@ -4,13 +4,12 @@
 namespace Rxn::Graphics::Mapped
 {
     MemoryMappedFile::MemoryMappedFile() = default;
+    MemoryMappedFile::~MemoryMappedFile() = default;
 
     bool MemoryMappedFile::IsMapped() const
     {
         return m_MapAddress != nullptr;
     }
-
-    MemoryMappedFile::~MemoryMappedFile() = default;
 
     void MemoryMappedFile::InitFile(const WString &fileName, uint32 fileSize)
     {
@@ -29,46 +28,43 @@ namespace Rxn::Graphics::Mapped
         if (m_File == INVALID_HANDLE_VALUE)
         {
             RXN_LOGGER::Error(L"Create file error: %d", GetLastError());
-            return;
+            throw FileException("Create file error. Invalid handle was produced.");
         }
 
         LARGE_INTEGER realFileSize = {};
         if (!GetFileSizeEx(m_File, &realFileSize))
         {
             RXN_LOGGER::Error(L"\nError %ld occurred in GetFileSizeEx!", GetLastError());
-            assert(false);
-            return;
+            throw FileException("Error occurred in 'GetFileSizeEx'");
         }
 
         assert(realFileSize.HighPart == 0);
 
-        m_currentFileSize = realFileSize.LowPart;
+        m_CurrentFileSize = realFileSize.LowPart;
 
-        if (m_currentFileSize == 0)
+        if (m_CurrentFileSize == 0)
         {
-            m_currentFileSize = DefaultFileSize;
+            m_CurrentFileSize = DEFAULT_FILE_SIZE;
         }
-        else if (fileSize > m_currentFileSize)
+        else if (fileSize > m_CurrentFileSize)
         {
-            m_currentFileSize = fileSize;
+            m_CurrentFileSize = fileSize;
         }
 
-        m_MapFile = CreateFileMapping(m_File, nullptr, PAGE_READWRITE, 0, m_currentFileSize, nullptr);
+        m_MapFile = CreateFileMapping(m_File, nullptr, PAGE_READWRITE, 0, m_CurrentFileSize, nullptr);
 
         if (m_MapFile == nullptr)
         {
-            RXN_LOGGER::Error(L"m_mapFile is NULL: last error: %d\n", GetLastError());
-            assert(false);
-            return;
+            RXN_LOGGER::Error(L"Map file handle is null. Error during 'CreateFileMapping': %d\n", GetLastError());
+            throw FileMapException("Mapping a file using the given file address returned an error.");
         }
 
-        m_MapAddress = MapViewOfFile(m_MapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_currentFileSize);
+        m_MapAddress = MapViewOfFile(m_MapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_CurrentFileSize);
 
         if (m_MapAddress == nullptr)
         {
-            RXN_LOGGER::Error(L"m_mapAddress is NULL: last error: %d\n", GetLastError());
-            assert(false);
-            return;
+            RXN_LOGGER::Error(L"Creating a map view of a file using the given map address returned an error. Error Code: %ld", GetLastError());
+            throw FileMapException("Creating a map view of a file using the given map address returned an error.");
         }
     }
     void MemoryMappedFile::DestroyFile(bool deleteFile)
@@ -79,7 +75,7 @@ namespace Rxn::Graphics::Mapped
             if (!UnmapViewOfFile(m_MapAddress))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred unmapping the view!", GetLastError());
-                assert(false);
+                throw FileMapException("Error occurred when unmap was called using the given map address.");
             }
 
             m_MapAddress = nullptr;
@@ -88,13 +84,13 @@ namespace Rxn::Graphics::Mapped
             if (!CloseHandle(m_MapFile))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred closing the mapping object!", GetLastError());
-                assert(false);
+                throw FileMapException("Error %ld occurred closing the mapping object");
             }
 
             if (!CloseHandle(m_File))
             {
                 RXN_LOGGER::Error(L"Error %ld occurred closing the file!", GetLastError());
-                assert(false);
+                throw FileException("Error %ld occurred closing the file!");
             }
         }
 
@@ -107,7 +103,7 @@ namespace Rxn::Graphics::Mapped
     void MemoryMappedFile::GrowMapping(uint32 size)
     {
         size += sizeof(uint32);
-        if (size <= m_currentFileSize)
+        if (size <= m_CurrentFileSize)
         {
             return;
         }
@@ -115,12 +111,12 @@ namespace Rxn::Graphics::Mapped
         if (!FlushViewOfFile(m_MapAddress, 0))
         {
             RXN_LOGGER::Error(L"Error %ld occurred flushing the mapping object!", GetLastError());
-            assert(false);
+            throw FileException("Grow failed! Exception occurred during flush.");
         }
 
         DestroyFile(false);
-        m_currentFileSize = size;
-        InitFile(m_Filename, m_currentFileSize);
+        m_CurrentFileSize = size;
+        InitFile(m_Filename, m_CurrentFileSize);
     }
 
     uint32 MemoryMappedFile::GetSize() const
@@ -135,7 +131,7 @@ namespace Rxn::Graphics::Mapped
 
     uint32 MemoryMappedFile::GetCurrentFileSize() const
     {
-        return m_currentFileSize;
+        return m_CurrentFileSize;
     }
 
     void MemoryMappedFile::SetSize(uint32 size)

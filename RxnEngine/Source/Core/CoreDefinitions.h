@@ -178,6 +178,7 @@ namespace Rxn::Constants
         const uint16 DEFAULT_WINDOW_HEIGHT = 600;
 
         const WString RENDER_VIEW_WINDOW_KEY = L"_SIMULATEDVIEW";
+        const WString RENDER_VIEW_WINDOW2_KEY = L"_SIMULATEDVIEW2";
         const WString SPLASH_SCREEN_WINDOW_KEY = L"_SPLASH";
     }
 

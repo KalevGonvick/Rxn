@@ -14,7 +14,9 @@ namespace Rxn::Graphics::Pooled
         void Create(ComPointer<ID3D12Device> device);
         ComPointer<ID3D12CommandAllocator> &RequestAllocator(const uint64 fenceValue);
         void DiscardAllocator(const uint64 FenceValue, ComPointer<ID3D12CommandAllocator> Allocator);
+
     private:
+        
         const D3D12_COMMAND_LIST_TYPE m_CommandListType;
         ComPointer<ID3D12Device> m_Device;
         std::vector<ComPointer<ID3D12CommandAllocator>> m_AllocatorPool;

@@ -15,7 +15,7 @@ namespace Rxn::Engine
 
     public:
 
-        virtual void InitializeEngineSystems() override;
+        void InitializeEngineSystems() override;
 
         void SetMode(EngineRuntimeMode mode);
 

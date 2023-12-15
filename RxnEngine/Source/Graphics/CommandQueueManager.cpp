@@ -16,23 +16,23 @@ namespace Rxn::Graphics::Manager
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
         ComPointer<ID3D12CommandQueue> commandQueue;
 
-        const uint8_t *p = reinterpret_cast<const uint8_t *>(queueName.c_str());
+        auto p = reinterpret_cast<const uint8_t *>(queueName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());
 
-        if (m_CommandQueues.find(hash) != m_CommandQueues.end())
+        if (m_CommandQueues.contains(hash))
         {
-            RXN_LOGGER::Error(L"Command queue '%s' already exists", queueName);
+            RXN_LOGGER::Error(L"Command queue '%s' already exists", queueName.c_str());
             return;
         }
 
-        m_CommandQueues.emplace(hash, commandQueue);
+        m_CommandQueues.try_emplace(hash, commandQueue);
         m_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_CommandQueues.at(hash)));
 
     }
 
     ComPointer<ID3D12CommandQueue> &CommandQueueManager::GetCommandQueue(const String &queueName)
     {
-        const uint8_t *p = reinterpret_cast<const uint8_t *>(queueName.c_str());
+        auto p = reinterpret_cast<const uint8_t *>(queueName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());
         return m_CommandQueues.at(hash);
     }
