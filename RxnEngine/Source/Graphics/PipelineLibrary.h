@@ -26,6 +26,7 @@
 
 namespace Rxn::Graphics::Mapped
 {
+    
     enum PSOCachingMechanism
     {
         CachedBlobs,
@@ -81,7 +82,7 @@ namespace Rxn::Graphics::Mapped
     static const D3D12_INPUT_LAYOUT_DESC g_cForwardRenderInputLayout = { g_cSimpleInputElementDescs, _countof(g_cSimpleInputElementDescs) };
     static const D3D12_INPUT_LAYOUT_DESC g_cQuadInputLayout = { g_cQuadInputElementDescs, _countof(g_cQuadInputElementDescs) };
 
-    static const GraphicsShaderSet g_cEffectShaderData[EffectPipelineTypeCount] =
+   /* static const GraphicsShaderSet g_cEffectShaderData[EffectPipelineTypeCount] =
     {
         {
             g_cForwardRenderInputLayout,
@@ -179,40 +180,268 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
+    };*/
+
+    
+
+    //static const wchar_t *g_cCacheFileNames[EffectPipelineTypeCount] =
+    //{
+    //    L"normal3dPSO.cache",
+    //    L"ubershaderPSO.cache",
+    //    L"blitEffectPSO.cache",
+    //    L"invertEffectPSO.cache",
+    //    L"grayscaleEffectPSO.cache",
+    //    L"edgeDetectEffectPSO.cache",
+    //    L"blurEffectPSO.cache",
+    //    L"warpEffectPSO.cache",
+    //    L"pixelateEffectPSO.cache",
+    //    L"distortEffectPSO.cache",
+    //    L"waveEffectPSO.cache",
+    //    L"additionalPixelShaderPSO.cache"
+    //};
+
+    //static const wchar_t *g_cEffectNames[EffectPipelineTypeCount] =
+    //{
+    //    L"Normal 3D",
+    //    L"Generic post effect",
+    //    L"Blit",
+    //    L"Invert",
+    //    L"Grayscale",
+    //    L"Edge detect",
+    //    L"Blur",
+    //    L"Warp",
+    //    L"Pixelate",
+    //    L"Distort",
+    //    L"Wave",
+    //    L"Additional"
+    //};
+
+    class PipelineEffectTemplate
+    {
+    public:
+        PipelineEffectTemplate() = delete;
+        PipelineEffectTemplate(const String &effectName, const GraphicsShaderSet &graphicsShaderSet, bool baseEffect) 
+            : m_EffectName(effectName)
+            , m_GraphicsShaderSet(graphicsShaderSet)
+            , m_CachingMechanism(PSOCachingMechanism::PipelineLibraries)
+            , m_EffectFileName("pipelineLibrary.cache")
+            , m_BaseEffect(baseEffect)
+        {};
+
+        PipelineEffectTemplate(const String &effectName, const String &fileName, const GraphicsShaderSet  &graphicsShaderSet, bool baseEffect)
+            : m_EffectName(effectName)
+            , m_EffectFileName(fileName)
+            , m_GraphicsShaderSet(graphicsShaderSet)
+            , m_CachingMechanism(PSOCachingMechanism::CachedBlobs)
+            , m_BaseEffect(baseEffect)
+        {};
+
+        ~PipelineEffectTemplate() = default;
+
+    public:
+
+        const String &GetEffectName()
+        {
+            return m_EffectName;
+        }
+
+        const String &GetEffectFileName()
+        {
+            return m_EffectFileName;
+        }
+
+        const GraphicsShaderSet &GetGraphicsShaderSet()
+        {
+            return m_GraphicsShaderSet;
+        }
+
+        const PSOCachingMechanism &GetCachingMechanism()
+        {
+            return m_CachingMechanism;
+        }
+
+        bool IsBaseEffect()
+        {
+            return m_BaseEffect;
+        }
+
+
+    private:
+
+        String m_EffectName;
+        String m_EffectFileName;
+        GraphicsShaderSet m_GraphicsShaderSet;
+        PSOCachingMechanism m_CachingMechanism;
+        const bool m_BaseEffect;
     };
 
-    static const wchar_t *g_cPipelineLibraryFileName = L"pipelineLibrary.cache";
 
-    static const wchar_t *g_cCacheFileNames[EffectPipelineTypeCount] =
-    {
-        L"normal3dPSO.cache",
-        L"ubershaderPSO.cache",
-        L"blitEffectPSO.cache",
-        L"invertEffectPSO.cache",
-        L"grayscaleEffectPSO.cache",
-        L"edgeDetectEffectPSO.cache",
-        L"blurEffectPSO.cache",
-        L"warpEffectPSO.cache",
-        L"pixelateEffectPSO.cache",
-        L"distortEffectPSO.cache",
-        L"waveEffectPSO.cache",
-        L"additionalPixelShaderPSO.cache"
+    inline const PipelineEffectTemplate g_Normal3D{
+        "Normal 3D", 
+        "normal3dPSO.cache",
+        {
+            g_cForwardRenderInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_SimpleVertexShader, sizeof(g_SimpleVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_SimplePixelShader, sizeof(g_SimplePixelShader)),
+            {},
+            {},
+            {},
+        },
+        true
     };
 
-    static const wchar_t *g_cEffectNames[EffectPipelineTypeCount] =
-    {
-        L"Normal 3D",
-        L"Generic post effect",
-        L"Blit",
-        L"Invert",
-        L"Grayscale",
-        L"Edge detect",
-        L"Blur",
-        L"Warp",
-        L"Pixelate",
-        L"Distort",
-        L"Wave",
-        L"Additional"
+    inline const PipelineEffectTemplate g_GenericPostEffect{
+        "Generic post effect",
+        "ubershaderPSO.cache",
+        {
+             g_cQuadInputLayout,
+             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+             CD3DX12_SHADER_BYTECODE(g_UberPixelShader, sizeof(g_UberPixelShader)),
+             {},
+             {},
+             {},
+        },
+        true
+    };
+
+    inline const PipelineEffectTemplate g_Blit{
+        "Blit",
+        "blitEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_BlitPixelShader, sizeof(g_BlitPixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Invert{
+        "Invert",
+        "invertEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_InvertPixelShader, sizeof(g_InvertPixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Grayscale{
+        "Grayscale",
+        "grayscaleEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_GrayScalePixelShader, sizeof(g_GrayScalePixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_EdgeDetect{
+        "Edge detect",
+        "edgeDetectEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_EdgeDetectPixelShader, sizeof(g_EdgeDetectPixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Blur{
+        "Blur",
+        "blurEffectPSO.cache",
+        {
+             g_cQuadInputLayout,
+             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+             CD3DX12_SHADER_BYTECODE(g_BlurPixelShader, sizeof(g_BlurPixelShader)),
+             {},
+             {},
+             {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Warp{
+        "Warp",
+        "warpEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_WarpPixelShader, sizeof(g_WarpPixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Pixelate{
+        "Pixelate",
+        "pixelateEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_PixelatePixelShader, sizeof(g_PixelatePixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Distort{
+        "Distort",
+        "distortEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_DistortPixelShader, sizeof(g_DistortPixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Wave{
+        "Wave",
+        "waveEffectPSO.cache",
+        {
+            g_cQuadInputLayout,
+            CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+            CD3DX12_SHADER_BYTECODE(g_WavePixelShader, sizeof(g_WavePixelShader)),
+            {},
+            {},
+            {},
+        },
+        false
+    };
+
+    inline const PipelineEffectTemplate g_Additional{
+        "Additional",
+        "additionalPixelShaderPSO.cache",
+        {
+             g_cQuadInputLayout,
+             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
+             CD3DX12_SHADER_BYTECODE(g_AdditionalPixelShader, sizeof(g_AdditionalPixelShader)),
+             {},
+             {},
+             {},
+        },
+        false
     };
 
     class RXN_ENGINE_API PipelineLibrary
@@ -308,7 +537,6 @@ namespace Rxn::Graphics::Mapped
             ID3D12Device *pDevice;
             ID3D12RootSignature *pRootSignature;
             EffectPipelineType type;
-
             HANDLE threadHandle;
         };
 
@@ -350,7 +578,8 @@ namespace Rxn::Graphics::Mapped
 
     private:
 
-        
+        std::vector<PipelineEffectTemplate> m_PipelineEffects;
+        const WString PIPELINE_LIBRARY_FILE_NAME = L"pipelineLibrary.cache";
 
         ComPointer<ID3D12PipelineState> m_PipelineStates[EffectPipelineTypeCount];
 
