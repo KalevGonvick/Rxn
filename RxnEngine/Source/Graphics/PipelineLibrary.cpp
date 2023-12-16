@@ -1,5 +1,6 @@
 #include "Rxn.h"
 #include "PipelineLibrary.h"
+#include <filesystem>
 
 namespace Rxn::Graphics::Mapped
 {
@@ -10,15 +11,34 @@ namespace Rxn::Graphics::Mapped
         WCHAR path[512];
         GetAssetsPath(path, _countof(path));
         m_CachePath = path;
+
+        m_PipelineEffects.push_back(g_Normal3D);
+        m_PipelineEffects.push_back(g_GenericPostEffect);
+        m_PipelineEffects.push_back(g_Blit);
+        m_PipelineEffects.push_back(g_Invert);
+        m_PipelineEffects.push_back(g_Grayscale);
+        m_PipelineEffects.push_back(g_EdgeDetect);
+        m_PipelineEffects.push_back(g_Blur);
+        m_PipelineEffects.push_back(g_Warp);
+        m_PipelineEffects.push_back(g_Pixelate);
+        m_PipelineEffects.push_back(g_Distort);
+        m_PipelineEffects.push_back(g_Wave);
+        m_PipelineEffects.push_back(g_Additional);
     }
 
     PipelineLibrary::~PipelineLibrary()
     {
         WaitForThreads();
 
-        for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
+        /*for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
             m_DiskCaches[i].DestroyFile(false);
+        }*/
+        uint32 x = 0;
+        for (auto &effect : m_PipelineEffects)
+        {
+            m_DiskCaches[x].DestroyFile(false);
+            x++;
         }
 
         m_PipelineLibrary.DestroyPipelineLibrary(false);
@@ -30,7 +50,8 @@ namespace Rxn::Graphics::Mapped
         {
             if (thread.threadHandle)
             {
-                RXN_LOGGER::Trace(L"Waiting on the compile thread to finish for shader effect: '%s'.", g_cEffectNames[thread.type]);
+                auto index = static_cast<uint32>(thread.type);
+                RXN_LOGGER::Trace(L"Waiting on the compile thread to finish for shader effect: '%s'.", m_PipelineEffects.at(index).GetEffectName().c_str());
                 WaitForSingleObject(thread.threadHandle, INFINITE);
                 CloseHandle(thread.threadHandle);
             }
@@ -44,11 +65,19 @@ namespace Rxn::Graphics::Mapped
         RXN_LOGGER::Debug(L"Building new pipeline cache.");
 
         RXN_LOGGER::Trace(L"Initialize all cache file mappings (file may be empty).");
-        m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + g_cPipelineLibraryFileName);
-        for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
+        m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + PIPELINE_LIBRARY_FILE_NAME);
+        /*for (uint32 i = 0; i < EffectPipelineTypeCount; i++)
         {
             RXN_LOGGER::Trace(L"Initializeing cache file mapping for shader: [%d]", i);
             m_DiskCaches[i].InitFile(m_CachePath + g_cCacheFileNames[i]);
+        }*/
+        uint32 x = 0;
+        for (auto &effect : m_PipelineEffects)
+        {
+            WString wName = std::filesystem::path(effect.GetEffectName().c_str()).wstring();
+            RXN_LOGGER::Trace(L"Initializeing cache file mapping for shader: [%d]", x);
+            m_DiskCaches[x].InitFile(m_CachePath + wName.c_str());
+            x++;
         }
 
         if (!m_PipelineLibrariesSupported)
@@ -57,7 +86,7 @@ namespace Rxn::Graphics::Mapped
             m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::CachedBlobs;
         }
 
-        for (uint32 i = 0; i < BaseEffectCount; i++)
+        /*for (uint32 i = 0; i < BaseEffectCount; i++)
         {
             RXN_LOGGER::Trace(L" Compiling the 3D & 'Ubershader'.");
             m_WorkerThreads[i].pDevice = pDevice;
@@ -65,6 +94,21 @@ namespace Rxn::Graphics::Mapped
             m_WorkerThreads[i].type = EffectPipelineType(i);
             m_WorkerThreads[i].pLibrary = this;
             CompilePipelineStateObject(&m_WorkerThreads[i]);
+        }*/
+        uint32 i = 0;
+        for (auto &effect : m_PipelineEffects)
+        {
+            if (effect.IsBaseEffect())
+            {
+                WString name = std::filesystem::path(effect.GetEffectName()).wstring();
+                RXN_LOGGER::Debug(L"Compiling base effect: %s", name.c_str());
+                m_WorkerThreads[i].pDevice = pDevice;
+                m_WorkerThreads[i].pRootSignature = pRootSignature;
+                m_WorkerThreads[i].type = EffectPipelineType(i);
+                m_WorkerThreads[i].pLibrary = this;
+                CompilePipelineStateObject(&m_WorkerThreads[i]);
+            }
+            i++;
         }
 
         m_DynamicConstantBuffer.Create(pDevice);
@@ -75,7 +119,6 @@ namespace Rxn::Graphics::Mapped
     void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, _In_range_(0, EffectPipelineTypeCount - 1) EffectPipelineType type, uint32 frameIndex)
     {
         assert(m_DrawIndex < m_MaxDrawsPerFrame);
-        //assert(m_WorkerThreads[type].threadHandle != 0);
 
         bool isBuilt = false;
         bool isInFlight = false;
@@ -87,64 +130,58 @@ namespace Rxn::Graphics::Mapped
             isInFlight = m_InflightPipelineStateObjectFlags[type];
         }
 
-        if (type > BaseUberShader)
+
+        if (!isBuilt && m_UseUberShaders)
         {
-            if (!isBuilt && m_UseUberShaders)
+            RXN_LOGGER::Debug(L"Ubershader using effect: %d", type);
+            auto constantData = (UberShaderConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, frameIndex);
+            constantData->effectIndex = type;
+            pCommandList->SetGraphicsRootConstantBufferView(m_CBVRootSignatureIndex, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, frameIndex));
+
+            // We don't want to double compile
+            if (!isInFlight)
             {
-                RXN_LOGGER::Debug(L"Ubershader using effect: %d", type);
-                auto constantData = (UberShaderConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(m_DrawIndex, frameIndex);
-                constantData->effectIndex = type;
-                pCommandList->SetGraphicsRootConstantBufferView(m_CBVRootSignatureIndex, m_DynamicConstantBuffer.GetGpuVirtualAddress(m_DrawIndex, frameIndex));
-
-                // We don't want to double compile
-                if (!isInFlight)
-                {
-                    m_WorkerThreads[type].pDevice = RenderContext::GetGraphicsDevice().Get();
-                    m_WorkerThreads[type].pRootSignature = pRootSignature;
-                    m_WorkerThreads[type].type = type;
-                    m_WorkerThreads[type].pLibrary = this;
-
-                    RXN_LOGGER::Debug(L"Compileing the pipeline state object on a background thread.");
-                    m_WorkerThreads[type].threadHandle = CreateThread(
-                        nullptr,
-                        0,
-                        reinterpret_cast<LPTHREAD_START_ROUTINE>(CompilePipelineStateObject),
-                        reinterpret_cast<void *>(&m_WorkerThreads[type]),
-                        CREATE_SUSPENDED,
-                        nullptr);
-
-                    if (!m_WorkerThreads[type].threadHandle)
-                    {
-                        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-                    }
-
-                    ResumeThread(m_WorkerThreads[type].threadHandle);
-
-                    {
-                        auto lock = std::scoped_lock(m_FlagsMutex);
-
-                        m_InflightPipelineStateObjectFlags[type] = true;
-                    }
-                }
-
-                type = BaseUberShader;
-            }
-            else if (!isBuilt && !m_UseUberShaders)
-            {
-                RXN_LOGGER::Debug(L"Not using ubershaders... This will take a long time and cause a hitch as the CPU is stalled!");
                 m_WorkerThreads[type].pDevice = RenderContext::GetGraphicsDevice().Get();
                 m_WorkerThreads[type].pRootSignature = pRootSignature;
                 m_WorkerThreads[type].type = type;
                 m_WorkerThreads[type].pLibrary = this;
 
-                CompilePipelineStateObject(&m_WorkerThreads[type]);
-            }
-        }
-        else
-        {
-            assert(isBuilt);
-        }
+                RXN_LOGGER::Debug(L"Compileing the pipeline state object on a background thread.");
+                m_WorkerThreads[type].threadHandle = CreateThread(
+                    nullptr,
+                    0,
+                    reinterpret_cast<LPTHREAD_START_ROUTINE>(CompilePipelineStateObject),
+                    reinterpret_cast<void *>(&m_WorkerThreads[type]),
+                    CREATE_SUSPENDED,
+                    nullptr);
 
+                if (!m_WorkerThreads[type].threadHandle)
+                {
+                    ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+                }
+
+                ResumeThread(m_WorkerThreads[type].threadHandle);
+
+                {
+                    auto lock = std::scoped_lock(m_FlagsMutex);
+
+                    m_InflightPipelineStateObjectFlags[type] = true;
+                }
+            }
+
+            type = BaseUberShader;
+        }
+        else if (!isBuilt && !m_UseUberShaders)
+        {
+            RXN_LOGGER::Debug(L"Not using ubershaders... This will take a long time and cause a hitch as the CPU is stalled!");
+            m_WorkerThreads[type].pDevice = RenderContext::GetGraphicsDevice().Get();
+            m_WorkerThreads[type].pRootSignature = pRootSignature;
+            m_WorkerThreads[type].type = type;
+            m_WorkerThreads[type].pLibrary = this;
+
+            CompilePipelineStateObject(&m_WorkerThreads[type]);
+        }
+    
         pCommandList->SetPipelineState(m_PipelineStates[type].Get());
 
         m_DrawIndex++;
@@ -157,8 +194,10 @@ namespace Rxn::Graphics::Mapped
         ID3D12Device *pDevice = pDataPackage->pDevice;
         ID3D12RootSignature *pRootSignature = pDataPackage->pRootSignature;
         EffectPipelineType type = pDataPackage->type;
-
-        RXN_LOGGER::Debug(L"Compiling effect: '%s'", g_cEffectNames[type]);
+        auto index = static_cast<uint32>(type);
+        WString wPipelienEffectName = std::filesystem::path(pLibrary->m_PipelineEffects.at(index).GetEffectName()).wstring();
+        //RXN_LOGGER::Debug(L"Compiling effect: '%s'", g_cEffectNames[type]);
+        RXN_LOGGER::Debug(L"Compiling effect: '%s'", wPipelienEffectName.c_str());
 
         bool useCache = CompileCacheCheck(pDataPackage);
 
@@ -174,12 +213,12 @@ namespace Rxn::Graphics::Mapped
         baseDesc.DepthStencilState.DepthEnable = FALSE;
         baseDesc.DepthStencilState.StencilEnable = FALSE;
 
-        baseDesc.InputLayout = g_cEffectShaderData[type].inputLayout;
-        baseDesc.VS = g_cEffectShaderData[type].VS;
-        baseDesc.PS = g_cEffectShaderData[type].PS;
-        baseDesc.DS = g_cEffectShaderData[type].DS;
-        baseDesc.HS = g_cEffectShaderData[type].HS;
-        baseDesc.GS = g_cEffectShaderData[type].GS;
+        baseDesc.InputLayout = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().inputLayout;
+        baseDesc.VS = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().VS;
+        baseDesc.PS = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().PS;
+        baseDesc.DS = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().DS;
+        baseDesc.HS = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().HS;
+        baseDesc.GS = pLibrary->m_PipelineEffects.at(index).GetGraphicsShaderSet().GS;
 
         if (useCache && (pLibrary->m_PipelineStateObjectCachingMechanism == PSOCachingMechanism::PipelineLibraries))
         {
@@ -187,16 +226,18 @@ namespace Rxn::Graphics::Mapped
             ID3D12PipelineLibrary *pPipelineLibrary = pLibrary->m_PipelineLibrary.GetPipelineLibrary().Get();
 
             // Note: Load*Pipeline() will auto-name PSOs for you based on the provided name. However, this sample overrides those names.
-            HRESULT hr = pPipelineLibrary->LoadGraphicsPipeline(g_cEffectNames[type], &baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type]));
+            //HRESULT hr = pPipelineLibrary->LoadGraphicsPipeline(g_cEffectNames[type], &baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type]));
+           
+            HRESULT hr = pPipelineLibrary->LoadGraphicsPipeline(wPipelienEffectName.c_str(), &baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type]));
             if (E_INVALIDARG == hr)
             {
-                RXN_LOGGER::Trace(L"A pipeline state object' with the specified name '%s' does not exist, or the input desc does not match the data in the library.", g_cEffectNames[type]);
+                RXN_LOGGER::Trace(L"A pipeline state object' with the specified name '%s' does not exist, or the input desc does not match the data in the library.", wPipelienEffectName.c_str());
                 ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pLibrary->m_PipelineStates[type])));
 
-                hr = pPipelineLibrary->StorePipeline(g_cEffectNames[type], pLibrary->m_PipelineStates[type].Get());
+                hr = pPipelineLibrary->StorePipeline(wPipelienEffectName.c_str(), pLibrary->m_PipelineStates[type].Get());
                 if (E_INVALIDARG == hr)
                 {
-                    RXN_LOGGER::Error(L"A PSO with the specified name '%s' already exists in the library.", g_cEffectNames[type]);
+                    RXN_LOGGER::Error(L"A PSO with the specified name '%s' already exists in the library.", wPipelienEffectName.c_str());
                     throw std::runtime_error("A PSO with the specified name already exists in the library.");
                 }
                 else
@@ -249,7 +290,7 @@ namespace Rxn::Graphics::Mapped
         }
 
         WCHAR name[50];
-        if (swprintf_s(name, L"m_PipelineStates[%s]", g_cEffectNames[type]) > 0)
+        if (swprintf_s(name, L"m_PipelineStates[%s]",wPipelienEffectName.c_str()) > 0)
         {
             SetName(pLibrary->m_PipelineStates[type].Get(), name);
         }
@@ -341,7 +382,7 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::DestroyShader(EffectPipelineType type)
     {
-        RXN_LOGGER::Debug(L"Destroying shader effect '%s'", g_cEffectNames[type]);
+        //RXN_LOGGER::Debug(L"Destroying shader effect '%s'", g_cEffectNames[type]);
         WaitForThreads();
 
         if (m_PipelineStates[type])
@@ -366,6 +407,8 @@ namespace Rxn::Graphics::Mapped
     {
         return m_PipelineStateObjectCachingMechanism;
     }
+
+
 
 
 }
