@@ -11,7 +11,7 @@ namespace Rxn::Graphics::Basic
         HRESULT result;
 
         const CD3DX12_RESOURCE_DESC resourceDescriptorBufferSize = CD3DX12_RESOURCE_DESC::Buffer(size);
-        const CD3DX12_HEAP_PROPERTIES defaultHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        const auto defaultHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
         result = device->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDescriptorBufferSize, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&buffer));
         if (FAILED(result))
@@ -28,7 +28,7 @@ namespace Rxn::Graphics::Basic
         HRESULT result;
 
         const CD3DX12_RESOURCE_DESC resourceDescriptorBufferSize = CD3DX12_RESOURCE_DESC::Buffer(size);
-        const CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        const auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
         result = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDescriptorBufferSize, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&buffer));
         if (FAILED(result))

@@ -2,69 +2,61 @@
 
 namespace Rxn::Graphics
 {
-    static RenderContext &GetContext()
-    {
-        static RenderContext inst;
-        return inst;
-    }
+    inline static RenderContext Instance;
 
-    RenderContext::RenderContext()
-        : m_Seed(89348)
-    {
-    }
-
+    RenderContext::RenderContext() = default;
     RenderContext::~RenderContext() = default;
 
     void RenderContext::InitRenderContext()
     {
         HRESULT result;
 
-        result = GetContext().CreateFactory();
+        result = Instance.CreateFactory();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create factory...");
             return;
         }
 
-        result = GetContext().CreateIndependantDevice();
+        result = Instance.CreateIndependantDevice();
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create DX12 device");
             return;
         }
 
-        GetContext().SetHighestRootSignatureVersion();
-        GetContext().m_IsInitialized = true;
+        Instance.SetHighestRootSignatureVersion();
+        Instance.m_IsInitialized = true;
     }
 
     const uint32 &RenderContext::GetEngineSeed()
     {
-        return GetContext().m_Seed;
+        return Instance.m_Seed;
     }
 
     void RenderContext::SetHWND(const HWND &hwnd)
     {
-        GetContext().m_Hwnd = hwnd;
+        Instance.m_Hwnd = hwnd;
     }
 
     HWND &RenderContext::GetHWND()
     {
-        return GetContext().m_Hwnd;
+        return Instance.m_Hwnd;
     }
 
     ComPointer<ID3D12Device> &RenderContext::GetGraphicsDevice()
     {
-        return GetContext().m_Device;
+        return Instance.m_Device;
     }
 
     ComPointer<IDXGIFactory4> &RenderContext::GetFactory()
     {
-        return GetContext().m_Factory;
+        return Instance.m_Factory;
     }
 
     D3D_ROOT_SIGNATURE_VERSION &RenderContext::GetHighestRootSignatureVersion()
     {
-        return GetContext().m_HighestRootSignatureVersion;
+        return Instance.m_HighestRootSignatureVersion;
     }
 
     HRESULT RenderContext::CreateIndependantDevice()
@@ -128,7 +120,7 @@ namespace Rxn::Graphics
 
     }
 
-    void RenderContext::GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter)
+    void RenderContext::GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter) const
     {
         *ppAdapter = nullptr;
 

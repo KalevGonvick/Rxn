@@ -33,11 +33,6 @@ namespace Rxn::Graphics
             return (rand() % 100) / 100.0f;
         }
 
-        inline WString GetAssetFullPath(LPCWSTR assetName)
-        {
-            return m_AssetsPath + assetName;
-        }
-
         virtual void InitializeRender() = 0;
         virtual void ShutdownRender() = 0;
         virtual void RenderPass() = 0;
@@ -54,39 +49,23 @@ namespace Rxn::Graphics
 
         ComPointer<ID3D12CommandAllocator> &GetCommandAllocator(const uint32 frameIndex);
         Pooled::CommandAllocatorPool &GetCommandAllocatorPool();
-        
-        const uint32 &GetDrawIndex() const;
 
         void CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap);
-        void IncrementDrawIndex();
-        void ResetDrawIndex();
         void CreateAllocatorPool();
         
-        void InitScene();
-        
-        
+    public:
 
-    protected:
-
-        static void InitRendererDisplay(Renderer &renderer, const String &cmdQueueHashKey);
-        static void InitGpuFence(Renderer &renderer, const String &cmdQueueHashKey);
-        static void InitCommandQueues(Renderer &renderer, const String &cmdQueueHashKey);
-        static void InitCommandList(Renderer &renderer, const String &cmdQueueHashKey, const String &newCmdListHashKey);
-        static void InitCachedPipeline(Renderer &renderer, ComPointer<ID3D12Device> device);
-        static void InitCommandAllocator(Renderer &renderer, uint32 bufferIndex);
-
-    private:
-
+        uint32 m_DrawIndex = 0;
         bool m_UseWarpDevice = false;
         bool m_HasTearingSupport = false;
 
-        uint32 m_DrawIndex = 0;
+    private:
 
         Manager::CommandQueueManager m_CommandQueueManager { RenderContext::GetGraphicsDevice() };
         Manager::CommandListManager m_CommandListManager { RenderContext::GetGraphicsDevice() };
-        Mapped::PipelineLibrary m_PipelineLibrary { SwapChainBuffers::TOTAL_BUFFERS, RootParameterCB };
+        Mapped::PipelineLibrary m_PipelineLibrary { static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS), RootParameterCB };
         Pooled::CommandAllocatorPool m_AllocatorPool { D3D12_COMMAND_LIST_TYPE_DIRECT };
-        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[SwapChainBuffers::TOTAL_BUFFERS];
+        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS)];
 
         Scene m_Scene;
         WString m_AssetsPath;
@@ -94,10 +73,33 @@ namespace Rxn::Graphics
 
         GPU::Fence m_Fence;
 
-        static const uint32 MaxDrawsPerFrame = 256;
         static const uint32 TextureWidth = 256;
         static const uint32 TextureHeight = 256;
         static const uint32 TextureBytesPerPixel = 4;
+
+    };
+
+    class RenderPassObjects
+    {
+    public:
+
+        RenderPassObjects() = delete;
+        explicit RenderPassObjects(Renderer *renderer);
+        ~RenderPassObjects();
+
+    public:
+        
+        RenderPassObjects &PopulateNewList(ComPointer<ID3D12GraphicsCommandList> cmdList);
+
+    private:
+
+        int8 m_RenderPassState = 0;
+        
+        const int8 INIT_STATE = 1 << 1;
+        const int8 FINISH_STATE = 1 << 2;
+
+        Renderer *m_Renderer;
+        ComPointer<ID3D12GraphicsCommandList> m_ActiveCmdList = nullptr;
 
     };
 }

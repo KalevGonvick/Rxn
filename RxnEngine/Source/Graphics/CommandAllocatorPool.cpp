@@ -40,9 +40,8 @@ namespace Rxn::Graphics::Pooled
         }
 
         m_Device->CreateCommandAllocator(m_CommandListType, IID_PPV_ARGS(&allocator));
-        String allocatorName = std::format("CommandAllocator {}", m_AllocatorPool.size());
-        WString wAllocatorName = std::filesystem::path(allocatorName).wstring();
-        allocator->SetName(wAllocatorName.c_str());
+        String allocatorName = std::format("CommandAllocator[{}]", m_AllocatorPool.size());
+        allocator->SetName(Core::Strings::StringToWideString(allocatorName).c_str());
         return m_AllocatorPool.emplace_back(allocator);
        
     }

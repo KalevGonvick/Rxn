@@ -34,13 +34,13 @@ namespace Rxn::Graphics
         LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
 
         void SetupWindow() override;
-
-        void UpdateSimulation();
-        void LoadSceneData();
         void InitializeRender() override;
         void ShutdownRender() override;
         void RenderPass() override;
         void PreRenderPass() override;
+
+        void UpdateSimulation();
+        void LoadSceneData();
 
 
     protected:
@@ -60,10 +60,18 @@ namespace Rxn::Graphics
         void HandleKeyUp(uint8 key) override;
 
     private:
+
+        /**
+         * .
+         * 
+         */
         void OnSizeChange();
-        void DestroySwapChainResources();
-        void ResetFrameCommandObjects(ComPointer<ID3D12GraphicsCommandList> &frameCmdList, ComPointer<ID3D12CommandAllocator> &frameCmdAllocator) const;
-        void UpdateShaderParameters(ComPointer<ID3D12GraphicsCommandList> &frameCmdList, const uint32 frameIndex);
+
+        /**
+         * .
+         * 
+         * \return 
+         */
         uint64 GetFPS() const;
 
     private:

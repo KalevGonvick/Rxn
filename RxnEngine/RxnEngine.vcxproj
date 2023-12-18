@@ -169,6 +169,7 @@
     <ClInclude Include="Source\Core\RxnBinaryHandler.h" />
     <ClInclude Include="Source\Core\Span.h" />
     <ClInclude Include="Source\Core\StepTimer.h" />
+    <ClInclude Include="Source\Core\StringUtil.h" />
     <ClInclude Include="Source\Engine\EngineContext.h" />
     <ClInclude Include="Source\Engine\EngineSettings.h" />
     <ClInclude Include="Source\Engine\RxnEngine.h" />
