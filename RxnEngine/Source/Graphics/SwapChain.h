@@ -7,7 +7,7 @@ namespace Rxn::Graphics::GPU
 
     public:
 
-        SwapChain(int width, int height);
+        SwapChain(uint32 width, uint32 height);
         ~SwapChain();
 
     public:
@@ -18,7 +18,7 @@ namespace Rxn::Graphics::GPU
         uint32 GetCurrentBackBufferIndex();
         HANDLE GetFrameLatencyWaitableObject();
         HRESULT GetBuffer(uint32 bufferNum, ComPointer<ID3D12Resource> &bufferResource);
-        HRESULT ResizeBuffers(int width, int height);
+        HRESULT ResizeBuffers(uint32 width, uint32 height);
         HRESULT Present(uint32 syncInterval, uint32 flags);
 
     private:

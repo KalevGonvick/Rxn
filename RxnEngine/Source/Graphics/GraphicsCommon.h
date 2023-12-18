@@ -15,11 +15,11 @@ namespace Rxn::Graphics
         DirectX::XMFLOAT3 colour;
     };
 
-    enum SwapChainBuffers : uint32
+    enum class SwapChainBuffers : uint32
     {
         BUFFER_ONE = 0,
-        BUFFER_TWO,
-        TOTAL_BUFFERS
+        BUFFER_TWO = 1,
+        TOTAL_BUFFERS = 2
     };
 
     const float INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
@@ -79,17 +79,10 @@ namespace Rxn::Graphics
         }
     }
 
-    inline String HrToString(HRESULT hr)
-    {
-        char s_str[64] = {};
-        sprintf_s(s_str, "HRESULT of 0x%08X", static_cast<UINT>(hr));
-        return std::string(s_str);
-    }
-
     class HrException : public std::runtime_error
     {
     public:
-        explicit HrException(HRESULT hr) : std::runtime_error(HrToString(hr)), m_hr(hr) {}
+        explicit HrException(HRESULT hr) : std::runtime_error(Core::Strings::GetHResultToString(hr)), m_hr(hr) {}
         HRESULT Error() const { return m_hr; }
     private:
         const HRESULT m_hr;
@@ -117,28 +110,6 @@ namespace Rxn::Graphics
         if (FAILED(result))
         {
             throw HrException(result);
-        }
-    }
-
-    inline void GetAssetsPath(_Out_writes_(pathSize) WCHAR *path, UINT pathSize)
-    {
-        if (path == nullptr)
-        {
-            RXN_LOGGER::Error(L"Provided path is null");
-            throw std::exception();
-        }
-
-        DWORD size = GetModuleFileName(nullptr, path, pathSize);
-        if (size == 0 || size == pathSize)
-        {
-            RXN_LOGGER::Error(L"Provided path was truncated/method failed to find module.");
-            throw std::exception();
-        }
-
-        WCHAR *lastSlash = wcsrchr(path, L'\\');
-        if (lastSlash)
-        {
-            *(lastSlash + 1) = L'\0';
         }
     }
 

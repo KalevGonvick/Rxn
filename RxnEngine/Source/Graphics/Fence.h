@@ -35,6 +35,6 @@ namespace Rxn::Graphics::GPU
 
         HANDLE m_FenceEvent = nullptr;
         ComPointer<ID3D12Fence> m_Fence;
-        uint64 m_FenceValues[SwapChainBuffers::TOTAL_BUFFERS];
+        uint64 m_FenceValues[static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS)];
     };
 }

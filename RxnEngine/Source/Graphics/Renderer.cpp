@@ -8,7 +8,7 @@ namespace Rxn::Graphics
     {
         
         WCHAR assetsPath[512];
-        GetAssetsPath(assetsPath, _countof(assetsPath));
+        Core::Strings::GetAssetsPath(assetsPath, _countof(assetsPath));
         m_AssetsPath = assetsPath;
     }
 
@@ -16,8 +16,6 @@ namespace Rxn::Graphics
 
     void Renderer::CreateTextureUploadHeap(ComPointer<ID3D12Resource> &textureUploadHeap)
     {
-
-
         // Describe and create a Texture2D.
         D3D12_RESOURCE_DESC textureDesc = {};
         textureDesc.MipLevels = 1;
@@ -117,121 +115,22 @@ namespace Rxn::Graphics
         return m_PipelineLibrary;
     }
 
-    const uint32 &Renderer::GetDrawIndex() const
-    {
-        return m_DrawIndex;
-    }
-
-    void Renderer::IncrementDrawIndex()
-    {
-        m_DrawIndex++;
-    }
-
-    void Renderer::ResetDrawIndex()
-    {
-        m_DrawIndex = 0;
-    }
-
     void Renderer::CreateAllocatorPool()
     {
         m_AllocatorPool.Create(RenderContext::GetGraphicsDevice());
     }
 
-    void Renderer::InitRendererDisplay(Renderer &renderer, const String &cmdQueueHashKey)
-    {
-        renderer.m_Display.GetSwapChain().SetTearingSupport(renderer.m_HasTearingSupport);
-        renderer.m_Display.GetSwapChain().CreateSwapChain(renderer.m_CommandQueueManager.GetCommandQueue(cmdQueueHashKey));
-        renderer.m_Display.TurnOverSwapChainBuffer();
-
-    }
-
-    void Renderer::InitScene()
-    {
-        // We don't modify the SRV in the command list after SetGraphicsRootDescriptorTable
-        // is executed on the GPU so we can use the default range behavior:
-        // D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[RootParametersCount]{};
-        ranges[RootParameterSRV].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-
-        CD3DX12_ROOT_PARAMETER1 rootParameters[3]{};
-        rootParameters[RootParameterUberShaderCB].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
-        rootParameters[RootParameterCB].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
-        rootParameters[RootParameterSRV].InitAsDescriptorTable(1, &ranges[RootParameterSRV], D3D12_SHADER_VISIBILITY_PIXEL);
-
-        D3D12_STATIC_SAMPLER_DESC sampler = {};
-        sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-        sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        sampler.MipLODBias = 0;
-        sampler.MaxAnisotropy = 0;
-        sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-        sampler.MinLOD = 0.0f;
-        sampler.MaxLOD = D3D12_FLOAT32_MAX;
-        sampler.ShaderRegister = 0;
-        sampler.RegisterSpace = 0;
-        sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
-        rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-        m_Scene.InitHeaps();
-        m_Scene.SetSerializedRootSignature(rootSignatureDesc);
-        m_Scene.InitSceneRenderTargets(
-            m_Display.GetFrameIndex(),
-            m_Display.GetSwapChain()
-        );
-        m_Scene.GetDynamicConstantBuffer().Create(RenderContext::GetGraphicsDevice().Get());
-    }
-
-    void Renderer::InitCachedPipeline(Renderer &renderer, ComPointer<ID3D12Device> device)
-    {
-        renderer.GetPipelineLibrary().Build(device, renderer.GetScene().GetRootSignature());
-    }
-
-    void Renderer::InitCommandQueues(Renderer &renderer, const String &cmdQueueHashKey)
-    {
-        renderer.GetCommandQueueManager().CreateCommandQueue(cmdQueueHashKey);
-    }
-
-    void Renderer::InitCommandList(Renderer &renderer, const String &cmdQueueHashKey, const String &newCmdListHashKey)
-    {
-        auto primaryCommandQueue = renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey);
-        auto currentCommandAllocator = renderer.GetCommandAllocator(renderer.GetDisplay().GetFrameIndex());
-
-        renderer.GetCommandListManager().CreateCommandList(
-            newCmdListHashKey,
-            currentCommandAllocator,
-            true,
-            D3D12_COMMAND_LIST_TYPE_DIRECT
-        );
-
-        //renderer.GetCommandListManager().CloseCommandList(newCmdListHashKey);
-        renderer.GetCommandListManager().ExecuteCommandList(newCmdListHashKey, primaryCommandQueue);
-        /*renderer.GetCommandListManager().CloseAndExecuteCommandList(
-            newCmdListHashKey,
-            primaryCommandQueue
-        );*/
-    }
-
-    void Renderer::InitCommandAllocator(Renderer &renderer, uint32 bufferIndex)
-    {
-        renderer.GetCommandAllocator(bufferIndex) = renderer.GetCommandAllocatorPool().RequestAllocator(bufferIndex);
-    }
-
-    void Renderer::InitGpuFence(Renderer &renderer, const String &cmdQueueHashKey)
-    {
-        renderer.GetFence().CreateFence(renderer.GetDisplay().GetFrameIndex());
-        const uint32 nextFrameIndex = renderer.GetDisplay().GetSwapChain().GetCurrentBackBufferIndex();
-
-        renderer.GetFence().MoveFenceMarker(renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey), renderer.GetDisplay().GetFrameIndex(), nextFrameIndex);
-        renderer.GetDisplay().TurnOverSwapChainBuffer();
-        renderer.GetFence().SignalFence(renderer.GetCommandQueueManager().GetCommandQueue(cmdQueueHashKey), renderer.GetDisplay().GetFrameIndex());
-        renderer.GetFence().WaitInfinite(renderer.GetDisplay().GetFrameIndex());
-        renderer.GetFence().IncrementFenceValue(renderer.GetDisplay().GetFrameIndex());
-    }
-
    
+    RenderPassObjects::RenderPassObjects(Renderer *renderer)
+        : m_Renderer(renderer)
+    {}
+
+    RenderPassObjects::~RenderPassObjects() = default;
+
+    RenderPassObjects &RenderPassObjects::PopulateNewList(ComPointer<ID3D12GraphicsCommandList> cmdList)
+    {
+        m_ActiveCmdList = cmdList;
+        return *this;
+    }
 
 }

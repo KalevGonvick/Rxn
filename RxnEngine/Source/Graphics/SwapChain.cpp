@@ -3,9 +3,9 @@
 
 namespace Rxn::Graphics::GPU
 {
-    SwapChain::SwapChain(int width, int height)
+    SwapChain::SwapChain(uint32 width, uint32 height)
     {
-        m_SwapChainDesc.BufferCount = SwapChainBuffers::TOTAL_BUFFERS;
+        m_SwapChainDesc.BufferCount = static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS);
         m_SwapChainDesc.Width = width;
         m_SwapChainDesc.Height = height;
         m_SwapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -48,9 +48,11 @@ namespace Rxn::Graphics::GPU
         return m_SwapChain->GetBuffer(bufferNum, IID_PPV_ARGS(&bufferResource));
     }
 
-    HRESULT SwapChain::ResizeBuffers(int width, int height)
+    HRESULT SwapChain::ResizeBuffers(uint32 width, uint32 height)
     {
-        return m_SwapChain->ResizeBuffers(SwapChainBuffers::TOTAL_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+        m_SwapChainDesc.Width = width;
+        m_SwapChainDesc.Height = height;
+        return m_SwapChain->ResizeBuffers(m_SwapChainDesc.BufferCount, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
     }
 
     HRESULT SwapChain::Present(uint32 syncInterval, uint32 flags)

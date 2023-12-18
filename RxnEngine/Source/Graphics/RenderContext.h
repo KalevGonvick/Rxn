@@ -82,7 +82,7 @@ namespace Rxn::Graphics
          * \param ppAdapter
          * \param requestHighPerformanceAdapter
          */
-        void GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false);
+        void GetHardwareAdapter(IDXGIFactory1 *pFactory, IDXGIAdapter1 **ppAdapter, bool requestHighPerformanceAdapter = false) const;
 
         /**
          * .
@@ -92,12 +92,9 @@ namespace Rxn::Graphics
 
         static const uint32 &GetEngineSeed();
 
-    public:
-
-        HWND m_Hwnd;
-
     private:
 
+        HWND m_Hwnd;
 
         bool m_IsInitialized;
         bool m_HasTearingSupport;
@@ -109,7 +106,7 @@ namespace Rxn::Graphics
         ComPointer<IDXGIFactory4> m_Factory;
         D3D_ROOT_SIGNATURE_VERSION m_HighestRootSignatureVersion;
 
-        uint32 m_Seed;
+        uint32 m_Seed = 89348;
 
     };
 }

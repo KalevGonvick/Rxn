@@ -1,12 +1,6 @@
 #include "Rxn.h"
 #include "SplashScreen.h"
 
-
-namespace Rxn::Engine::SplashScreen
-{
-
-}
-
 namespace Rxn::Engine
 {
     SplashWindow::SplashWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height)
@@ -35,13 +29,6 @@ namespace Rxn::Engine
 
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(255, 255, 255));
-
-            /*if (Engine::Runtime::GetEngineMode() != Engine::Runtime::EngineRuntimeMode::PRODUCTION)
-            {
-                WString engineModeText = Engine::Runtime::GetEngineModeString() + L"Mode";
-                SetTextAlign(hdc, TA_RIGHT);
-                TextOut(hdc, m_Size.cx - 15, 15, engineModeText.c_str(), wcslen(engineModeText.c_str()));
-            }*/
 
             SetTextAlign(hdc, TA_CENTER);
 

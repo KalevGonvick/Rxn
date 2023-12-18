@@ -6,7 +6,7 @@ namespace Rxn::Graphics::Pooled
     {
     public:
 
-        CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE type);
+        explicit CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE type);
         ~CommandAllocatorPool();
 
     public:
