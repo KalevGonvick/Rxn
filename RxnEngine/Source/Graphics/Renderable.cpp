@@ -6,7 +6,7 @@ namespace Rxn::Graphics::Basic
     Renderable::Renderable() = default;
     Renderable::~Renderable() = default;
 
-    HRESULT Renderable::CreateCommittedBufferDestinationResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const
+    HRESULT Renderable::CreateCommittedBufferDestinationResource(ComPointer<ID3D12Device8> device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const
     {
         HRESULT result;
 
@@ -23,7 +23,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Renderable::CreateCommittedUploadBufferResource(ID3D12Device *device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const
+    HRESULT Renderable::CreateCommittedUploadBufferResource(ComPointer<ID3D12Device8> device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const
     {
         HRESULT result;
 
@@ -48,7 +48,7 @@ namespace Rxn::Graphics::Basic
         return mem;
     }
 
-    void Renderable::AddCopyRegionTransition(ID3D12GraphicsCommandList *cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer) const
+    void Renderable::AddCopyRegionTransition(ComPointer<ID3D12GraphicsCommandList6> cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer) const
     {
         cmdList->CopyBufferRegion(buffer.Get(), 0, uploadBuffer.Get(), 0, size);
         const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);

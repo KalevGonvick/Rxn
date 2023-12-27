@@ -1,5 +1,5 @@
 /*****************************************************************//**
- * \file   SimulationWindow.h
+ * \file   RenderWindow.h
  * \brief
  *
  * \author kalev
@@ -11,14 +11,14 @@
 
 namespace Rxn::Graphics
 {
-    class RXN_ENGINE_API SimulationWindow
+    class RXN_ENGINE_API RenderWindow
         : public Renderer
         , public Platform::Win32::Window
     {
     public:
 
-        SimulationWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height);
-        ~SimulationWindow();
+        RenderWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height);
+        ~RenderWindow();
 
     public:
 
@@ -34,7 +34,6 @@ namespace Rxn::Graphics
         LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
 
         void SetupWindow() override;
-        void InitializeRender() override;
         void ShutdownRender() override;
         void RenderPass() override;
         void PreRenderPass() override;

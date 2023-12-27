@@ -33,12 +33,13 @@ namespace Rxn::Graphics
             return (rand() % 100) / 100.0f;
         }
 
-        virtual void InitializeRender() = 0;
+        void InitializeRender();
         virtual void ShutdownRender() = 0;
         virtual void RenderPass() = 0;
         virtual void PreRenderPass() = 0;
 
         std::vector<uint8> GenerateTextureData() const;
+        ComPointer<ID3D12RootSignature> &GetRootSignature();
         Scene &GetScene();
         GPU::Fence &GetFence();
         Display &GetDisplay();
@@ -55,7 +56,6 @@ namespace Rxn::Graphics
         
     public:
 
-        uint32 m_DrawIndex = 0;
         bool m_UseWarpDevice = false;
         bool m_HasTearingSupport = false;
 
@@ -63,9 +63,10 @@ namespace Rxn::Graphics
 
         Manager::CommandQueueManager m_CommandQueueManager { RenderContext::GetGraphicsDevice() };
         Manager::CommandListManager m_CommandListManager { RenderContext::GetGraphicsDevice() };
-        Mapped::PipelineLibrary m_PipelineLibrary { static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS), RootParameterCB };
+        Mapped::PipelineLibrary m_PipelineLibrary { 2, 1 };
         Pooled::CommandAllocatorPool m_AllocatorPool { D3D12_COMMAND_LIST_TYPE_DIRECT };
-        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS)];
+        ComPointer<ID3D12CommandAllocator> m_CommandAllocators[2];
+        ComPointer<ID3D12RootSignature> m_RootSignature;
 
         Scene m_Scene;
         WString m_AssetsPath;
@@ -79,27 +80,29 @@ namespace Rxn::Graphics
 
     };
 
-    class RenderPassObjects
+    class SceneRenderContext
     {
     public:
 
-        RenderPassObjects() = delete;
-        explicit RenderPassObjects(Renderer *renderer);
-        ~RenderPassObjects();
+        SceneRenderContext() = delete;
+        explicit SceneRenderContext(Scene &scene, Display &display);
+        ~SceneRenderContext();
 
     public:
         
-        RenderPassObjects &PopulateNewList(ComPointer<ID3D12GraphicsCommandList> cmdList);
+        void FrameStart(ID3D12GraphicsCommandList6 *cmdList, ID3D12RootSignature *rootSignature);
+        void ClearRtv(ID3D12GraphicsCommandList6 *cmdList, const CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle) const;
+        void AddBarrier(uint32 barrierIndex, ID3D12Resource *pResource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+        void SetRootDescriptorTable(ID3D12GraphicsCommandList6 *cmdList, uint32 rootParameterIndex);
+        void ExecuteBarrier(ID3D12GraphicsCommandList6 *cmdList, uint32 barrierIndex) const;
+        void ExecuteBarriers(ID3D12GraphicsCommandList6 *cmdList) const;
+        void SwapBarrier(uint32 barrierIndex);
+        void FrameEnd(ComPointer<ID3D12GraphicsCommandList6> cmdList) const;
 
     private:
 
-        int8 m_RenderPassState = 0;
-        
-        const int8 INIT_STATE = 1 << 1;
-        const int8 FINISH_STATE = 1 << 2;
-
-        Renderer *m_Renderer;
-        ComPointer<ID3D12GraphicsCommandList> m_ActiveCmdList = nullptr;
-
+        Scene &m_Scene;
+        Display &m_Display;
+        std::vector<std::pair<uint32, D3D12_RESOURCE_BARRIER>> m_Barriers;
     };
 }

@@ -11,7 +11,7 @@ namespace Rxn::Graphics::GPU
         return m_FenceEvent;
     }
 
-    ComPointer<ID3D12Fence> Fence::GetFence()
+    ID3D12Fence* Fence::GetFence()
     {
         return m_Fence;
     }
@@ -21,12 +21,13 @@ namespace Rxn::Graphics::GPU
         return m_FenceValues[index];
     }
 
-    void Fence::CreateFence(uint32 frameIndex)
+    void Fence::CreateFence(uint32 frameIndex, D3D12_FENCE_FLAGS flags)
     {
-        HRESULT result = RenderContext::GetGraphicsDevice()->CreateFence(m_FenceValues[frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
+        HRESULT result = RenderContext::GetGraphicsDevice()->CreateFence(m_FenceValues[frameIndex], flags, IID_PPV_ARGS(&m_Fence));
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create a new fence.");
+            throw std::runtime_error("");
         }
 
         IncrementFenceValue(frameIndex);
@@ -56,6 +57,7 @@ namespace Rxn::Graphics::GPU
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
+            throw std::runtime_error("");
         }
     }
 
@@ -74,11 +76,11 @@ namespace Rxn::Graphics::GPU
         if (m_Fence->GetCompletedValue() < m_FenceValues[frameIndex])
         {
             ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[frameIndex], m_FenceEvent));
-            WaitForSingleObjectEx(m_FenceEvent, ms, FALSE);
+            WaitForSingleObjectEx(m_FenceEvent, static_cast<uint_word>(ms), FALSE);
         }
     }
 
-    void Fence::ShutdownFence(ComPointer<ID3D12CommandQueue> cmdQueue, const uint32 frameIndex) 
+    void Fence::ShutdownFence(ID3D12CommandQueue *cmdQueue, const uint32 frameIndex) 
     {
         SignalFence(cmdQueue, frameIndex);
         WaitInfinite(frameIndex);
@@ -88,13 +90,13 @@ namespace Rxn::Graphics::GPU
 
     void Fence::MoveFenceMarker(ID3D12CommandQueue * cmdQueue, const uint32 frameIndex, uint32 nextFrameIndex)
     {
-        const UINT64 fenceValue = m_FenceValues[frameIndex];
+        const uint64 fenceValue = m_FenceValues[frameIndex];
 
         HRESULT result = cmdQueue->Signal(m_Fence.Get(), fenceValue);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
-            return;
+            throw std::runtime_error("");
         }
 
         if (m_Fence->GetCompletedValue() < m_FenceValues[nextFrameIndex])
@@ -103,7 +105,7 @@ namespace Rxn::Graphics::GPU
             if (FAILED(result))
             {
                 RXN_LOGGER::Error(L"Failed to set new event on completion.");
-                return;
+                throw std::runtime_error("");
             }
 
             WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);

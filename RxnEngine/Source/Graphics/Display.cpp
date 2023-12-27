@@ -15,6 +15,11 @@ namespace Rxn::Graphics
 
     Display::~Display() = default;
 
+    bool Display::IsSizeEqual(uint32 width, uint32 height) const
+    {
+        return (width == m_Width && height == m_Height);
+    }
+
     uint32 Display::GetHeight() const
     {
         return m_Height;
@@ -101,11 +106,5 @@ namespace Rxn::Graphics
     const DirectX::XMMATRIX & Display::GetProjectionMatrix() const
     {
         return m_ProjectionMatrix;
-    }
-
-    void Display::SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList)
-    {
-        frameCmdList->RSSetViewports(1, &GetViewPort());
-        frameCmdList->RSSetScissorRects(1, &GetScissorRect());
     }
 }

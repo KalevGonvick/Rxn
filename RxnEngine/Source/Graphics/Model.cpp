@@ -157,13 +157,13 @@ namespace Rxn::Graphics::Basic
         m_meshes.resize(meshes.size());
         for (uint32_t i = 0; i < static_cast<uint32_t>(meshes.size()); ++i)
         {
-            auto &meshView = meshes[i];
+            auto const &meshView = meshes[i];
             auto &mesh = m_meshes[i];
 
             // Index data
             {
-                Accessor &accessor = accessors[meshView.Indices];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.Indices];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.IndexSize = accessor.Size;
                 mesh.IndexCount = accessor.Count;
@@ -173,8 +173,8 @@ namespace Rxn::Graphics::Basic
 
             // Index Subset data
             {
-                Accessor &accessor = accessors[meshView.IndexSubsets];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.IndexSubsets];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.IndexSubsets = Core::MakeSpan(reinterpret_cast<Subset *>(m_buffer.data() + bufferView.Offset), accessor.Count);
             }
@@ -192,7 +192,7 @@ namespace Rxn::Graphics::Basic
                 if (meshView.Attributes[j] == -1)
                     continue;
 
-                Accessor &accessor = accessors[meshView.Attributes[j]];
+                const Accessor &accessor = accessors[meshView.Attributes[j]];
 
                 auto it = std::find(vbMap.begin(), vbMap.end(), accessor.BufferView);
                 if (it != vbMap.end())
@@ -202,7 +202,7 @@ namespace Rxn::Graphics::Basic
 
                 // New buffer view encountered; add to list and copy vertex data
                 vbMap.push_back(accessor.BufferView);
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 Core::Span<uint8_t> verts = Core::MakeSpan(m_buffer.data() + bufferView.Offset, bufferView.Size);
 
@@ -217,7 +217,7 @@ namespace Rxn::Graphics::Basic
                 if (meshView.Attributes[j] == -1)
                     continue;
 
-                Accessor &accessor = accessors[meshView.Attributes[j]];
+                const Accessor &accessor = accessors[meshView.Attributes[j]];
 
                 // Determine which vertex buffer index holds this attribute's data
                 auto it = std::find(vbMap.begin(), vbMap.end(), accessor.BufferView);
@@ -230,40 +230,40 @@ namespace Rxn::Graphics::Basic
 
             // Meshlet data
             {
-                Accessor &accessor = accessors[meshView.Meshlets];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.Meshlets];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.Meshlets = Core::MakeSpan(reinterpret_cast<Meshlet *>(m_buffer.data() + bufferView.Offset), accessor.Count);
             }
 
             // Meshlet Subset data
             {
-                Accessor &accessor = accessors[meshView.MeshletSubsets];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.MeshletSubsets];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.MeshletSubsets = Core::MakeSpan(reinterpret_cast<Subset *>(m_buffer.data() + bufferView.Offset), accessor.Count);
             }
 
             // Unique Vertex Index data
             {
-                Accessor &accessor = accessors[meshView.UniqueVertexIndices];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.UniqueVertexIndices];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.UniqueVertexIndices = Core::MakeSpan(m_buffer.data() + bufferView.Offset, bufferView.Size);
             }
 
             // Primitive Index data
             {
-                Accessor &accessor = accessors[meshView.PrimitiveIndices];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.PrimitiveIndices];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.PrimitiveIndices = Core::MakeSpan(reinterpret_cast<PackedTriangle *>(m_buffer.data() + bufferView.Offset), accessor.Count);
             }
 
             // Cull data
             {
-                Accessor &accessor = accessors[meshView.CullData];
-                BufferView &bufferView = bufferViews[accessor.BufferView];
+                const Accessor &accessor = accessors[meshView.CullData];
+                const BufferView &bufferView = bufferViews[accessor.BufferView];
 
                 mesh.CullingData = Core::MakeSpan(reinterpret_cast<CullData *>(m_buffer.data() + bufferView.Offset), accessor.Count);
             }
@@ -279,7 +279,7 @@ namespace Rxn::Graphics::Basic
             // Find the index of the vertex buffer of the position attribute
             for (uint32_t j = 1; j < m.LayoutDesc.NumElements; ++j)
             {
-                auto &desc = m.LayoutElems[j];
+                auto const &desc = m.LayoutElems[j];
                 if (strcmp(desc.SemanticName, "POSITION") == 0)
                 {
                     vbIndexPos = j;
@@ -292,7 +292,7 @@ namespace Rxn::Graphics::Basic
 
             for (uint32_t j = 0; j < m.LayoutDesc.NumElements; ++j)
             {
-                auto &desc = m.LayoutElems[j];
+                auto const &desc = m.LayoutElems[j];
                 if (strcmp(desc.SemanticName, "POSITION") == 0)
                 {
                     break;
@@ -304,7 +304,7 @@ namespace Rxn::Graphics::Basic
                 }
             }
 
-            DirectX::XMFLOAT3 *v0 = reinterpret_cast<DirectX::XMFLOAT3 *>(m.Vertices[vbIndexPos].data() + positionOffset);
+            auto *v0 = reinterpret_cast<DirectX::XMFLOAT3 *>(m.Vertices[vbIndexPos].data() + positionOffset);
             uint32_t stride = m.VertexStrides[vbIndexPos];
 
             DirectX::BoundingSphere::CreateFromPoints(m.BoundingSphere, m.VertexCount, v0, stride);
@@ -322,7 +322,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Model::UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList)
+    HRESULT Model::UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList)
     {
         for (uint32_t i = 0; i < m_meshes.size(); ++i)
         {

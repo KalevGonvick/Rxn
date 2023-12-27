@@ -44,9 +44,14 @@ namespace Rxn::Graphics
         return Instance.m_Hwnd;
     }
 
-    ComPointer<ID3D12Device> &RenderContext::GetGraphicsDevice()
+    ComPointer<ID3D12Device8> &RenderContext::GetGraphicsDevice()
     {
         return Instance.m_Device;
+    }
+
+    ComPointer<IDXGIDebug1> &RenderContext::GetDebugLayerController()
+    {
+        return Instance.m_DxgiDebug;
     }
 
     ComPointer<IDXGIFactory4> &RenderContext::GetFactory()
@@ -80,11 +85,16 @@ namespace Rxn::Graphics
         UINT dxgiFactoryFlags = 0;
 
 #ifdef _DEBUG
-        ComPointer<ID3D12Debug3> debugController;
-        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+        
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_DebugLayerController))))
         {
-            debugController->EnableDebugLayer();
+            m_DebugLayerController->EnableDebugLayer();
             dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+
+            if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_DxgiDebug))))
+            {
+                m_DxgiDebug->EnableLeakTrackingForThread();
+            }
         }
 #endif
 

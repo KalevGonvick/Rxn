@@ -3,9 +3,10 @@
 
 namespace Rxn::Graphics::GPU
 {
+
     SwapChain::SwapChain(uint32 width, uint32 height)
     {
-        m_SwapChainDesc.BufferCount = static_cast<uint32>(SwapChainBuffers::TOTAL_BUFFERS);
+        m_SwapChainDesc.BufferCount = 2;
         m_SwapChainDesc.Width = width;
         m_SwapChainDesc.Height = height;
         m_SwapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;

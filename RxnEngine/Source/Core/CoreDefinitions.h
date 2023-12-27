@@ -117,7 +117,7 @@ using float32 = float;
 
 #ifndef DCX_USESTYLE
 
-constexpr int DCX_USESTYLE = 0x00010000;
+constexpr int32 DCX_USESTYLE = 0x00010000;
 
 #endif
 
@@ -162,6 +162,36 @@ using FVector = struct
     float32 y;
     float32 z;
     float32 w;
+};
+
+struct VertexPositionColour
+{
+    FVector position;
+    FVector3 colour;
+};
+
+struct VertexPositionUV
+{
+    FVector position;
+    FVector2 uv;
+};
+
+const int8 RXN_VERTEX_TYPE = 1;
+struct RxnVertexEntry
+{
+    VertexPositionColour vertex;
+};
+
+const int8 RXN_INDEX_TYPE = 2;
+struct RxnIndexEntry
+{
+    uint32 index;
+};
+
+const int8 RXN_QUAD_TYPE = 3;
+struct RxnQuadEntry
+{
+    VertexPositionUV vertex;
 };
 
 namespace Rxn::Constants

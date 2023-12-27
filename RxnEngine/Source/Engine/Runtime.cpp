@@ -2,7 +2,7 @@
 #include "Engine/Runtime.h"
 
 #include "Graphics/SplashScreen.h"
-#include "Graphics/SimulationWindow.h"
+#include "Graphics/RenderWindow.h"
 
 
 namespace Rxn::Engine

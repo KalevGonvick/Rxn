@@ -1,126 +1,185 @@
 #include "Rxn.h"
-#include<iostream>
-#include<fstream>
-#include<stdio.h>
-#include <random>
-#include <set>
-#include <thread>
+#include "RxnBinaryHandler.h"
 
 namespace Rxn::Core
 {
-    RxnBinaryHandler *RxnBinaryHandler::INSTANCE;
+    inline static const RxnBinaryHandler Instance;
 
-    RxnBinaryHandler::RxnBinaryHandler()
-    {
-        INSTANCE = this;
-        INSTANCE->m_dRandomResult = Random();
-    }
+    RxnBinaryHandler::RxnBinaryHandler() = default;
+    RxnBinaryHandler::~RxnBinaryHandler() = default;
 
-    RxnBinaryHandler::~RxnBinaryHandler()
+    void RxnBinaryHandler::WriteRxnFile(const String &outputFile)
     {
-        delete Instance();
-    }
-
-    void RxnBinaryHandler::ReadRxnFile(const wchar_t *fileName, bool decrypt)
-    {
-        if (decrypt)
+        std::ofstream outFile(outputFile, std::ios::binary);
+        if (!outFile.is_open())
         {
-            DecryptRxnFile(L"");
-        }
-    }
-
-    void RxnBinaryHandler::WriteRxnFile(const wchar_t *fileName, const std::list<RXN_BASE_FILE> content, bool encrypt)
-    {
-
-    }
-
-    void RxnBinaryHandler::ReadRxnEngineConfigFile()
-    {
-
-    }
-
-    double RxnBinaryHandler::Random()
-    {
-        int seed = 20230525;
-        std::mt19937 rng(seed);
-        std::uniform_real_distribution<> param(-10, 10);
-        double rand = param(rng);
-        return rand;
-    }
-
-    bool RxnBinaryHandler::WriteRxnBundle(const wchar_t *fileName, std::list<RXN_BASE_FILE> content)
-    {
-        return false;
-    }
-
-    bool RxnBinaryHandler::WriteRxnSingleFile(const wchar_t *fileName, const RXN_BASE_FILE &content)
-    {
-        return false;
-    }
-
-    bool RxnBinaryHandler::EncryptRxnFile(const wchar_t *fileName)
-    {
-        char ch;
-        std::fstream sourceFile, tempFile;
-
-        sourceFile.open(fileName, std::fstream::in);
-
-        if (!sourceFile)
-        {
-            RXN_LOGGER::Error(L"Error Occurred, Opening the Source File (to Read)!");
-            return false;
+            RXN_LOGGER::Error(L"Unable to open file for writing...");
+            throw std::runtime_error("");
         }
 
-        tempFile.open("tmp.txt", std::fstream::out);
+        RxnVertexEntry vertexEntry;
+        vertexEntry.vertex = VertexPositionColour{ { -1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ {  1.0f, 1.0f, -1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ {  1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ { -1.0f, 1.0f, 1.0f, 1.0f }, { GetRandomColour(), GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ { -1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ {  1.0f, -1.0f, -1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ {  1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
+        vertexEntry.vertex = VertexPositionColour{ { -1.0f, -1.0f, 1.0f, 1.0f }, { GetRandomColour(),GetRandomColour(), GetRandomColour() } };
+        WriteEntry(outFile, RXN_VERTEX_TYPE, vertexEntry);
 
-        if (!tempFile)
-        {
-            RXN_LOGGER::Error(L"Error Occurred, Opening/Creating the tmp File!");
-            return false;
-        }
+        RxnIndexEntry indexEntry;
+        indexEntry.index = 0;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 1;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 3;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        while (sourceFile >> std::noskipws >> ch)
-        {
-            //ch = ch + INSTANCE->m_dRandomResult;
-            //tempFile << ch;
-        }
+        indexEntry.index = 1;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 2;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 3;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        sourceFile.close();
-        tempFile.close();
-        sourceFile.open(fileName, std::fstream::out);
 
-        if (!sourceFile)
-        {
-            RXN_LOGGER::Error(L"Error Occurred, Opening the Source File (to write)!");
-            return false;
-        }
+        indexEntry.index = 3;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 2;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 7;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        tempFile.open("tmp.txt", std::fstream::in);
+        indexEntry.index = 6;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 7;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 2;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        if (!tempFile)
-        {
-            RXN_LOGGER::Error(L"Error Occurred, Opening the tmp File!");
-            return false;
-        }
 
-        while (tempFile >> std::noskipws >> ch)
-        {
-            sourceFile << ch;
-        }
+        indexEntry.index = 2;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 1;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 6;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        sourceFile.close();
-        tempFile.close();
+        indexEntry.index = 5;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 6;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 1;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
 
-        RXN_LOGGER::Trace(L"File '%s' was encrypted successfully.", fileName);
 
-        return true;
+        indexEntry.index = 1;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 0;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 5;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+        indexEntry.index = 4;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 5;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 0;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+
+        indexEntry.index = 0;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 3;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 4;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+        indexEntry.index = 7;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 4;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 3;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+
+        indexEntry.index = 7;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 6;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 4;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+        indexEntry.index = 5;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 4;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+        indexEntry.index = 6;
+        WriteEntry(outFile, RXN_INDEX_TYPE, indexEntry);
+
+        outFile.close();
+
+
     }
 
-    bool RxnBinaryHandler::DecryptRxnFile(const wchar_t *fileName)
+    void RxnBinaryHandler::ReadRxnFile(std::vector<VertexPositionColour> &vertexData, std::vector<uint32> &indexData, const String &inputFile)
     {
-        RXN_LOGGER::Debug(L"Random Result: %d", INSTANCE->m_dRandomResult);
-        return true;
+        std::ifstream inFile(inputFile, std::ios::binary);
+
+        if (!inFile.is_open()) {
+            RXN_LOGGER::Error(L"Cannot open input file...");
+            return;
+        }
+
+        while (true)
+        {
+            char type;
+            inFile.read(&type, sizeof(char));
+
+            if (inFile.eof()) {
+                // End of file reached
+                break;
+            }
+            
+            switch (type)
+            {
+            case RXN_VERTEX_TYPE: {
+                RxnVertexEntry entry;
+                inFile.read(std::bit_cast<char *>(&entry), sizeof(RxnVertexEntry));
+
+                vertexData.emplace_back(entry.vertex);
+                break;
+            }
+            case RXN_INDEX_TYPE: {
+                RxnIndexEntry entry;
+                inFile.read(std::bit_cast<char *>(&entry), sizeof(RxnIndexEntry));
+                indexData.emplace_back(entry.index);
+                break;
+            }
+            case RXN_QUAD_TYPE: {
+                RxnQuadEntry entry;
+                inFile.read(std::bit_cast<char *>(&entry), sizeof(RxnQuadEntry));
+                // TODO
+                break;
+            }
+                
+            default:
+                throw std::runtime_error("");
+            }
+        }
+
+        inFile.close();
     }
+
+ 
 }
 
 

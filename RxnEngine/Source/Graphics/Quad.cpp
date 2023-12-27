@@ -18,7 +18,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Quad::UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList)
+    HRESULT Quad::UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList)
     {
         HRESULT result;
 
@@ -51,7 +51,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    void Quad::DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount)
+    void Quad::DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount)
     {
         frameCmdList->IASetVertexBuffers(0, 1, &m_QuadBufferView);
         frameCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
