@@ -46,7 +46,7 @@ namespace Rxn::Graphics::Pooled
        
     }
 
-    void CommandAllocatorPool::Create(const ComPointer<ID3D12Device> device)
+    void CommandAllocatorPool::Create(const ComPointer<ID3D12Device8> device)
     {
         m_Device = device;
     }

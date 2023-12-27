@@ -39,7 +39,9 @@ namespace Rxn::Graphics
          * 
          * \return 
          */
-        static ComPointer<ID3D12Device> &GetGraphicsDevice();
+        static ComPointer<ID3D12Device8> &GetGraphicsDevice();
+
+        static ComPointer<IDXGIDebug1> &GetDebugLayerController();
 
         /**
          * .
@@ -102,7 +104,9 @@ namespace Rxn::Graphics
 
         std::unordered_map<uint64, D3D12_CPU_DESCRIPTOR_HANDLE> m_SamplerCache;
 
-        ComPointer<ID3D12Device> m_Device;
+        ComPointer<ID3D12Device8> m_Device;
+        ComPointer<ID3D12Debug3> m_DebugLayerController;
+        ComPointer<IDXGIDebug1> m_DxgiDebug;
         ComPointer<IDXGIFactory4> m_Factory;
         D3D_ROOT_SIGNATURE_VERSION m_HighestRootSignatureVersion;
 

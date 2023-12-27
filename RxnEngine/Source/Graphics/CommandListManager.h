@@ -11,15 +11,14 @@ namespace Rxn::Graphics::Manager
     {
     public:
 
-        CommandListManager(ComPointer<ID3D12Device> device);
+        CommandListManager(ComPointer<ID3D12Device8> device);
         ~CommandListManager();
 
         void CreateCommandList(const String &listName, ComPointer<ID3D12CommandAllocator> &cmdAlloc, bool autoClose, D3D12_COMMAND_LIST_TYPE type);
-        ComPointer<ID3D12GraphicsCommandList> &GetCommandList(const String &listName);
+        ComPointer<ID3D12GraphicsCommandList6> &GetCommandList(const String &listName);
 
         void ExecuteCommandList(const String &listName, ComPointer<ID3D12CommandQueue> cmdQueue);
         void CloseCommandList(const String &listName);
-        //void CloseAndExecuteCommandList(const String &listName, ComPointer<ID3D12CommandQueue> cmdQueue);
 
     private:
 
@@ -28,7 +27,7 @@ namespace Rxn::Graphics::Manager
 
     private:
 
-        ComPointer<ID3D12Device> m_Device;
-        std::unordered_map<uint32, ComPointer<ID3D12GraphicsCommandList>> m_CommandLists;
+        ComPointer<ID3D12Device8> m_Device;
+        std::unordered_map<uint32, ComPointer<ID3D12GraphicsCommandList6>> m_CommandLists;
     };
 }

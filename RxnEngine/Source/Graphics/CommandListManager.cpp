@@ -5,7 +5,7 @@
 
 namespace Rxn::Graphics::Manager
 {
-    CommandListManager::CommandListManager(ComPointer<ID3D12Device> device)
+    CommandListManager::CommandListManager(ComPointer<ID3D12Device8> device)
         : m_Device(device)
     {}
 
@@ -14,7 +14,7 @@ namespace Rxn::Graphics::Manager
     void CommandListManager::CreateCommandList(const String &listName, ComPointer<ID3D12CommandAllocator> &cmdAlloc, bool autoClose, D3D12_COMMAND_LIST_TYPE type)
     {
         RXN_LOGGER::Debug(L"Creating a new ID3D12GraphicsCommandList with the properties { key: '%s', autoClose: '%d', type: '%d' }", listName.c_str(), autoClose, type);
-        ComPointer<ID3D12GraphicsCommandList> commandList;
+        ComPointer<ID3D12GraphicsCommandList6> commandList;
         
         uint32 hash = GetHash(listName);
 
@@ -36,7 +36,7 @@ namespace Rxn::Graphics::Manager
         }
     }
 
-    ComPointer<ID3D12GraphicsCommandList> &CommandListManager::GetCommandList(const String &listName)
+    ComPointer<ID3D12GraphicsCommandList6> &CommandListManager::GetCommandList(const String &listName)
     {
         auto p = reinterpret_cast<const uint8 *>(listName.c_str());
         uint32 hash = Core::Math::Murmer3(p, sizeof(p), RenderContext::GetEngineSeed());

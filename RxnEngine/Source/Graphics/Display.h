@@ -20,6 +20,8 @@ namespace Rxn::Graphics
 
     public:
 
+        bool IsSizeEqual(uint32 width, uint32 height) const;
+
         /**
          * .
          * 
@@ -44,18 +46,64 @@ namespace Rxn::Graphics
         /**
          * .
          * 
-         * \param frameCmdList
+         * \param width
          */
-        void SetRasterizerView(ComPointer<ID3D12GraphicsCommandList> frameCmdList);
-
         void SetWidth(uint32 width);
+        
+        /**
+         * .
+         * 
+         * \param height
+         */
         void SetHeight(uint32 height);
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         uint32 GetHeight() const;
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         uint32 GetWidth() const;
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         uint32 GetFrameIndex() const;
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         GPU::SwapChain &GetSwapChain();
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         CD3DX12_VIEWPORT &GetViewPort();
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         CD3DX12_RECT &GetScissorRect();
+        
+        /**
+         * .
+         * 
+         * \return 
+         */
         const DirectX::XMMATRIX &GetProjectionMatrix() const;
 
     private:

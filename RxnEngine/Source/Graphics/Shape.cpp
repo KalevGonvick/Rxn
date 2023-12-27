@@ -20,7 +20,7 @@ namespace Rxn::Graphics::Basic
         return E_NOTIMPL;
     }
 
-    HRESULT Shape::UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList)
+    HRESULT Shape::UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList)
     {
         Renderable::CreateCommittedBufferDestinationResource(device, m_VertexIndexBuffer, m_VertexIndexBufferSize);
         Renderable::CreateCommittedUploadBufferResource(device, m_VertexIndexUpload, m_VertexIndexBufferSize);
@@ -45,7 +45,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    void Shape::DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount)
+    void Shape::DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount)
     {
         frameCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         frameCmdList->IASetVertexBuffers(0, 1, &m_VertexBufferView);

@@ -92,12 +92,6 @@
     <Filter Include="Source\Graphics\Private\Buffer">
       <UniqueIdentifier>{6cf07c61-eb32-4762-a9ee-ae3099594696}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Graphics\Public\Buffer">
-      <UniqueIdentifier>{2153841d-5f3a-42e8-b782-008a489810da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Graphics\Public\Mapped">
-      <UniqueIdentifier>{989fc8e3-c7ff-4dc9-b857-dcb3534af1b0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Graphics\Classes\Mapped">
       <UniqueIdentifier>{38eafad3-ca64-4d3c-b413-a1cd60f67c3f}</UniqueIdentifier>
     </Filter>
@@ -130,6 +124,9 @@
     </Filter>
     <Filter Include="Source\Graphics\Private\Pooled">
       <UniqueIdentifier>{ae26f3db-5d7d-4af7-9fd1-dc679120b240}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Graphics\Classes\Buffer">
+      <UniqueIdentifier>{2153841d-5f3a-42e8-b782-008a489810da}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -193,7 +190,7 @@
     <ClCompile Include="Source\Graphics\RenderCore.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\SimulationWindow.cpp">
+    <ClCompile Include="Source\Graphics\RenderWindow.cpp">
       <Filter>Source\Graphics\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Renderer.cpp">
@@ -336,20 +333,11 @@
     <ClInclude Include="Source\Graphics\RenderCore.h">
       <Filter>Source\Graphics\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\SimulationWindow.h">
+    <ClInclude Include="Source\Graphics\RenderWindow.h">
       <Filter>Source\Graphics\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\Renderer.h">
       <Filter>Source\Graphics\Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
-      <Filter>Source\Graphics\Public\Mapped</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h">
-      <Filter>Source\Graphics\Public\Mapped</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
-      <Filter>Source\Graphics\Public\Mapped</Filter>
     </ClInclude>
     <ClInclude Include="Content\Shaders\BlitPixelShader.hlsl.h">
       <Filter>Resources\ShaderHeaders</Filter>
@@ -394,7 +382,7 @@
       <Filter>Source\Core\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\DynamicConstantBuffer.h">
-      <Filter>Source\Graphics\Public\Buffer</Filter>
+      <Filter>Source\Graphics\Classes\Buffer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Span.h">
       <Filter>Source\Core\Public</Filter>
@@ -458,6 +446,15 @@
     </ClInclude>
     <ClInclude Include="Source\Core\StringUtil.h">
       <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedFile.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineLibrary.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
+      <Filter>Source\Graphics\Classes\Mapped</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

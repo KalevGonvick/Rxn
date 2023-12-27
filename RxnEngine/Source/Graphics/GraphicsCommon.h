@@ -2,35 +2,7 @@
 
 namespace Rxn::Graphics
 {
-
-    struct VertexPositionUV
-    {
-        DirectX::XMFLOAT4 position;
-        DirectX::XMFLOAT2 uv;
-    };
-
-    struct VertexPositionColour
-    {
-        DirectX::XMFLOAT4 position;
-        DirectX::XMFLOAT3 colour;
-    };
-
-    enum class SwapChainBuffers : uint32
-    {
-        BUFFER_ONE = 0,
-        BUFFER_TWO = 1,
-        TOTAL_BUFFERS = 2
-    };
-
-    const float INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
-
-    enum RootParameters : uint32
-    {
-        RootParameterUberShaderCB = 0,
-        RootParameterCB,
-        RootParameterSRV,
-        RootParametersCount
-    };
+    const float32 INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
 
     struct DrawConstantBuffer
     {

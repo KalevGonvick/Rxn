@@ -52,7 +52,7 @@ namespace Rxn::Graphics::Mapped
         }
     }
 
-    void PipelineLibrary::Build(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature)
+    void PipelineLibrary::Build(ID3D12Device8 *pDevice, ID3D12RootSignature *pRootSignature)
     {
         RXN_LOGGER::PrintLnHeader(L"Pipeline Library - Build Start");
 
@@ -94,7 +94,7 @@ namespace Rxn::Graphics::Mapped
     }
 
     
-    void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, uint32 pipelineIndex, uint32 frameIndex)
+    void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList6 *pCommandList, uint32 pipelineIndex, uint32 frameIndex)
     {
         assert(m_DrawIndex < MAX_DRAWS_PER_FRAME);
 
@@ -162,7 +162,7 @@ namespace Rxn::Graphics::Mapped
         m_DrawIndex++;
     }
 
-    void PipelineLibrary::FallbackToCompiledPipeline(ID3D12GraphicsCommandList *pCommandList)
+    void PipelineLibrary::FallbackToCompiledPipeline(ID3D12GraphicsCommandList6 *pCommandList)
     {
         for (auto &effect : m_PipelineEffects)
         {

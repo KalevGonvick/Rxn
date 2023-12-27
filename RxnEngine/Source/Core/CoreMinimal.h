@@ -24,7 +24,7 @@
 
 #include "Common/Logger.h"
 #include "Common/Time.h"
-#include "Core/RxnBinaryHandler.h"
+//#include "Core/RxnBinaryHandler.h"
 
 #endif // !RXN_Singletons
 #pragma endregion
@@ -63,11 +63,7 @@
 
 #ifdef WIN32
 
-
-#ifdef _DEBUG
-#define USE_PIX
-#include "pix3.h"
-#endif
+#include <pix3.h>
 
 #include "Platform/WIN32/SubComponent.h"
 #include "Platform/WIN32/Window.h"

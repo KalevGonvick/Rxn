@@ -5,7 +5,7 @@
 #include "Graphics/SplashScreen.h"
 #include "Platform/WIN32/WinEntry.h"
 #include "Platform/WIN32/Window.h"
-#include "Graphics/SimulationWindow.h"
+#include "Graphics/RenderWindow.h"
 #include "Common/CommandLine.h"
 
 class BlankProject : public Rxn::Engine::Runtime
@@ -50,7 +50,7 @@ void BlankProject::InitializeRuntime()
     splash->SetupWindow();
     m_WindowManager->AddWindow(splash);
 
-    auto mainsim = std::make_shared<Rxn::Graphics::SimulationWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1920, 1080);
+    auto mainsim = std::make_shared<Rxn::Graphics::RenderWindow>(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY, 1920, 1080);
     mainsim->SetupWindow();
     m_WindowManager->AddWindow(mainsim);
 
@@ -63,7 +63,7 @@ void BlankProject::InitializeRuntime()
 
 void BlankProject::UpdateEngine()
 {
-    auto win = std::dynamic_pointer_cast<Rxn::Graphics::SimulationWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY));
+    auto win = std::dynamic_pointer_cast<Rxn::Graphics::RenderWindow>(m_WindowManager->m_ManagedWindows.at(Rxn::Constants::Win32::RENDER_VIEW_WINDOW_KEY));
     win->UpdateSimulation();
 
     // Scene setup
@@ -85,4 +85,5 @@ void BlankProject::UpdateEngine()
 
 void BlankProject::OnDestroy()
 {
+
 }

@@ -22,7 +22,7 @@
 #include <dxgidebug.h>
 #endif
 
-#include <D3Dcompiler.h>
+#include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include "d3dx12.h"
 

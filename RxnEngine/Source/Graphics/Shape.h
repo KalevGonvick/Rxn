@@ -37,7 +37,7 @@ namespace Rxn::Graphics::Basic
          * \param cmdList
          * \return 
          */
-        HRESULT UploadGpuResources(ComPointer<ID3D12Device> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList> cmdList) override;
+        HRESULT UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList) override;
 
         /**
          * .
@@ -45,7 +45,7 @@ namespace Rxn::Graphics::Basic
          * \param frameCmdList
          * \param instanceCount
          */
-        void DrawInstanced(ComPointer<ID3D12GraphicsCommandList> frameCmdList, uint32 instanceCount) override;
+        void DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount) override;
 
     private:
 

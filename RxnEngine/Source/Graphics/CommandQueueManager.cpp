@@ -3,7 +3,7 @@
 
 namespace Rxn::Graphics::Manager
 {
-    CommandQueueManager::CommandQueueManager(ComPointer<ID3D12Device> device)
+    CommandQueueManager::CommandQueueManager(ComPointer<ID3D12Device8> device)
         : m_Device(device)
     {}
 
@@ -14,6 +14,7 @@ namespace Rxn::Graphics::Manager
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
         ComPointer<ID3D12CommandQueue> commandQueue;
 
         auto p = reinterpret_cast<const uint8_t *>(queueName.c_str());

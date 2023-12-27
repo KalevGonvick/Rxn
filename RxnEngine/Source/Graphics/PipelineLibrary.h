@@ -105,7 +105,7 @@ namespace Rxn::Graphics::Mapped
          * \param pDevice
          * \param pRootSignature
          */
-        void Build(ID3D12Device *pDevice, ID3D12RootSignature *pRootSignature);
+        void Build(ID3D12Device8 *pDevice, ID3D12RootSignature *pRootSignature);
 
         /**
          * .
@@ -115,7 +115,7 @@ namespace Rxn::Graphics::Mapped
          * \param type
          * \param frameIndex
          */
-        void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList *pCommandList, uint32 pipelineIndex, uint32 frameIndex);
+        void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList6 *pCommandList, uint32 pipelineIndex, uint32 frameIndex);
 
 
 
@@ -184,7 +184,7 @@ namespace Rxn::Graphics::Mapped
          *
          * \param pCommandList
          */
-        void FallbackToCompiledPipeline(ID3D12GraphicsCommandList *pCommandList);
+        void FallbackToCompiledPipeline(ID3D12GraphicsCommandList6 *pCommandList);
 
         /**
          * .
@@ -275,9 +275,6 @@ namespace Rxn::Graphics::Mapped
         {
             return m_BaseEffect;
         }
-
-       
-        
 
     private:
 

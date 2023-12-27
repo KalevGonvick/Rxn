@@ -93,16 +93,21 @@ namespace Rxn::Platform::Win32
         }
         case WM_SIZING:
         case WM_MOVING:
+        
         {
             Redraw();
             return 1;
         }
         case WM_ENTERSIZEMOVE:
         case WM_MOVE:
-        case WM_SIZE:
         {
             Redraw();
             return 0;
+        }
+        case WM_SIZE:
+        {
+            Redraw();
+            break;
         }
         case WM_TIMER:
         {
@@ -222,7 +227,7 @@ namespace Rxn::Platform::Win32
     void Window::Redraw()
     {
         /* reset window */
-        SetWindowPos(m_HWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
+        SetWindowPos(m_HWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME | SWP_FRAMECHANGED);
         InvalidateRect(m_HWnd, nullptr, false);
     }
 
@@ -236,7 +241,7 @@ namespace Rxn::Platform::Win32
         if (m_IsInteractive)
         {
             RXN_LOGGER::Trace(L"Window %s is interactive, setting invalidate timer", m_ClassName.c_str());
-            SetTimer(m_HWnd, 1, 250, 0);
+            SetTimer(m_HWnd, 1, 250, nullptr);
         }
 
 
@@ -278,9 +283,9 @@ namespace Rxn::Platform::Win32
         BITMAP qBitmap{};
         HDC hLocalDC = CreateCompatibleDC(hWinDC);
 
-        auto hBitmap = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        auto hBitmap = (HBITMAP)LoadImage(nullptr, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-        if (hBitmap == 0)
+        if (hBitmap == nullptr)
         {
             RXN_LOGGER::Error(L"Failed to load image from URL %s", szFileName);
             return 0;
@@ -320,7 +325,10 @@ namespace Rxn::Platform::Win32
     {
         for (const auto &button : m_WindowCaption.GetButtons())
         {
-            button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
+            //button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
+            button->rect.left = size.cx - button->width - button->offset;
+            button->rect.right = 0;
+            button->rect.bottom = 30;
         }
     }
 
