@@ -24,6 +24,8 @@
 #include "../Content/Shaders/UberPixelShader.hlsl.h"
 #include "../Content/Shaders/AdditionalPixelShader.hlsl.h"
 
+#include <array>
+
 namespace Rxn::Graphics::Mapped
 {
     struct PipelineLibraryException : std::runtime_error
@@ -33,52 +35,37 @@ namespace Rxn::Graphics::Mapped
 
     enum class PSOCachingMechanism : uint32
     {
-        CachedBlobs = 1,
-
-        // Enables applications to explicitly group PSOs which are expected to share data. Recommended over Cached Blobs.
-        PipelineLibraries = 2,
-
-        PSOCachingMechanismCount = 3
+        CachedBlobs                 = 1,
+        PipelineLibraries           = 2,
+        PSOCachingMechanismCount    = 3
     };
 
     struct GraphicsShaderSet
     {
-        D3D12_INPUT_LAYOUT_DESC inputLayout;
-        D3D12_SHADER_BYTECODE VS;
-        D3D12_SHADER_BYTECODE PS;
-        D3D12_SHADER_BYTECODE DS;
-        D3D12_SHADER_BYTECODE HS;
-        D3D12_SHADER_BYTECODE GS;
+        D3D12_INPUT_LAYOUT_DESC     inputLayout;
+        D3D12_SHADER_BYTECODE       VS;
+        D3D12_SHADER_BYTECODE       PS;
+        D3D12_SHADER_BYTECODE       DS;
+        D3D12_SHADER_BYTECODE       HS;
+        D3D12_SHADER_BYTECODE       GS;
     };
 
-    static const D3D12_INPUT_ELEMENT_DESC g_cSimpleInputElementDescs[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-    };
-
-    inline const std::array<D3D12_INPUT_ELEMENT_DESC, 2>  g_SimpleInputElementDescs = { 
+    inline const std::vector<D3D12_INPUT_ELEMENT_DESC>  g_SimpleInputElementDescs = { 
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
             { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
         } 
     };
 
-    static const D3D12_INPUT_ELEMENT_DESC g_cQuadInputElementDescs[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-    };
-
-    inline const std::array<D3D12_INPUT_ELEMENT_DESC, 2>  g_QuadInputElementDescs = {
+    inline const std::vector<D3D12_INPUT_ELEMENT_DESC>  g_QuadInputElementDescs = {
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
             { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
         }
     };
 
-    static const D3D12_INPUT_LAYOUT_DESC g_cForwardRenderInputLayout = { g_cSimpleInputElementDescs, _countof(g_cSimpleInputElementDescs) };
-    static const D3D12_INPUT_LAYOUT_DESC g_cQuadInputLayout = { g_cQuadInputElementDescs, _countof(g_cQuadInputElementDescs) };
+    static const D3D12_INPUT_LAYOUT_DESC g_cForwardRenderInputLayout = { g_SimpleInputElementDescs.data() , static_cast<uint32>(g_SimpleInputElementDescs.size()) };
+    static const D3D12_INPUT_LAYOUT_DESC g_cQuadInputLayout = { g_QuadInputElementDescs.data(), static_cast<uint32>(g_QuadInputElementDescs.size()) };
 
     // This will be used to tell the uber shader which effect to use.
     struct UberShaderConstantBuffer
@@ -88,11 +75,11 @@ namespace Rxn::Graphics::Mapped
 
     
     class PipelineEffectTemplate;
-    class RXN_ENGINE_API PipelineLibrary
+    class RXN_ENGINE_API PipelineLibrary : NonCopyable
     {
     public:
 
-        PipelineLibrary(uint32 frameCount, uint32 cbvRootSignatureIndex);
+        PipelineLibrary();
         ~PipelineLibrary();
 
         friend class PipelineEffectTemplate;
@@ -104,8 +91,9 @@ namespace Rxn::Graphics::Mapped
          * 
          * \param pDevice
          * \param pRootSignature
+         * \param swapChainBuffers
          */
-        void Build(ID3D12Device8 *pDevice, ID3D12RootSignature *pRootSignature);
+        void Build(ID3D12Device8 *pDevice, ID3D12RootSignature *pRootSignature, uint32 cbvRootSignatureIndex, uint32 maxPipelineEffects, uint32 swapChainBuffers);
 
         /**
          * .
@@ -116,14 +104,6 @@ namespace Rxn::Graphics::Mapped
          * \param frameIndex
          */
         void SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList6 *pCommandList, uint32 pipelineIndex, uint32 frameIndex);
-
-
-
-        /**
-         * .
-         * 
-         */
-        void EndFrame();
         
         /**
          * .
@@ -186,22 +166,11 @@ namespace Rxn::Graphics::Mapped
          */
         void FallbackToCompiledPipeline(ID3D12GraphicsCommandList6 *pCommandList);
 
-        /**
-         * .
-         * 
-         * \param pDataPackage
-         */
         static void CompilePipelineStateObject(PipelineEffectTemplate *pPipelineEffect);
-
-        /**
-         * .
-         * 
-         * \param pDataPackage
-         * \return 
-         */
         static bool CompileCacheCheck(PipelineEffectTemplate *pPipelineEffect);
         static bool GetPipelineCompileFlagSafe(PipelineEffectTemplate *pPipelineEffect);
         static bool GetPipelineInFlightFlagSafe(PipelineEffectTemplate *pPipelineEffect);
+        
         static void SetPipelineInFlightFlagSafe(PipelineEffectTemplate *pPipelineEffect, bool flag);
         static void SetPipelineCompileFlagSafe(PipelineEffectTemplate *pPipelineEffect, bool flag);
 
@@ -226,8 +195,6 @@ namespace Rxn::Graphics::Mapped
 
         WString m_CachePath;
         uint32 m_CbvRootSignatureIndex = 0;
-        
-        uint32 m_DrawIndex = 0;
         std::mutex m_FlagsMutex;
         Buffer::DynamicConstantBuffer m_DynamicConstantBuffer;
     };
@@ -235,38 +202,41 @@ namespace Rxn::Graphics::Mapped
     class RXN_ENGINE_API PipelineEffectTemplate
     {
     public:
-        PipelineEffectTemplate() = delete;
-        PipelineEffectTemplate(const String &effectName, const GraphicsShaderSet &graphicsShaderSet, bool baseEffect)
+        
+        PipelineEffectTemplate(const String &effectName, const GraphicsShaderSet &graphicsShaderSet, bool baseEffect, bool diskCache)
             : m_EffectName(effectName)
             , m_GraphicsShaderSet(graphicsShaderSet)
             , m_EffectFileName("pipelineLibrary.cache")
             , m_BaseEffect(baseEffect)
+            , m_UseDiskCache(diskCache)
         {};
 
-        PipelineEffectTemplate(const String &effectName, const String &fileName, const GraphicsShaderSet &graphicsShaderSet, bool baseEffect)
+        PipelineEffectTemplate(const String &effectName, const String &fileName, const GraphicsShaderSet &graphicsShaderSet, bool baseEffect, bool diskCache)
             : m_EffectName(effectName)
             , m_EffectFileName(fileName)
             , m_GraphicsShaderSet(graphicsShaderSet)
             , m_BaseEffect(baseEffect)
+            , m_UseDiskCache(diskCache)
         {};
 
         ~PipelineEffectTemplate() = default;
 
+        // TODO - remove friend for codebase maintainability reasons...
         friend class PipelineLibrary;
 
     public:
 
-        String &GetEffectName()
+        const String &GetEffectName()
         {
             return m_EffectName;
         }
 
-        String &GetEffectFileName()
+        const String &GetEffectFileName()
         {
             return m_EffectFileName;
         }
 
-        GraphicsShaderSet &GetGraphicsShaderSet()
+        const GraphicsShaderSet &GetGraphicsShaderSet()
         {
             return m_GraphicsShaderSet;
         }
@@ -276,27 +246,67 @@ namespace Rxn::Graphics::Mapped
             return m_BaseEffect;
         }
 
+        bool IsCompiled()
+        {
+            return compileFlag;
+        }
+
+        bool IsInFlight()
+        {
+            return flightFlag;
+        }
+
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC CreatePipelineStateDesc()
+        {
+            D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc = {};
+            baseDesc.pRootSignature = rootSignature;
+            baseDesc.SampleMask = UINT_MAX;
+            baseDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            baseDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            baseDesc.NumRenderTargets = 1;
+            baseDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+            baseDesc.SampleDesc.Count = 1;
+            baseDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+            baseDesc.DepthStencilState.DepthEnable = FALSE;
+            baseDesc.DepthStencilState.StencilEnable = FALSE;
+
+
+            baseDesc.InputLayout = GetGraphicsShaderSet().inputLayout;
+            baseDesc.VS = GetGraphicsShaderSet().VS;
+            baseDesc.PS = GetGraphicsShaderSet().PS;
+            baseDesc.DS = GetGraphicsShaderSet().DS;
+            baseDesc.HS = GetGraphicsShaderSet().HS;
+            baseDesc.GS = GetGraphicsShaderSet().GS;
+            return baseDesc;
+        };
+
+
+
     private:
 
-        String m_EffectName;
-        String m_EffectFileName;
-        GraphicsShaderSet m_GraphicsShaderSet;
-        bool m_BaseEffect;
+        const String m_EffectName;
+        const String m_EffectFileName;
+        const GraphicsShaderSet m_GraphicsShaderSet;
+        const bool m_BaseEffect;
+        const bool m_UseDiskCache;
 
-        ComPointer<ID3D12PipelineState> pipelineState = nullptr;
         MemoryMappedPipelineStateObjectCache diskCache;
+        ID3D12PipelineState *pipelineState = nullptr;
+        ID3D12PipelineLibrary *pipelineLibrary = nullptr;
+        std::mutex *pipelineMutex = nullptr;
+        PSOCachingMechanism pipelineStateObjectCachingMechanism = PSOCachingMechanism::PipelineLibraries;
+        ID3D12Device8 *device = nullptr;
+        ID3D12RootSignature *rootSignature = nullptr;
+        HANDLE threadHandle = INVALID_HANDLE_VALUE;
+    
         bool compileFlag = false;
         bool flightFlag = false;
-        PipelineLibrary *pipelineLibrary = nullptr;
-        ComPointer<ID3D12Device> device = nullptr;
-        ComPointer<ID3D12RootSignature> rootSignature = nullptr;
-        HANDLE threadHandle = INVALID_HANDLE_VALUE;
     };
 
 
     inline const PipelineEffectTemplate g_Normal3D{
         "Normal 3D",
-            "normal3dPSO.cache",
+        "normal3dPSO.cache",
         {
             g_cForwardRenderInputLayout,
             CD3DX12_SHADER_BYTECODE(g_SimpleVertexShader, sizeof(g_SimpleVertexShader)),
@@ -305,12 +315,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_GenericPostEffect{
         "Generic post effect",
-            "ubershaderPSO.cache",
+        "ubershaderPSO.cache",
         {
              g_cQuadInputLayout,
              CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -319,12 +330,13 @@ namespace Rxn::Graphics::Mapped
              {},
              {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Blit{
         "Blit",
-            "blitEffectPSO.cache",
+        "blitEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -333,12 +345,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Invert{
         "Invert",
-            "invertEffectPSO.cache",
+        "invertEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -347,12 +360,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Grayscale{
         "Grayscale",
-            "grayscaleEffectPSO.cache",
+        "grayscaleEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -361,12 +375,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_EdgeDetect{
         "Edge detect",
-            "edgeDetectEffectPSO.cache",
+        "edgeDetectEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -375,12 +390,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Blur{
         "Blur",
-            "blurEffectPSO.cache",
+        "blurEffectPSO.cache",
         {
              g_cQuadInputLayout,
              CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -389,12 +405,13 @@ namespace Rxn::Graphics::Mapped
              {},
              {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Warp{
         "Warp",
-            "warpEffectPSO.cache",
+        "warpEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -403,12 +420,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Pixelate{
         "Pixelate",
-            "pixelateEffectPSO.cache",
+        "pixelateEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -417,12 +435,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Distort{
         "Distort",
-            "distortEffectPSO.cache",
+        "distortEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -431,12 +450,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Wave{
         "Wave",
-            "waveEffectPSO.cache",
+        "waveEffectPSO.cache",
         {
             g_cQuadInputLayout,
             CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -445,12 +465,13 @@ namespace Rxn::Graphics::Mapped
             {},
             {},
         },
-        true
+        true,
+        false
     };
 
     inline const PipelineEffectTemplate g_Additional{
         "Additional",
-            "additionalPixelShaderPSO.cache",
+        "additionalPixelShaderPSO.cache",
         {
              g_cQuadInputLayout,
              CD3DX12_SHADER_BYTECODE(g_QuadVertexShader, sizeof(g_QuadVertexShader)),
@@ -459,7 +480,8 @@ namespace Rxn::Graphics::Mapped
              {},
              {},
         },
-        true
+        true,
+        false
     };
 }
 

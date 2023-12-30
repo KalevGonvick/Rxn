@@ -2,6 +2,7 @@
 
 namespace Rxn::Engine
 {
+    constexpr uint32 MAX_NAME_STRING_LENGTH = 256;
     class RXN_ENGINE_API SplashWindow : public Platform::Win32::Window
     {
     public:
@@ -18,7 +19,7 @@ namespace Rxn::Engine
 
     private:
 
-        wchar_t m_pwOutputMessage[Constants::MAX_NAME_STRING_LENGTH] = L"...";
+        wchar_t m_pwOutputMessage[MAX_NAME_STRING_LENGTH] = L"...";
     };
 }
 

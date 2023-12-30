@@ -3,7 +3,14 @@
 
 namespace Rxn::Graphics::GPU
 {
-    Fence::Fence() = default;
+    Fence::Fence(uint32 fenceCount)
+    {
+        for (uint32 i = 0; i < fenceCount; i++)
+        {
+            m_FenceValues.push_back(0);
+        }
+    }
+
     Fence::~Fence() = default;
 
     HANDLE Fence::GetFenceEvent()
@@ -16,18 +23,25 @@ namespace Rxn::Graphics::GPU
         return m_Fence;
     }
 
-    uint64 Fence::GetFenceValue(uint64 index) const
+    uint64 Fence::GetFenceValue(uint32 index) const
     {
+        if (index > static_cast<uint32>(m_FenceValues.size()))
+        {
+            RXN_LOGGER::Error(L"Could not find a fence with the index '%d'", index);
+            throw FenceException(std::format("Could not find a fence with the index '{}'", std::to_string(index)));
+        }
+
         return m_FenceValues[index];
     }
 
     void Fence::CreateFence(uint32 frameIndex, D3D12_FENCE_FLAGS flags)
     {
+        
         HRESULT result = RenderContext::GetGraphicsDevice()->CreateFence(m_FenceValues[frameIndex], flags, IID_PPV_ARGS(&m_Fence));
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to create a new fence.");
-            throw std::runtime_error("");
+            throw FenceException("Failed to create a new fence.");
         }
 
         IncrementFenceValue(frameIndex);
@@ -41,6 +55,7 @@ namespace Rxn::Graphics::GPU
         if (m_FenceEvent == nullptr)
         {
             RXN_LOGGER::Error(L"Failed to create a new fence event.");
+            throw FenceException("Failed to create a new fence event.");
         }
     }
 
@@ -51,13 +66,11 @@ namespace Rxn::Graphics::GPU
 
     void Fence::SignalFence(ID3D12CommandQueue *cmdQueue, const uint32 frameIndex)
     {
-        const uint64 fenceValue = m_FenceValues[frameIndex];
-
-        HRESULT result = cmdQueue->Signal(m_Fence.Get(), fenceValue);
+        HRESULT result = cmdQueue->Signal(m_Fence.Get(), m_FenceValues[frameIndex]);
         if (FAILED(result))
         {
-            RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
-            throw std::runtime_error("");
+            RXN_LOGGER::Error(L"Failed to signal fence value: %d", m_FenceValues[frameIndex]);
+            throw FenceException(std::format("Failed to signal fence value: {}", std::to_string(m_FenceValues[frameIndex])));
         }
     }
 
@@ -76,7 +89,7 @@ namespace Rxn::Graphics::GPU
         if (m_Fence->GetCompletedValue() < m_FenceValues[frameIndex])
         {
             ThrowIfFailed(m_Fence->SetEventOnCompletion(m_FenceValues[frameIndex], m_FenceEvent));
-            WaitForSingleObjectEx(m_FenceEvent, static_cast<uint_word>(ms), FALSE);
+            WaitForSingleObjectEx(m_FenceEvent, static_cast<uword>(ms), FALSE);
         }
     }
 
@@ -96,7 +109,7 @@ namespace Rxn::Graphics::GPU
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to signal fence value: %d", fenceValue);
-            throw std::runtime_error("");
+            throw FenceException(std::format("Failed to signal fence value: {}", std::to_string(fenceValue)));
         }
 
         if (m_Fence->GetCompletedValue() < m_FenceValues[nextFrameIndex])
@@ -105,7 +118,7 @@ namespace Rxn::Graphics::GPU
             if (FAILED(result))
             {
                 RXN_LOGGER::Error(L"Failed to set new event on completion.");
-                throw std::runtime_error("");
+                throw FenceException("Failed to set new event on completion.");
             }
 
             WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);

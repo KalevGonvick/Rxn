@@ -101,12 +101,6 @@
     <Filter Include="Source\Graphics\Private\Basic">
       <UniqueIdentifier>{2b0fb3d6-4c6e-4156-bc1a-122d63c6236d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Graphics\Private\Manager">
-      <UniqueIdentifier>{aea49325-4cad-4cac-890a-3823c589b72d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Graphics\Classes\Manager">
-      <UniqueIdentifier>{ece2941f-e3b6-4e41-b6e0-1f96532e9ad4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Graphics\Classes\Descriptor">
       <UniqueIdentifier>{b9c2f916-ac51-4b37-8a2e-32b30de2a598}</UniqueIdentifier>
     </Filter>
@@ -226,12 +220,6 @@
     <ClCompile Include="Source\Graphics\Shape.cpp">
       <Filter>Source\Graphics\Private\Basic</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Graphics\CommandListManager.cpp">
-      <Filter>Source\Graphics\Private\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Graphics\CommandQueueManager.cpp">
-      <Filter>Source\Graphics\Private\Manager</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Graphics\DescriptorHeapDesc.cpp">
       <Filter>Source\Graphics\Private\Descriptor</Filter>
     </ClCompile>
@@ -261,6 +249,21 @@
     </ClCompile>
     <ClCompile Include="Source\Graphics\CommandAllocatorPool.cpp">
       <Filter>Source\Graphics\Private\Pooled</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandListPool.cpp">
+      <Filter>Source\Graphics\Private\Pooled</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\CommandQueuePool.cpp">
+      <Filter>Source\Graphics\Private\Pooled</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\PooledResource.cpp">
+      <Filter>Source\Graphics\Private\Pooled</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Pipeline.cpp">
+      <Filter>Source\Graphics\Private\Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\PipelineDescriptor.cpp">
+      <Filter>Source\Graphics\Private\Descriptor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -408,12 +411,6 @@
     <ClInclude Include="Source\Graphics\Model.h">
       <Filter>Source\Graphics\Classes\Basic</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\CommandListManager.h">
-      <Filter>Source\Graphics\Classes\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Graphics\CommandQueueManager.h">
-      <Filter>Source\Graphics\Classes\Manager</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Graphics\DescriptorHeapDesc.h">
       <Filter>Source\Graphics\Classes\Descriptor</Filter>
     </ClInclude>
@@ -455,6 +452,27 @@
     </ClInclude>
     <ClInclude Include="Source\Graphics\MemoryMappedPipelineStateObjectCache.h">
       <Filter>Source\Graphics\Classes\Mapped</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CHelpers.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CommonTypes.h">
+      <Filter>Source\Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandListPool.h">
+      <Filter>Source\Graphics\Classes\Pooled</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\CommandQueuePool.h">
+      <Filter>Source\Graphics\Classes\Pooled</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\PooledResource.h">
+      <Filter>Source\Graphics\Classes\Pooled</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\Pipeline.hpp">
+      <Filter>Source\Graphics\Classes\Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\PipelineDescriptor.h">
+      <Filter>Source\Graphics\Classes\Descriptor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

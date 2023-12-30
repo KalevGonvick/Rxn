@@ -32,7 +32,7 @@ namespace Rxn::Core::Strings
             throw StringUtilException("The provided path is null or empty...");
         }
 
-        uint_word size = GetModuleFileName(nullptr, path, pathSize);
+        uword size = GetModuleFileName(nullptr, path, pathSize);
         if (size == 0 || size == pathSize)
         {
             throw StringUtilException("The provided path was truncated/method failed to find module.");

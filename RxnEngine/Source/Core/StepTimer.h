@@ -14,7 +14,7 @@
 // Helper class for animation and simulation timing.
 namespace Rxn::Core
 {
-    class StepTimer
+    class RXN_ENGINE_API StepTimer
     {
     public:
         StepTimer() :

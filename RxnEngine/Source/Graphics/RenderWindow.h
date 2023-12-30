@@ -34,12 +34,9 @@ namespace Rxn::Graphics
         LRESULT MessageHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam) override;
 
         void SetupWindow() override;
-        void ShutdownRender() override;
         void RenderPass() override;
-        void PreRenderPass() override;
 
         void UpdateSimulation();
-        void LoadSceneData();
 
 
     protected:

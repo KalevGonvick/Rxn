@@ -13,24 +13,23 @@ namespace Rxn::Engine
     void Runtime::InitializeEngineSystems()
     {
 
-        m_Engine = std::make_shared<RxnEngine>();
-        m_WindowManager = std::make_shared<Platform::Win32::WindowManager>();
+
         SetupLogger();
     }
 
     void Runtime::SetMode(EngineRuntimeMode mode)
     {
-        return m_Engine->SetMode(mode);
+        return GetEngine().SetMode(mode);
     }
 
-    const EngineRuntimeMode Runtime::GetEngineMode()
+    EngineRuntimeMode Runtime::GetEngineMode()
     {
-        return m_Engine->GetMode();
+        return GetEngine().GetMode();
     }
 
-    const WString Runtime::GetEngineModeString()
+    WString Runtime::GetEngineModeString()
     {
-        switch (m_Engine->GetMode())
+        switch (GetEngine().GetMode())
         {
         case EngineRuntimeMode::DEBUG:
             return L"Debug";
@@ -63,6 +62,18 @@ namespace Rxn::Engine
 
         RXN_LOGGER::Info(L"Loaded up... %s", Engine::EngineContext::GetEngineSettings().GetGameName());
     }
+
+    RxnEngine &Runtime::GetEngine()
+    {
+        return m_Engine;
+    }
+
+    Platform::Win32::WindowManager &Runtime::GetWindowManager()
+    {
+        return m_WindowManager;
+    }
+
+
 
 
 } // Rxn::Engine

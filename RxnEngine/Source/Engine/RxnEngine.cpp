@@ -8,22 +8,22 @@ namespace Rxn::Engine
 
     void RxnEngine::SetMode(EngineRuntimeMode mode)
     {
-        m_uEngineMode = mode;
+        m_EngineMode = mode;
     }
 
     EngineRuntimeMode RxnEngine::GetMode() const
     {
-        return m_uEngineMode;
+        return m_EngineMode;
     }
 
-    std::shared_ptr<EngineSettings> RxnEngine::GetSettings()
+    EngineSettings &RxnEngine::GetSettings()
     {
-        return m_pEngineSettings;
+        return m_EngineSettings;
     }
 
-    void RxnEngine::InitializeEngineSettings(std::shared_ptr<EngineSettings> settings)
+    void RxnEngine::InitializeEngineSettings(const EngineSettings &settings)
     {
-        m_pEngineSettings = settings;
+        m_EngineSettings = settings;
     }
 }
 

@@ -19,8 +19,8 @@ namespace Rxn::Engine
 
         void SetMode(EngineRuntimeMode mode);
 
-        const EngineRuntimeMode GetEngineMode();
-        const WString GetEngineModeString();
+        EngineRuntimeMode GetEngineMode();
+        WString GetEngineModeString();
 
     private:
 
@@ -29,8 +29,13 @@ namespace Rxn::Engine
 
     protected:
 
-        std::shared_ptr<RxnEngine> m_Engine;
-        std::shared_ptr<Platform::Win32::WindowManager> m_WindowManager;
+        RxnEngine &GetEngine();
+        Platform::Win32::WindowManager &GetWindowManager();
+
+    private:
+
+        RxnEngine m_Engine{};
+        Platform::Win32::WindowManager m_WindowManager{};
 
     };
 

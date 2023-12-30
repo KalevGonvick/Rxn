@@ -12,8 +12,8 @@ namespace Rxn::Graphics::Basic
     public:
 
         virtual HRESULT LoadFromFile(const wchar_t *filename) = 0;
-        virtual HRESULT UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList) = 0;
-        virtual void DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount) = 0;
+        virtual HRESULT UploadGpuResources(ID3D12Device8 *device, ID3D12GraphicsCommandList6 *cmdList) = 0;
+        virtual void DrawInstanced(ID3D12GraphicsCommandList6 *frameCmdList, uint32 instanceCount) = 0;
 
 
         template<typename T>
@@ -38,12 +38,12 @@ namespace Rxn::Graphics::Basic
 
     protected:
 
-        HRESULT CreateCommittedBufferDestinationResource(ComPointer<ID3D12Device8> device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const;
-        HRESULT CreateCommittedUploadBufferResource(ComPointer<ID3D12Device8> device, ComPointer<ID3D12Resource> &buffer, const uint32 &size) const;
+        HRESULT CreateCommittedBufferDestinationResource(ID3D12Device8 *device, ID3D12Resource **buffer, const uint32 size) const;
+        HRESULT CreateCommittedUploadBufferResource(ID3D12Device8 *device, ID3D12Resource **buffer, const uint32 size) const;
 
-        void AddCopyRegionTransition(ComPointer<ID3D12GraphicsCommandList6> cmdList, ComPointer<ID3D12Resource> &buffer, const uint32 &size, ComPointer<ID3D12Resource> &uploadBuffer) const;
+        void AddCopyRegionTransition(ID3D12GraphicsCommandList6 *cmdList, ID3D12Resource **buffer, uint32 size, ID3D12Resource **uploadBuffer) const;
 
-        uint8 *MapAndGetHeapLocationFromBuffer(ComPointer<ID3D12Resource> &buffer);
+        uint8 *MapAndGetHeapLocationFromBuffer(ID3D12Resource *buffer);
 
     };
 }

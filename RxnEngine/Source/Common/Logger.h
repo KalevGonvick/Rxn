@@ -28,11 +28,8 @@ namespace Rxn::Common
     };
 
 
-    class RXN_ENGINE_API Logger
+    class Logger : NonCopyable
     {
-        Logger(const Logger &) = delete;
-        Logger &operator=(const Logger &) = delete;
-
     public:
 
         Logger();
@@ -45,132 +42,132 @@ namespace Rxn::Common
          *
          * \param level
          */
-        static void SetLogLevel(const LogLevel &level);
+        RXN_ENGINE_API static void SetLogLevel(const LogLevel &level);
 
         /**
          * .
          *
          * \param writeToFile
          */
-        static void SetWriteToFile(const bool &writeToFile);
+        RXN_ENGINE_API static void SetWriteToFile(const bool &writeToFile);
 
         /**
          * .
          *
          * \param writeToConsole
          */
-        static void SetWriteToConsole(const bool &writeToConsole);
+        RXN_ENGINE_API static void SetWriteToConsole(const bool &writeToConsole);
 
         /**
          * .
          *
          * \param ...
          */
-        static void Info(const wchar_t *fmt...);
+        RXN_ENGINE_API static void Info(const wchar_t *fmt...);
 
         /**
          * .
          *
          * \param ...
          */
-        static void Warn(const wchar_t *fmt...);
+        RXN_ENGINE_API static void Warn(const wchar_t *fmt...);
 
         /**
          * .
          *
          * \param ...
          */
-        static void Error(const wchar_t *fmt...);
+        RXN_ENGINE_API static void Error(const wchar_t *fmt...);
 
         /**
          * .
          *
          * \param ...
          */
-        static void Debug(const wchar_t *fmt...);
+        RXN_ENGINE_API static void Debug(const wchar_t *fmt...);
 
         /**
          * .
          *
          * \param ...
          */
-        static void Trace(const wchar_t *fmt...);
+        RXN_ENGINE_API static void Trace(const wchar_t *fmt...);
 
         /**
          * .
          *
          */
-        static void PrintLnSeperator();
+        RXN_ENGINE_API static void PrintLnSeperator();
 
         /**
          * .
          *
          * \param fmt
          */
-        static void PrintLnHeader(const wchar_t *fmt);
+        RXN_ENGINE_API static void PrintLnHeader(const wchar_t *fmt);
 
         /**
          * .
          *
          * \return
          */
-        static bool IsMTailRunning();
+        RXN_ENGINE_API static bool IsMTailRunning();
 
         /**
          * .
          *
          * \return
          */
-        static bool StartMTail();
+        RXN_ENGINE_API static bool StartMTail();
 
         /**
          * .
          *
          * \return
          */
-        static bool IsInfoEnabled();
+        RXN_ENGINE_API static bool IsInfoEnabled();
 
         /**
          * .
          *
          * \return
          */
-        static bool IsWarnEnabled();
+        RXN_ENGINE_API static bool IsWarnEnabled();
 
         /**
          * .
          *
          * \return
          */
-        static bool IsErrorEnabled();
+        RXN_ENGINE_API static bool IsErrorEnabled();
 
         /**
          * .
          *
          * \return
          */
-        static bool IsDebugEnabled();
+        RXN_ENGINE_API static bool IsDebugEnabled();
 
         /**
          * .
          *
          * \return
          */
-        static bool IsTraceEnabled();
+        RXN_ENGINE_API static bool IsTraceEnabled();
 
         /**
          * .
          *
          * \return
          */
-        static WString GetLogFileName();
+        RXN_ENGINE_API static WString GetLogFileName();
 
         /**
          * .
          *
          * \return
          */
-        static WString GetLogDirectory();
+        RXN_ENGINE_API static WString GetLogDirectory();
 
     private:
 

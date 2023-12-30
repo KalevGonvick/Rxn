@@ -121,7 +121,7 @@ namespace Rxn::Graphics::Basic
         std::vector<Accessor> accessors;
 
         FileHeader header;
-        stream.read(reinterpret_cast<char *>(&header), sizeof(header));
+        stream.read(std::bit_cast<char *>(&header), sizeof(header));
 
         if (header.Prolog != c_prolog)
         {
@@ -135,16 +135,16 @@ namespace Rxn::Graphics::Basic
 
         // Read mesh metdata
         meshes.resize(header.MeshCount);
-        stream.read(reinterpret_cast<char *>(meshes.data()), meshes.size() * sizeof(meshes[0]));
+        stream.read(std::bit_cast<char *>(meshes.data()), meshes.size() * sizeof(meshes[0]));
 
         accessors.resize(header.AccessorCount);
-        stream.read(reinterpret_cast<char *>(accessors.data()), accessors.size() * sizeof(accessors[0]));
+        stream.read(std::bit_cast<char *>(accessors.data()), accessors.size() * sizeof(accessors[0]));
 
         bufferViews.resize(header.BufferViewCount);
-        stream.read(reinterpret_cast<char *>(bufferViews.data()), bufferViews.size() * sizeof(bufferViews[0]));
+        stream.read(std::bit_cast<char *>(bufferViews.data()), bufferViews.size() * sizeof(bufferViews[0]));
 
         m_buffer.resize(header.BufferSize);
-        stream.read(reinterpret_cast<char *>(m_buffer.data()), header.BufferSize);
+        stream.read(std::bit_cast<char *>(m_buffer.data()), header.BufferSize);
 
         char eofbyte;
         stream.read(&eofbyte, 1); // Read last byte to hit the eof bit
@@ -304,7 +304,7 @@ namespace Rxn::Graphics::Basic
                 }
             }
 
-            auto *v0 = reinterpret_cast<DirectX::XMFLOAT3 *>(m.Vertices[vbIndexPos].data() + positionOffset);
+            auto *v0 = std::bit_cast<DirectX::XMFLOAT3 *>(m.Vertices[vbIndexPos].data() + positionOffset);
             uint32_t stride = m.VertexStrides[vbIndexPos];
 
             DirectX::BoundingSphere::CreateFromPoints(m.BoundingSphere, m.VertexCount, v0, stride);
@@ -322,179 +322,180 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    HRESULT Model::UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList)
+    HRESULT Model::UploadGpuResources(ID3D12Device8 *pDevice, ID3D12GraphicsCommandList6 *pCmdList)
     {
-        for (uint32_t i = 0; i < m_meshes.size(); ++i)
-        {
-            auto &m = m_meshes[i];
+        //for (uint32_t i = 0; i < m_meshes.size(); ++i)
+        //{
+        //    auto &m = m_meshes[i];
 
-            // Create committed D3D resources of proper sizes
-            auto indexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Indices.size());
-            auto meshletDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Meshlets.size() * sizeof(m.Meshlets[0]));
-            auto cullDataDesc = CD3DX12_RESOURCE_DESC::Buffer(m.CullingData.size() * sizeof(m.CullingData[0]));
-            auto vertexIndexDesc = CD3DX12_RESOURCE_DESC::Buffer(DivRoundUp(m.UniqueVertexIndices.size(), 4) * 4);
-            auto primitiveDesc = CD3DX12_RESOURCE_DESC::Buffer(m.PrimitiveIndices.size() * sizeof(m.PrimitiveIndices[0]));
-            auto meshInfoDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(MeshInfo));
+        //    // Create committed D3D resources of proper sizes
+        //    auto indexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Indices.size());
+        //    auto meshletDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Meshlets.size() * sizeof(m.Meshlets[0]));
+        //    auto cullDataDesc = CD3DX12_RESOURCE_DESC::Buffer(m.CullingData.size() * sizeof(m.CullingData[0]));
+        //    auto vertexIndexDesc = CD3DX12_RESOURCE_DESC::Buffer(DivRoundUp(m.UniqueVertexIndices.size(), 4) * 4);
+        //    auto primitiveDesc = CD3DX12_RESOURCE_DESC::Buffer(m.PrimitiveIndices.size() * sizeof(m.PrimitiveIndices[0]));
+        //    auto meshInfoDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(MeshInfo));
 
-            auto defaultHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &indexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.IndexResource)));
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &meshletDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.MeshletResource)));
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &cullDataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.CullDataResource)));
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &vertexIndexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.UniqueVertexIndexResource)));
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &primitiveDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.PrimitiveIndexResource)));
-            ThrowIfFailed(device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &meshInfoDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.MeshInfoResource)));
-
-
-            m.IBView.BufferLocation = m.IndexResource->GetGPUVirtualAddress();
-            m.IBView.Format = m.IndexSize == 4 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
-            m.IBView.SizeInBytes = m.IndexCount * m.IndexSize;
-
-            m.VertexResources.resize(m.Vertices.size());
-            m.VBViews.resize(m.Vertices.size());
-
-            for (uint32_t j = 0; j < m.Vertices.size(); ++j)
-            {
-                auto vertexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Vertices[j].size());
-                device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &vertexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.VertexResources[j]));
-
-                m.VBViews[j].BufferLocation = m.VertexResources[j]->GetGPUVirtualAddress();
-                m.VBViews[j].SizeInBytes = static_cast<uint32_t>(m.Vertices[j].size());
-                m.VBViews[j].StrideInBytes = m.VertexStrides[j];
-            }
-
-            // Create upload resources
-            std::vector<ComPointer<ID3D12Resource>> vertexUploads;
-            ComPointer<ID3D12Resource>              indexUpload;
-            ComPointer<ID3D12Resource>              meshletUpload;
-            ComPointer<ID3D12Resource>              cullDataUpload;
-            ComPointer<ID3D12Resource>              uniqueVertexIndexUpload;
-            ComPointer<ID3D12Resource>              primitiveIndexUpload;
-            ComPointer<ID3D12Resource>              meshInfoUpload;
-
-            auto uploadHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &indexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&indexUpload)));
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &meshletDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&meshletUpload)));
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &cullDataDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&cullDataUpload)));
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &vertexIndexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uniqueVertexIndexUpload)));
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &primitiveDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&primitiveIndexUpload)));
-            ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &meshInfoDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&meshInfoUpload)));
-
-            // Map & copy memory to upload heap
-            vertexUploads.resize(m.Vertices.size());
-            for (uint32_t j = 0; j < m.Vertices.size(); ++j)
-            {
-                auto vertexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Vertices[j].size());
-                ThrowIfFailed(device->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &vertexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexUploads[j])));
-
-                uint8_t *memory = nullptr;
-                vertexUploads[j]->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.Vertices[j].data(), m.Vertices[j].size());
-                vertexUploads[j]->Unmap(0, nullptr);
-            }
-
-            {
-                uint8_t *memory = nullptr;
-                indexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.Indices.data(), m.Indices.size());
-                indexUpload->Unmap(0, nullptr);
-            }
-
-            {
-                uint8_t *memory = nullptr;
-                meshletUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.Meshlets.data(), m.Meshlets.size() * sizeof(m.Meshlets[0]));
-                meshletUpload->Unmap(0, nullptr);
-            }
-
-            {
-                uint8_t *memory = nullptr;
-                cullDataUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.CullingData.data(), m.CullingData.size() * sizeof(m.CullingData[0]));
-                cullDataUpload->Unmap(0, nullptr);
-            }
-
-            {
-                uint8_t *memory = nullptr;
-                uniqueVertexIndexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.UniqueVertexIndices.data(), m.UniqueVertexIndices.size());
-                uniqueVertexIndexUpload->Unmap(0, nullptr);
-            }
-
-            {
-                uint8_t *memory = nullptr;
-                primitiveIndexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, m.PrimitiveIndices.data(), m.PrimitiveIndices.size() * sizeof(m.PrimitiveIndices[0]));
-                primitiveIndexUpload->Unmap(0, nullptr);
-            }
-
-            {
-                MeshInfo info = {};
-                info.IndexSize = m.IndexSize;
-                info.MeshletCount = static_cast<uint32_t>(m.Meshlets.size());
-                info.LastMeshletVertCount = m.Meshlets.back().VertCount;
-                info.LastMeshletPrimCount = m.Meshlets.back().PrimCount;
+        //    auto defaultHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &indexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.IndexResource)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &meshletDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.MeshletResource)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &cullDataDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.CullDataResource)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &vertexIndexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.UniqueVertexIndexResource)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &primitiveDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.PrimitiveIndexResource)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &meshInfoDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.MeshInfoResource)));
 
 
-                uint8_t *memory = nullptr;
-                meshInfoUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
-                std::memcpy(memory, &info, sizeof(MeshInfo));
-                meshInfoUpload->Unmap(0, nullptr);
-            }
+        //    m.IBView.BufferLocation = m.IndexResource->GetGPUVirtualAddress();
+        //    m.IBView.Format = m.IndexSize == 4 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+        //    m.IBView.SizeInBytes = m.IndexCount * m.IndexSize;
 
-            // Populate our command list
-            cmdList->Reset(cmdAlloc, nullptr);
+        //    m.VertexResources.resize(m.Vertices.size());
+        //    m.VBViews.resize(m.Vertices.size());
 
-            for (uint32_t j = 0; j < m.Vertices.size(); ++j)
-            {
-                cmdList->CopyResource(m.VertexResources[j].Get(), vertexUploads[j].Get());
-                const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m.VertexResources[j].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-                cmdList->ResourceBarrier(1, &barrier);
-            }
+        //    for (uint32_t j = 0; j < m.Vertices.size(); ++j)
+        //    {
+        //        auto vertexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Vertices[j].size());
+        //        pDevice->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &vertexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m.VertexResources[j]));
 
-            D3D12_RESOURCE_BARRIER postCopyBarriers[6];
+        //        m.VBViews[j].BufferLocation = m.VertexResources[j]->GetGPUVirtualAddress();
+        //        m.VBViews[j].SizeInBytes = static_cast<uint32_t>(m.Vertices[j].size());
+        //        m.VBViews[j].StrideInBytes = m.VertexStrides[j];
+        //    }
 
-            cmdList->CopyResource(m.IndexResource.Get(), indexUpload.Get());
-            postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m.IndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //    // Create upload resources
+        //    std::vector<ComPointer<ID3D12Resource>> vertexUploads;
+        //    ComPointer<ID3D12Resource>              indexUpload;
+        //    ComPointer<ID3D12Resource>              meshletUpload;
+        //    ComPointer<ID3D12Resource>              cullDataUpload;
+        //    ComPointer<ID3D12Resource>              uniqueVertexIndexUpload;
+        //    ComPointer<ID3D12Resource>              primitiveIndexUpload;
+        //    ComPointer<ID3D12Resource>              meshInfoUpload;
 
-            cmdList->CopyResource(m.MeshletResource.Get(), meshletUpload.Get());
-            postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m.MeshletResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //    auto uploadHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &indexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&indexUpload)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &meshletDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&meshletUpload)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &cullDataDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&cullDataUpload)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &vertexIndexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uniqueVertexIndexUpload)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &primitiveDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&primitiveIndexUpload)));
+        //    ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &meshInfoDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&meshInfoUpload)));
 
-            cmdList->CopyResource(m.CullDataResource.Get(), cullDataUpload.Get());
-            postCopyBarriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(m.CullDataResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //    // Map & copy memory to upload heap
+        //    vertexUploads.resize(m.Vertices.size());
+        //    for (uint32_t j = 0; j < m.Vertices.size(); ++j)
+        //    {
+        //        auto vertexDesc = CD3DX12_RESOURCE_DESC::Buffer(m.Vertices[j].size());
+        //        ThrowIfFailed(pDevice->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &vertexDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexUploads[j])));
 
-            cmdList->CopyResource(m.UniqueVertexIndexResource.Get(), uniqueVertexIndexUpload.Get());
-            postCopyBarriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(m.UniqueVertexIndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //        uint8_t *memory = nullptr;
+        //        vertexUploads[j]->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.Vertices[j].data(), m.Vertices[j].size());
+        //        vertexUploads[j]->Unmap(0, nullptr);
+        //    }
 
-            cmdList->CopyResource(m.PrimitiveIndexResource.Get(), primitiveIndexUpload.Get());
-            postCopyBarriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(m.PrimitiveIndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //    {
+        //        uint8_t *memory = nullptr;
+        //        indexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.Indices.data(), m.Indices.size());
+        //        indexUpload->Unmap(0, nullptr);
+        //    }
 
-            cmdList->CopyResource(m.MeshInfoResource.Get(), meshInfoUpload.Get());
-            postCopyBarriers[5] = CD3DX12_RESOURCE_BARRIER::Transition(m.MeshInfoResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+        //    {
+        //        uint8_t *memory = nullptr;
+        //        meshletUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.Meshlets.data(), m.Meshlets.size() * sizeof(m.Meshlets[0]));
+        //        meshletUpload->Unmap(0, nullptr);
+        //    }
 
-            cmdList->ResourceBarrier(ARRAYSIZE(postCopyBarriers), postCopyBarriers);
+        //    {
+        //        uint8_t *memory = nullptr;
+        //        cullDataUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.CullingData.data(), m.CullingData.size() * sizeof(m.CullingData[0]));
+        //        cullDataUpload->Unmap(0, nullptr);
+        //    }
 
-            ThrowIfFailed(cmdList->Close());
+        //    {
+        //        uint8_t *memory = nullptr;
+        //        uniqueVertexIndexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.UniqueVertexIndices.data(), m.UniqueVertexIndices.size());
+        //        uniqueVertexIndexUpload->Unmap(0, nullptr);
+        //    }
 
-            ID3D12CommandList *ppCommandLists[] = { cmdList };
-            cmdQueue->ExecuteCommandLists(1, ppCommandLists);
+        //    {
+        //        uint8_t *memory = nullptr;
+        //        primitiveIndexUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, m.PrimitiveIndices.data(), m.PrimitiveIndices.size() * sizeof(m.PrimitiveIndices[0]));
+        //        primitiveIndexUpload->Unmap(0, nullptr);
+        //    }
 
-            // Create our sync fence
-            ComPointer<ID3D12Fence> fence;
-            ThrowIfFailed(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+        //    {
+        //        MeshInfo info = {};
+        //        info.IndexSize = m.IndexSize;
+        //        info.MeshletCount = static_cast<uint32_t>(m.Meshlets.size());
+        //        info.LastMeshletVertCount = m.Meshlets.back().VertCount;
+        //        info.LastMeshletPrimCount = m.Meshlets.back().PrimCount;
 
-            cmdQueue->Signal(fence.Get(), 1);
 
-            // Wait for GPU
-            if (fence->GetCompletedValue() != 1)
-            {
-                HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-                fence->SetEventOnCompletion(1, event);
+        //        uint8_t *memory = nullptr;
+        //        meshInfoUpload->Map(0, nullptr, reinterpret_cast<void **>(&memory));
+        //        std::memcpy(memory, &info, sizeof(MeshInfo));
+        //        meshInfoUpload->Unmap(0, nullptr);
+        //    }
 
-                WaitForSingleObjectEx(event, INFINITE, false);
-                CloseHandle(event);
-            }
-        }
+        //    // Populate our command list
+        //    cmdList->Reset(cmdAlloc, nullptr);
 
+        //    for (uint32_t j = 0; j < m.Vertices.size(); ++j)
+        //    {
+        //        cmdList->CopyResource(m.VertexResources[j].Get(), vertexUploads[j].Get());
+        //        const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m.VertexResources[j].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        //        cmdList->ResourceBarrier(1, &barrier);
+        //    }
+
+        //    D3D12_RESOURCE_BARRIER postCopyBarriers[6];
+
+        //    cmdList->CopyResource(m.IndexResource.Get(), indexUpload.Get());
+        //    postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(m.IndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        //    cmdList->CopyResource(m.MeshletResource.Get(), meshletUpload.Get());
+        //    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(m.MeshletResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        //    cmdList->CopyResource(m.CullDataResource.Get(), cullDataUpload.Get());
+        //    postCopyBarriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(m.CullDataResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        //    cmdList->CopyResource(m.UniqueVertexIndexResource.Get(), uniqueVertexIndexUpload.Get());
+        //    postCopyBarriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(m.UniqueVertexIndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        //    cmdList->CopyResource(m.PrimitiveIndexResource.Get(), primitiveIndexUpload.Get());
+        //    postCopyBarriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(m.PrimitiveIndexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        //    cmdList->CopyResource(m.MeshInfoResource.Get(), meshInfoUpload.Get());
+        //    postCopyBarriers[5] = CD3DX12_RESOURCE_BARRIER::Transition(m.MeshInfoResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+        //    cmdList->ResourceBarrier(ARRAYSIZE(postCopyBarriers), postCopyBarriers);
+
+        //    ThrowIfFailed(cmdList->Close());
+
+        //    ID3D12CommandList *ppCommandLists[] = { cmdList };
+        //    cmdQueue->ExecuteCommandLists(1, ppCommandLists);
+
+        //    // Create our sync fence
+        //    ComPointer<ID3D12Fence> fence;
+        //    ThrowIfFailed(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+
+        //    cmdQueue->Signal(fence.Get(), 1);
+
+        //    // Wait for GPU
+        //    if (fence->GetCompletedValue() != 1)
+        //    {
+        //        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        //        fence->SetEventOnCompletion(1, event);
+
+        //        WaitForSingleObjectEx(event, INFINITE, false);
+        //        CloseHandle(event);
+        //    }
+        //}
+
+        //return S_OK;
         return S_OK;
     }
 }

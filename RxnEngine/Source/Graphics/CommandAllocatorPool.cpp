@@ -6,54 +6,49 @@
 namespace Rxn::Graphics::Pooled
 {
     CommandAllocatorPool::CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE type)
-        : m_CommandListType(type)
+        : PooledCommandResource<ID3D12CommandAllocator>(type)
     {
     }
 
     CommandAllocatorPool::~CommandAllocatorPool()
     {
-        std::ranges::for_each(m_AllocatorPool.begin(), m_AllocatorPool.end(), [](auto &alloc) 
+        std::ranges::for_each(GetResourcePoolInternal().begin(), GetResourcePoolInternal().end(), [](auto &alloc)
             {
                 alloc->Release();
             });
 
-        m_AllocatorPool.clear();
+        GetResourcePoolInternal().clear();
     }
 
-    ComPointer<ID3D12CommandAllocator> &CommandAllocatorPool::RequestAllocator(const uint64 fenceValue)
+    ID3D12CommandAllocator *CommandAllocatorPool::Request(const uint32 fenceValue)
     {
-        std::scoped_lock<std::mutex> LockGuard(m_AllocatorMutex);
 
-        ComPointer<ID3D12CommandAllocator> allocator;
+        ComPointer<ID3D12CommandAllocator> allocator = RequestInternal(fenceValue);
 
-        if (!m_ReadyAllocators.empty())
+        if (allocator)
         {
-            auto& [rdyFence, rdyAlloc] = m_ReadyAllocators.front();
-
-            if (rdyFence <= fenceValue)
-            {
-                allocator = rdyAlloc;
-                ThrowIfFailed(allocator->Reset());
-                m_ReadyAllocators.pop();
-                return rdyAlloc;
-            }
+            ThrowIfFailed(allocator->Reset());
+            return allocator;
         }
+       
 
-        m_Device->CreateCommandAllocator(m_CommandListType, IID_PPV_ARGS(&allocator));
-        String allocatorName = std::format("CommandAllocator[{}]", m_AllocatorPool.size());
+        GetDeviceInternal()->CreateCommandAllocator(GetCommandListTypeInternal(), IID_PPV_ARGS(&allocator));
+
+#ifdef _DEBUG
+        String allocatorName = std::format("CommandAllocator[{}]", GetResourcePoolInternal().size());
         allocator->SetName(Core::Strings::StringToWideString(allocatorName).c_str());
-        return m_AllocatorPool.emplace_back(allocator);
+#endif
+        return GetResourcePoolInternal().emplace_back(allocator);
        
     }
 
-    void CommandAllocatorPool::Create(const ComPointer<ID3D12Device8> device)
+    void CommandAllocatorPool::Create(ID3D12Device8 *pDevice)
     {
-        m_Device = device;
+        CreateInternal(pDevice);
     }
 
-    void CommandAllocatorPool::DiscardAllocator(const uint64 FenceValue, ComPointer<ID3D12CommandAllocator> Allocator)
+    void CommandAllocatorPool::Discard(const uint32 fenceValue, ID3D12CommandAllocator *pResource)
     {
-        std::scoped_lock<std::mutex> LockGuard(m_AllocatorMutex);
-        m_ReadyAllocators.push(std::make_pair(FenceValue, Allocator));
+        DiscardInternal(fenceValue, pResource);
     }
 }

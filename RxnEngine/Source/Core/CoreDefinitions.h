@@ -50,28 +50,26 @@
 
 #define WM_OUTPUTMESSAGE (WM_USER + 0x0001)
 
+#include <windowsx.h>
+#include <Windows.h>
+#include <shellapi.h>
+#include <mcx.h>
+
 #pragma endregion // WindowsDefinitions
 /* -------------------------------------------------------- */
 
 /* -------------------------------------------------------- */
-/*  ExternalLibs                                            */
+/*  Universal External Libs                                 */
 /* -------------------------------------------------------- */
-#pragma region ExternalLibs
+#pragma region UniversalExternalLibs
 
-#include <windowsx.h>
-#include <Windows.h>
 #include <string>
+#include <format>
 #include <memory>
-#include <unordered_map>
-#include <list>
 #include <queue>
-#include <array>
 #include <vector>
-#include <wrl.h>
-#include <shellapi.h>
-#include <mcx.h>
 
-#pragma endregion // ExternalLibs
+#pragma endregion // UniversalExternalLibs
 /* -------------------------------------------------------- */
 
 /* -------------------------------------------------------- */
@@ -89,8 +87,8 @@ using String = std::string;
 using WString = std::wstring;
 
 /* Numbers */
-using int_word = long;
-using uint_word = unsigned long;
+using word = long;
+using uword = unsigned long;
 using int64 = long long;
 using int32 = int;
 using int16 = short;
@@ -116,102 +114,14 @@ using float64 = double;
 using float32 = float;
 
 #ifndef DCX_USESTYLE
-
 constexpr int32 DCX_USESTYLE = 0x00010000;
-
 #endif
 
-/* Vectors */
-using Vector2 = struct
+namespace Rxn::Constants::Win32
 {
-    int32 x;
-    int32 y;
-};
-
-using Vector3 = struct
-{
-    int32 x;
-    int32 y;
-    int32 z;
-};
-
-using Vector = struct
-{
-    int32 x;
-    int32 y;
-    int32 z;
-    int32 w;
-};
-
-using FVector2 = struct
-{
-    float32 x;
-    float32 y;
-};
-
-using FVector3 = struct
-{
-    float32 x;
-    float32 y;
-    float32 z;
-};
-
-using FVector = struct
-{
-    float32 x;
-    float32 y;
-    float32 z;
-    float32 w;
-};
-
-struct VertexPositionColour
-{
-    FVector position;
-    FVector3 colour;
-};
-
-struct VertexPositionUV
-{
-    FVector position;
-    FVector2 uv;
-};
-
-const int8 RXN_VERTEX_TYPE = 1;
-struct RxnVertexEntry
-{
-    VertexPositionColour vertex;
-};
-
-const int8 RXN_INDEX_TYPE = 2;
-struct RxnIndexEntry
-{
-    uint32 index;
-};
-
-const int8 RXN_QUAD_TYPE = 3;
-struct RxnQuadEntry
-{
-    VertexPositionUV vertex;
-};
-
-namespace Rxn::Constants
-{
-
-    const uint16 MAX_NAME_STRING_LENGTH = 256;
-    const uint16 MAX_DIR_LENGTH = 1024;
-    const uint16 MAX_LOG_LINE_LENGTH = 4096;
-
-
-    namespace Win32
-    {
-        const uint16 DEFAULT_WINDOW_WIDTH = 800;
-        const uint16 DEFAULT_WINDOW_HEIGHT = 600;
-
-        const WString RENDER_VIEW_WINDOW_KEY = L"_SIMULATEDVIEW";
-        const WString RENDER_VIEW_WINDOW2_KEY = L"_SIMULATEDVIEW2";
-        const WString SPLASH_SCREEN_WINDOW_KEY = L"_SPLASH";
-    }
-
+    const WString RENDER_VIEW_WINDOW_KEY = L"_SIMULATEDVIEW";
+    const WString RENDER_VIEW_WINDOW2_KEY = L"_SIMULATEDVIEW2";
+    const WString SPLASH_SCREEN_WINDOW_KEY = L"_SPLASH";
 }
 
 #pragma endregion // RxnConstants/TypeDefs

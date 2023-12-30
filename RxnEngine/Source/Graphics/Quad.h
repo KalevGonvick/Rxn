@@ -15,8 +15,9 @@ namespace Rxn::Graphics::Basic
         void ReadDataFromRaw(const std::vector<VertexPositionUV> &quads);
 
         HRESULT LoadFromFile(const wchar_t *filename) override;
-        HRESULT UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList) override;
-        void DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount) override;
+        HRESULT UploadGpuResources(ID3D12Device8 *pDevice, ID3D12GraphicsCommandList6 *pCmdList) override;
+        
+        void DrawInstanced(ID3D12GraphicsCommandList6 *pCmdList, uint32 instanceCount) override;
 
         std::vector<VertexPositionUV> m_Quads;
         uint32 m_QuadStrideSize;

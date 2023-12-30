@@ -3,7 +3,7 @@
 
 namespace Rxn::Graphics::Basic
 {
-    class RXN_ENGINE_API Shape : public Renderable
+    class Shape : public Renderable
     {
     public:
 
@@ -18,7 +18,7 @@ namespace Rxn::Graphics::Basic
          * \param vertices - vector of vertices
          * \param indices - vector of indices
          */
-        void ReadDataFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices);
+        RXN_ENGINE_API void ReadDataFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices);
 
         /**
          * Takes vertex and index data from a file.
@@ -26,7 +26,7 @@ namespace Rxn::Graphics::Basic
          * \param filename - name of the file
          * \return 
          */
-        HRESULT LoadFromFile(const wchar_t *filename) override;
+        RXN_ENGINE_API HRESULT LoadFromFile(const wchar_t *filename) override;
 
         /**
          * Uploads the GPU resources.
@@ -37,7 +37,7 @@ namespace Rxn::Graphics::Basic
          * \param cmdList
          * \return 
          */
-        HRESULT UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList) override;
+        RXN_ENGINE_API HRESULT UploadGpuResources(ID3D12Device8 *device, ID3D12GraphicsCommandList6 *cmdList) override;
 
         /**
          * .
@@ -45,7 +45,7 @@ namespace Rxn::Graphics::Basic
          * \param frameCmdList
          * \param instanceCount
          */
-        void DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount) override;
+        RXN_ENGINE_API void DrawInstanced(ID3D12GraphicsCommandList6 *frameCmdList, uint32 instanceCount) override;
 
     private:
 

@@ -48,24 +48,15 @@ namespace Rxn::Platform::Win32
         cursor.x -= windowRect.left;
         cursor.y -= windowRect.top;
 
-        RXN_LOGGER::PrintLnSeperator();
-        RXN_LOGGER::Trace(L"Cursor at x: %d y: %d", cursor.x, cursor.y);
-        RXN_LOGGER::Trace(L"Window at top: %d, left: %d, right: %d, bottom: %d", windowRect.top, windowRect.left, windowRect.right, windowRect.bottom);
-
         for (auto currentButton = m_Buttons.begin(); currentButton != m_Buttons.end(); currentButton++)
         {
             std::shared_ptr<Button> itButton = *currentButton;
-            RXN_LOGGER::Trace(L"Button rect at top: %d, left: %d, right: %d, bottom: %d", itButton->rect.top, itButton->rect.left, itButton->rect.right, itButton->rect.bottom);
-
 
             if (itButton->rect.left < cursor.x && itButton->rect.right > cursor.x && itButton->rect.top < cursor.y && itButton->rect.bottom > cursor.y)
             {
-                RXN_LOGGER::Trace(L"Click within bounds!!!");
-                RXN_LOGGER::PrintLnSeperator();
                 return itButton->cmd;
             }
         }
-        RXN_LOGGER::PrintLnSeperator();
 
 
         return Command::CB_NOP;
