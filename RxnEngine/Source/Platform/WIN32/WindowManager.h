@@ -26,7 +26,7 @@ namespace Rxn::Platform::Win32
             , windowBorderColour(RGB(46, 46, 46))
             , windowActiveBorderHighlightColour(RGB(155, 80, 255))
             , windowStyle(WindowStyle::RESIZEABLE)
-            , windowSize(SIZE(Constants::Win32::DEFAULT_WINDOW_WIDTH, Constants::Win32::DEFAULT_WINDOW_HEIGHT))
+            , windowSize(SIZE(800, 600))
         {
             if (winClassName == L"")
             {

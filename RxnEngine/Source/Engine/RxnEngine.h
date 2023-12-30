@@ -22,17 +22,17 @@ namespace Rxn::Engine
 
     public:
 
-        void InitializeEngineSettings(std::shared_ptr<EngineSettings> settings);
+        void InitializeEngineSettings(const EngineSettings &settings);
         void SetMode(EngineRuntimeMode mode);
 
         EngineRuntimeMode GetMode() const;
-        std::shared_ptr<EngineSettings> GetSettings();
+        EngineSettings &GetSettings();
 
 
     private:
 
-        EngineRuntimeMode m_uEngineMode = EngineRuntimeMode::NONE;
-        std::shared_ptr<EngineSettings> m_pEngineSettings;
+        EngineRuntimeMode m_EngineMode = EngineRuntimeMode::NONE;
+        EngineSettings m_EngineSettings;
     };
 
 

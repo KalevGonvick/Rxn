@@ -3,7 +3,7 @@
 namespace Rxn::Engine
 {
 
-    class RXN_ENGINE_API EngineSettings
+    class EngineSettings
     {
     public:
 
@@ -13,30 +13,30 @@ namespace Rxn::Engine
     public:
 
         /* - Setters - */
-        void SetGameName(const wchar_t *name);
-        void SetGameShortName(const wchar_t *shortName);
-        void SetGameVersion(const wchar_t *gameVersion);
-        void SetBootTime(const wchar_t *bootTime);
-        void SetMainIcon(const wchar_t *iconUrl);
-        void SetSplashScreenURL(const wchar_t *id);
+        RXN_ENGINE_API void SetGameName(const wchar_t *name);
+        RXN_ENGINE_API void SetGameShortName(const wchar_t *shortName);
+        RXN_ENGINE_API void SetGameVersion(const wchar_t *gameVersion);
+        RXN_ENGINE_API void SetBootTime(const wchar_t *bootTime);
+        RXN_ENGINE_API void SetMainIcon(const wchar_t *iconUrl);
+        RXN_ENGINE_API void SetSplashScreenURL(const wchar_t *id);
 
-        void SetLogWriteToConsole(const bool &id);
-        void SetLogWriteToFile(const bool &id);
+        RXN_ENGINE_API void SetLogWriteToConsole(const bool &id);
+        RXN_ENGINE_API void SetLogWriteToFile(const bool &id);
 
-        void SetLogLevel(const Common::LogLevel &level);
+        RXN_ENGINE_API void SetLogLevel(const Common::LogLevel &level);
 
         /* - Getters - */
-        const wchar_t *GetGameName() const;
-        const wchar_t *GetGameShortName() const;
-        const wchar_t *GetGameVersion() const;
-        const wchar_t *GetBootTime() const;
-        const wchar_t *GetSplashScreenURL() const;
-        const wchar_t *GetMainIconURL() const;
+        RXN_ENGINE_API const wchar_t *GetGameName() const;
+        RXN_ENGINE_API const wchar_t *GetGameShortName() const;
+        RXN_ENGINE_API const wchar_t *GetGameVersion() const;
+        RXN_ENGINE_API const wchar_t *GetBootTime() const;
+        RXN_ENGINE_API const wchar_t *GetSplashScreenURL() const;
+        RXN_ENGINE_API const wchar_t *GetMainIconURL() const;
 
-        bool GetLogWriteToConsole() const;
-        bool GetLogWriteToFile() const;
+        RXN_ENGINE_API bool GetLogWriteToConsole() const;
+        RXN_ENGINE_API bool GetLogWriteToFile() const;
 
-        Common::LogLevel GetLogLevel() const;
+        RXN_ENGINE_API Common::LogLevel GetLogLevel() const;
 
     private:
 

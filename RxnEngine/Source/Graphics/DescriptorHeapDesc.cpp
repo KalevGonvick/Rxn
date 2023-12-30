@@ -16,28 +16,32 @@ namespace Rxn::Graphics
         NodeMask = mask;
     }
 
-    void DescriptorHeapDesc::CreateRTVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &rtvDescriptorHeap)
+    void DescriptorHeapDesc::CreateRTVDescriptorHeap(ID3D12DescriptorHeap **rtvDescriptorHeap)
     {
         Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(&rtvDescriptorHeap));
+        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(rtvDescriptorHeap));
     }
 
-    void DescriptorHeapDesc::CreateSRVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> &srvDescriptorHeap)
+    void DescriptorHeapDesc::CreateSRVDescriptorHeap(ID3D12DescriptorHeap **srvDescriptorHeap)
     {
         Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(&srvDescriptorHeap));
+        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(srvDescriptorHeap));
     }
 
-    void DescriptorHeapDesc::CreateDSVDescriptorHeap(ComPointer<ID3D12DescriptorHeap> dsvDescriptorHeap) const
+    void DescriptorHeapDesc::CreateDSVDescriptorHeap(ID3D12DescriptorHeap **dsvDescriptorHeap)
     {
-        // TODO
+        Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+        Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(dsvDescriptorHeap));
     }
 
-    void DescriptorHeapDesc::CreateSamplerDescriptorHeap(ComPointer<ID3D12DescriptorHeap> samplerDescriptorHeap) const
+    void DescriptorHeapDesc::CreateSamplerDescriptorHeap(ID3D12DescriptorHeap **samplerDescriptorHeap)
     {
-        // TODO
+        Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+        Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        RenderContext::GetGraphicsDevice()->CreateDescriptorHeap(this, IID_PPV_ARGS(samplerDescriptorHeap));
     }
 
 

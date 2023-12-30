@@ -29,7 +29,7 @@ namespace Rxn::Graphics
         AddressW = AddressMode;
     }
 
-    void SamplerDesc::SetBorderColour(Core::Math::FVector4D<float32> colour)
+    void SamplerDesc::SetBorderColour(FVector4D<float32> colour)
     {
         BorderColor[0] = colour.x;
         BorderColor[1] = colour.y;

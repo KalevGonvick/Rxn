@@ -7,11 +7,12 @@
  *********************************************************************/
 #pragma once
 #include "SwapChain.h"
+#include "Fence.h"
 #include "Camera.h"
 
 namespace Rxn::Graphics
 {
-    class RXN_ENGINE_API Display
+    class Display
     {
     public:
 
@@ -20,7 +21,10 @@ namespace Rxn::Graphics
 
     public:
 
-        bool IsSizeEqual(uint32 width, uint32 height) const;
+        RXN_ENGINE_API void Init(ID3D12CommandQueue *pCmdQueue, bool hasTearingSupport);
+        RXN_ENGINE_API void RotateSwapChainMarker(ID3D12CommandQueue *pCmdQueue);
+        RXN_ENGINE_API void WaitForDisplay(ID3D12CommandQueue *pCmdQueue);
+        RXN_ENGINE_API bool IsSizeEqual(uint32 width, uint32 height) const;
 
         /**
          * .
@@ -28,83 +32,83 @@ namespace Rxn::Graphics
          * \param newWidth
          * \param newHeight
          */
-        void HandleSizeChange(uint32 newWidth, uint32 newHeight);
+        RXN_ENGINE_API void HandleSizeChange(uint32 newWidth, uint32 newHeight);
 
         /**
          * .
          * 
          */
-        void TurnOverSwapChainBuffer();
+        RXN_ENGINE_API void TurnOverSwapChainBuffer();
 
         /**
          * .
          * 
          * \param cam
          */
-        void UpdateProjectionMatrix(Camera cam);
+        RXN_ENGINE_API void UpdateProjectionMatrix(Camera &cam);
 
         /**
          * .
          * 
          * \param width
          */
-        void SetWidth(uint32 width);
+        RXN_ENGINE_API void SetWidth(uint32 width);
         
         /**
          * .
          * 
          * \param height
          */
-        void SetHeight(uint32 height);
+        RXN_ENGINE_API void SetHeight(uint32 height);
         
         /**
          * .
          * 
          * \return 
          */
-        uint32 GetHeight() const;
+        RXN_ENGINE_API uint32 GetHeight() const;
         
         /**
          * .
          * 
          * \return 
          */
-        uint32 GetWidth() const;
+        RXN_ENGINE_API uint32 GetWidth() const;
         
         /**
          * .
          * 
          * \return 
          */
-        uint32 GetFrameIndex() const;
+        RXN_ENGINE_API uint32 GetFrameIndex() const;
         
         /**
          * .
          * 
          * \return 
          */
-        GPU::SwapChain &GetSwapChain();
+        RXN_ENGINE_API GPU::SwapChain &GetSwapChain();
         
         /**
          * .
          * 
          * \return 
          */
-        CD3DX12_VIEWPORT &GetViewPort();
+        RXN_ENGINE_API CD3DX12_VIEWPORT &GetViewPort();
         
         /**
          * .
          * 
          * \return 
          */
-        CD3DX12_RECT &GetScissorRect();
+        RXN_ENGINE_API CD3DX12_RECT &GetScissorRect();
         
         /**
          * .
          * 
          * \return 
          */
-        const DirectX::XMMATRIX &GetProjectionMatrix() const;
+        RXN_ENGINE_API const DirectX::XMMATRIX &GetProjectionMatrix() const;
 
     private:
 
@@ -120,10 +124,6 @@ namespace Rxn::Graphics
         float32 m_AspectRatio;
 
         GPU::SwapChain m_SwapChain;
-        std::array<Resolution, 2> const m_Resolutions = { 
-            { 
-                { 1280U, 720U }, { 1920U, 1080U } 
-            } 
-        };
+        GPU::Fence m_Fence;
     };
 }

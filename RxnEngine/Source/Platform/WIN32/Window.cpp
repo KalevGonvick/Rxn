@@ -11,6 +11,13 @@ namespace Rxn::Platform::Win32
 
     Window::~Window() = default;
 
+    RECT Window::GetWindowSize()
+    {
+        RECT rc;
+        GetClientRect(m_HWnd, &rc);
+        return rc;
+    }
+
     void Window::RegisterComponentClass()
     {
         RXN_LOGGER::Trace(L"Registering new win32 component %s", m_ClassName.c_str());
@@ -91,24 +98,12 @@ namespace Rxn::Platform::Win32
             HandleNonClientLeftClickDown();
             break;
         }
-        case WM_SIZING:
-        case WM_MOVING:
-        
-        {
-            Redraw();
-            return 1;
-        }
-        case WM_ENTERSIZEMOVE:
         case WM_MOVE:
         {
             Redraw();
             return 0;
         }
-        case WM_SIZE:
-        {
-            Redraw();
-            break;
-        }
+        //case WM_SIZE:
         case WM_TIMER:
         {
             Redraw();
@@ -197,8 +192,7 @@ namespace Rxn::Platform::Win32
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_HWnd, &ps);
 
-        RECT rc;
-        GetClientRect(m_HWnd, &rc);
+        RECT rc = GetWindowSize();
 
         HBRUSH brush = CreateSolidBrush(m_WindowBackgroundColour);
         FillRect(hdc, &rc, brush);

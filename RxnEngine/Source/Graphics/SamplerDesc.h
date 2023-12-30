@@ -12,7 +12,7 @@ namespace Rxn::Graphics
     public:
 
         void SetTextureAddressMode(D3D12_TEXTURE_ADDRESS_MODE AddressMode);
-        void SetBorderColour(Core::Math::FVector4D<float32> vector);
+        void SetBorderColour(FVector4D<float32> vector);
         void CreateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE handle) const;
     };
 }

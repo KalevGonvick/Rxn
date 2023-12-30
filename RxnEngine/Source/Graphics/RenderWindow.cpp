@@ -1,33 +1,19 @@
 #include "Rxn.h"
 #include "RenderWindow.h"
-#include "Core/RxnBinaryHandler.h"
 
 namespace Rxn::Graphics
 {
     RenderWindow::RenderWindow(const WString &windowTitle, const WString &windowClass, int32 width, int32 height)
         : Renderer(width, height)
         , Platform::Win32::Window(windowTitle, windowClass, width, height)
-    {
-    }
+    {}
 
     RenderWindow::~RenderWindow() = default;
-
-
-    void RenderWindow::ShutdownRender()
-    {
-        GetFence().ShutdownFence(
-            GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), 
-            GetDisplay().GetFrameIndex()
-        );
-    }
-
-
     
     uint64 RenderWindow::GetFPS() const
     {
         return Engine::EngineContext::GetTimer().GetFramesPerSecond();
     }
-
 
     void RenderWindow::SetupWindow()
     {
@@ -35,24 +21,13 @@ namespace Rxn::Graphics
         m_AddMaximizeButton = true;
         m_AddMinimizeButton = true;
 
-        m_WindowStyle = WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW;
+        m_WindowStyle = WS_SIZEBOX;
 
         RegisterComponentClass();
         InitializeWin32();
 
         RenderContext::SetHWND(m_HWnd);
-        InitializeRender();
-        LoadSceneData();
-        
-        uint32 FRAME_INDEX = GetDisplay().GetFrameIndex();
-        GetFence().CreateFence(FRAME_INDEX);
-        
-        const uint32 nextFrameIndex = GetDisplay().GetSwapChain().GetCurrentBackBufferIndex();
-        GetFence().MoveFenceMarker(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), FRAME_INDEX, nextFrameIndex);
-        GetDisplay().TurnOverSwapChainBuffer();
-        GetFence().SignalFence(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), FRAME_INDEX);
-        GetFence().WaitInfinite(FRAME_INDEX);
-        GetFence().IncrementFenceValue(FRAME_INDEX);
+        InitializeRender();        
 
         ShowWindow(m_HWnd, SW_SHOW);
         UpdateWindow(m_HWnd);
@@ -70,12 +45,18 @@ namespace Rxn::Graphics
         {
         case WM_KEYUP:
         {
-            HandleKeyDown(static_cast<uint8>(wParam));
+            HandleKeyUp(static_cast<uint8>(wParam));
+            return 0;
+        }
+        case WM_PAINT: 
+        {
+            UpdateSimulation();
+            RenderPass(); 
             return 0;
         }
         case WM_KEYDOWN:
         {
-            HandleKeyUp(static_cast<uint8>(wParam));
+            HandleKeyDown(static_cast<uint8>(wParam));
             return 0;
         }
         default:
@@ -97,26 +78,24 @@ namespace Rxn::Graphics
         switch (key)
         {
         case 'C':
-            GetFence().SignalFence(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), GetDisplay().GetFrameIndex());
-            GetFence().WaitInfinite(GetDisplay().GetFrameIndex());
-            GetFence().IncrementFenceValue(GetDisplay().GetFrameIndex());
-            GetPipelineLibrary().ClearPSOCache();
-            GetPipelineLibrary().Build(RenderContext::GetGraphicsDevice(), GetRootSignature());
+            GetDisplay().WaitForDisplay(GetCommandQueuePool().Request(GetDisplay().GetFrameIndex()));
+            GetScene().GetPipelineLibrary().ClearPSOCache();
+            GetScene().GetPipelineLibrary().Build(RenderContext::GetGraphicsDevice(), GetScene().GetRootSignature(), 1,256, 2);
             break;
 
         case 'U':
             RXN_LOGGER::Debug(L"U was pressed, toggling uber shader...");
-            GetPipelineLibrary().ToggleUberShader();
+            GetScene().GetPipelineLibrary().ToggleUberShader();
             break;
 
         case 'L':
             RXN_LOGGER::Debug(L"L was pressed, switching to disk library...");
-            GetPipelineLibrary().ToggleDiskLibrary();
+            GetScene().GetPipelineLibrary().ToggleDiskLibrary();
             break;
 
         case 'M':
             RXN_LOGGER::Debug(L"M was pressed, switching to PSO caching...");
-            GetPipelineLibrary().SwitchPSOCachingMechanism();
+            GetScene().GetPipelineLibrary().SwitchPSOCachingMechanism();
             break;
         case 'R':
             RXN_LOGGER::Debug(L"R was pressed, reporting live objects...");
@@ -127,36 +106,6 @@ namespace Rxn::Graphics
             break;
         }
     }
-
-    void RenderWindow::LoadSceneData()
-    {
-            
-            const auto &primaryCommandQueue = GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY);
-            auto &currentCommandAllocator = GetCommandAllocator(GetDisplay().GetFrameIndex());
-            auto &initCmdList = GetCommandListManager().GetCommandList(GOHKeys::CmdList::INIT);
-
-            initCmdList->Reset(currentCommandAllocator, nullptr);
-
-            //Core::RxnBinaryHandler::WriteRxnFile( "cube.bin");
-            std::vector<VertexPositionColour> vertexData;
-            std::vector<uint32> indexData;
-            Core::RxnBinaryHandler::ReadRxnFile(vertexData, indexData, "cube.bin");
-
-            GetScene().AddShapeFromRaw(vertexData, indexData, currentCommandAllocator, primaryCommandQueue, initCmdList);
-
-            std::vector<VertexPositionUV> quadVertices;
-            quadVertices.push_back(VertexPositionUV{ { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } });
-            quadVertices.push_back(VertexPositionUV{ { -1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } });
-            quadVertices.push_back(VertexPositionUV{ { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } });
-            quadVertices.push_back(VertexPositionUV{ { 1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } });
-
-            GetScene().AddQuadFromRaw(quadVertices, currentCommandAllocator, primaryCommandQueue, initCmdList);
-            
-            GetCommandListManager().CloseCommandList(GOHKeys::CmdList::INIT);
-            GetCommandListManager().ExecuteCommandList(GOHKeys::CmdList::INIT, primaryCommandQueue);
-        
-    }
-
 
 #pragma endregion // WIN-API
     /* -------------------------------------------------------- */
@@ -175,19 +124,23 @@ namespace Rxn::Graphics
         if (!GetDisplay().IsSizeEqual(static_cast<uint32>(newWidth), static_cast<uint32>(newHeight)))
         {
             GetScene().ReleaseResourceViews();
-            GetFence().ShutdownFence(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), GetDisplay().GetFrameIndex());
+            //GetFence().ShutdownFence(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), FRAME_INDEX);
             GetDisplay().HandleSizeChange(static_cast<uint32>(newWidth), static_cast<uint32>(newHeight));
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(GetScene().GetRtvHeap()->GetCPUDescriptorHandleForHeapStart());
+            
+            ID3D12Resource *rtv1 = GetScene().GetRenderTarget(0);
+            ID3D12Resource *rtv2 = GetScene().GetRenderTarget(1);
+            ID3D12Resource *intermediateRtv = GetScene().GetRenderTarget(2);
 
-            ThrowIfFailed(GetDisplay().GetSwapChain().GetBuffer(0, GetScene().GetRenderTarget(0)));
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(GetScene().GetRenderTarget(0), nullptr, rtvHandle);
+            ThrowIfFailed(GetDisplay().GetSwapChain().GetBuffer(0, &rtv1));
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(rtv1, nullptr, rtvHandle);
             rtvHandle.Offset(1, GetScene().GetRtvDescriptorHeapSize());
 
-            ThrowIfFailed(GetDisplay().GetSwapChain().GetBuffer(1, GetScene().GetRenderTarget(1)));
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(GetScene().GetRenderTarget(1), nullptr, rtvHandle);
+            ThrowIfFailed(GetDisplay().GetSwapChain().GetBuffer(1, &rtv2));
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(rtv2, nullptr, rtvHandle);
             rtvHandle.Offset(1, GetScene().GetRtvDescriptorHeapSize());
             
-            D3D12_RESOURCE_DESC renderTargetDesc = GetScene().GetRenderTarget(GetDisplay().GetFrameIndex())->GetDesc();
+            D3D12_RESOURCE_DESC renderTargetDesc = rtv1->GetDesc();
             D3D12_CLEAR_VALUE clearValue = {};
             memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -200,9 +153,9 @@ namespace Rxn::Graphics
                 &renderTargetDesc,
                 D3D12_RESOURCE_STATE_RENDER_TARGET,
                 &clearValue,
-                IID_PPV_ARGS(&GetScene().GetRenderTarget(2))));
+                IID_PPV_ARGS(&intermediateRtv)));
 
-            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(GetScene().GetRenderTarget(2).Get(), nullptr, rtvHandle);
+            RenderContext::GetGraphicsDevice()->CreateRenderTargetView(intermediateRtv, nullptr, rtvHandle);
             rtvHandle.Offset(1, GetScene().GetRtvDescriptorHeapSize());
 
             // Create a SRV of the intermediate render target.
@@ -213,87 +166,61 @@ namespace Rxn::Graphics
             srvDesc.Texture2D.MipLevels = 1;
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(GetScene().GetSrvHeap()->GetCPUDescriptorHandleForHeapStart());
-            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(GetScene().GetRenderTarget(2).Get(), &srvDesc, srvHandle);
+            RenderContext::GetGraphicsDevice()->CreateShaderResourceView(intermediateRtv, &srvDesc, srvHandle);
         }
 
-        }
+    }
 
     void RenderWindow::UpdateSimulation()
     {
-        GetDisplay().UpdateProjectionMatrix(GetScene().GetCamera());
         Engine::EngineContext::GetTimer().Tick(nullptr);
-        GetScene().GetCamera().Update(static_cast<float>(Engine::EngineContext::GetTimer().GetElapsedSeconds()));
+        GetScene().GetCamera().Update(static_cast<float32>(Engine::EngineContext::GetTimer().GetElapsedSeconds()));
+        GetDisplay().UpdateProjectionMatrix(GetScene().GetCamera());
         GetScene().UpdateConstantBufferByIndex(GetDisplay().GetProjectionMatrix(), GetDisplay().GetFrameIndex(), 0);
     }
 
 
     void RenderWindow::RenderPass()
     {
-
-        // Present the frame.
-        ThrowIfFailed(GetDisplay().GetSwapChain().Present(1, 0));
-
-        GetPipelineLibrary().EndFrame();
-
-        const uint32 nextFrameIndex = GetDisplay().GetSwapChain().GetCurrentBackBufferIndex();
-        GetFence().MoveFenceMarker(GetCommandQueueManager().GetCommandQueue(GOHKeys::CmdQueue::PRIMARY), GetDisplay().GetFrameIndex(), nextFrameIndex);
-        GetDisplay().TurnOverSwapChainBuffer();
-    }
-
-    void RenderWindow::PreRenderPass()
-    {
         const uint32 FRAME_INDEX = GetDisplay().GetFrameIndex();
-        const String CMD_LIST_HASH_KEY = GOHKeys::CmdList::PRIMARY;
-        const String CMD_QUEUE_HASH_KEY = GOHKeys::CmdQueue::PRIMARY;
 
-        auto &cmdList = GetCommandListManager().GetCommandList(CMD_LIST_HASH_KEY);
-        auto &rootSignature = GetRootSignature();
+        auto cmdAlloc = GetCommandAllocatorPool().Request(FRAME_INDEX);
+        auto cmdQueue = GetCommandQueuePool().Request(0);
 
-        GetCommandAllocator(GetDisplay().GetFrameIndex())->Reset();
-        
-        cmdList->Reset(GetCommandAllocator(FRAME_INDEX), nullptr);
+        auto cmdList = GetCommandListPool().RequestAndReset(FRAME_INDEX, cmdAlloc);
         
         SceneRenderContext renderContext(GetScene(), GetDisplay());
-        renderContext.FrameStart(cmdList, rootSignature);
+        renderContext.FrameStart(cmdList);
+        renderContext.ClearRtv(cmdList, 2);
         
-        CD3DX12_CPU_DESCRIPTOR_HANDLE intermediateRtvHandle(
-            GetScene().GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
-            2,
-            GetScene().GetRtvDescriptorHeapSize()
-        );
+        const uint32 BASE_PIPELINE_EFFECT = 0;
+        renderContext.SetPipelineState(cmdList, BASE_PIPELINE_EFFECT);
 
-        renderContext.ClearRtv(cmdList, intermediateRtvHandle);
+        GetScene().DrawSceneShapes(cmdList); //TODO
 
-        GetPipelineLibrary().SetPipelineState(rootSignature,cmdList, 0, FRAME_INDEX);
-        GetScene().DrawSceneShapes(cmdList);
-        
         const uint32 BARRIER_ONE_INDEX = 0;
         const uint32 BARRIER_TWO_INDEX = 1;
         renderContext.AddBarrier(BARRIER_ONE_INDEX, GetScene().GetRenderTarget(FRAME_INDEX), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
         renderContext.AddBarrier(BARRIER_TWO_INDEX, GetScene().GetRenderTarget(2), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         renderContext.ExecuteBarriers(cmdList);
+        renderContext.SetRootDescriptorTable(cmdList, 2);
 
-        const uint32 PIPELINE_EFFECT_INDEX = 2;
-        renderContext.SetRootDescriptorTable(cmdList, PIPELINE_EFFECT_INDEX);
-        GetPipelineLibrary().SetPipelineState(rootSignature, cmdList, PIPELINE_EFFECT_INDEX, FRAME_INDEX);
-        
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-            GetScene().GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
-            FRAME_INDEX,
-            GetScene().GetRtvDescriptorHeapSize()
-        );
+        const uint32 POST_PIPELINE_EFFECT = 6;
+        renderContext.SetPipelineState(cmdList, POST_PIPELINE_EFFECT);
+        renderContext.ClearRtv(cmdList, FRAME_INDEX);
 
-        renderContext.ClearRtv(cmdList, rtvHandle);
-        
-        GetScene().GetQuad().DrawInstanced(cmdList, 1);
+        GetScene().GetQuad().DrawInstanced(cmdList, 1); //TODO
 
-        
         renderContext.SwapBarrier(BARRIER_ONE_INDEX);
         renderContext.SwapBarrier(BARRIER_TWO_INDEX);
         renderContext.ExecuteBarriers(cmdList);
-        renderContext.FrameEnd(cmdList);
 
-        GetCommandListManager().ExecuteCommandList(CMD_LIST_HASH_KEY, GetCommandQueueManager().GetCommandQueue(CMD_QUEUE_HASH_KEY));
+        GetCommandListPool().ExecuteAndDiscard(FRAME_INDEX, cmdList, cmdQueue);
+        GetCommandAllocatorPool().Discard(FRAME_INDEX, cmdAlloc);
+        GetCommandQueuePool().Discard(0, cmdQueue);
+
+        renderContext.PresentFrame(cmdQueue);
+
 
     }
 

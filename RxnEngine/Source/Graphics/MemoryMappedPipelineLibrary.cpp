@@ -98,7 +98,7 @@ namespace Rxn::Graphics::Mapped
         m_pipelineLibrary = nullptr;
     }
 
-    ComPointer<ID3D12PipelineLibrary> MemoryMappedPipelineLibrary::GetPipelineLibrary()
+    ComPointer<ID3D12PipelineLibrary> MemoryMappedPipelineLibrary::GetResource()
     {
         return m_pipelineLibrary;
     }

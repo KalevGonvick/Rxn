@@ -6,28 +6,141 @@ namespace Rxn::Graphics
     Scene::Scene()
     {
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
-        m_Camera.SetMoveSpeed(1.0f); 
+        m_Camera.SetMoveSpeed(5.0f); 
     }
 
     Scene::~Scene()
     {
-       m_Texture.Release();
        m_SceneShapes.clear();
-       
-       //m_RenderTargets[0].Release();
-       //m_RenderTargets[1].Release();
-       //m_RenderTargets[2].Release();
-
+       ReleaseResourceViews();
        m_RTVHeap.Release();
-       
        m_SRVHeap.Release();
     }
 
-    void Scene::AddShapeFromRaw(const std::vector<VertexPositionColour> &vertices, const std::vector<uint32> &indices, ComPointer<ID3D12CommandAllocator> cmdAl, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12GraphicsCommandList6> cmdList)
+    void Scene::ReleaseResourceViews()
+    {
+        for (auto &[index, target] : m_Rtvs)
+        {
+            target.Release();
+        }
+    }
+
+    void Scene::Init(ID3D12Device8 *pDevice, GPU::SwapChain &swapChain, D3D_ROOT_SIGNATURE_VERSION version)
+    {
+        // two swap chain + additional intermediate target
+        DescriptorHeapDesc rtvDesc(2 + 1);
+        rtvDesc.CreateRTVDescriptorHeap(&m_RTVHeap);
+        m_RTVDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+        DescriptorHeapDesc srvDesc(1);
+        srvDesc.CreateSRVDescriptorHeap(&m_SRVHeap);
+        m_SRVDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        
+        //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);    // 2 frequently changed diffuse + normal textures - using registers t1 and t2.
+        //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);    // 1 frequently changed constant buffer.
+        //ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);                                                // 1 infrequently changed shadow texture - starting in register t0.
+        //ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 2, 0);
+        std::vector<CD3DX12_DESCRIPTOR_RANGE1> rangeVector;
+        //rangeVector.emplace_back();
+        //rangeVector[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        //rangeVector.emplace_back();
+        //rangeVector[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        rangeVector.emplace_back();
+        rangeVector[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+        //rangeVector.emplace_back();
+        //rangeVector[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 2, 0);
+        
+
+        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameterVector;
+        rootParameterVector.emplace_back();
+        rootParameterVector[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameterVector.emplace_back();
+        rootParameterVector[1].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameterVector.emplace_back();
+        rootParameterVector[2].InitAsDescriptorTable(1, &rangeVector[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        //rootParameterVector.emplace_back();
+        //rootParameterVector[3].InitAsDescriptorTable(1, &rangeVector[1], D3D12_SHADER_VISIBILITY_ALL);
+        //rootParameterVector.emplace_back();
+        //rootParameterVector[4].InitAsDescriptorTable(1, &rangeVector[2], D3D12_SHADER_VISIBILITY_PIXEL);
+        //rootParameterVector.emplace_back();
+        //rootParameterVector[5].InitAsDescriptorTable(1, &rangeVector[3], D3D12_SHADER_VISIBILITY_PIXEL);
+
+
+        D3D12_STATIC_SAMPLER_DESC sampler = {};
+        sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+        sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.MipLODBias = 0;
+        sampler.MaxAnisotropy = 0;
+        sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+        sampler.MinLOD = 0.0f;
+        sampler.MaxLOD = D3D12_FLOAT32_MAX;
+        sampler.ShaderRegister = 0;
+        sampler.RegisterSpace = 0;
+        sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+        rootSignatureDesc.Init_1_1(
+            static_cast<uint32>(rootParameterVector.size()), 
+            rootParameterVector.data(), 
+            1, 
+            &sampler, 
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+        );
+
+        ComPointer<ID3DBlob> signature;
+        ComPointer<ID3DBlob> error;
+
+        HRESULT result;
+        result = D3DX12SerializeVersionedRootSignature(
+            &rootSignatureDesc, 
+            version, 
+            &signature, 
+            &error
+        );
+
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to serialize root signature descriptor.");
+            throw std::runtime_error("");
+        }
+
+        result = pDevice->CreateRootSignature(
+            0, 
+            signature->GetBufferPointer(), 
+            signature->GetBufferSize(), 
+            IID_PPV_ARGS(&m_RootSignature)
+        );
+        if (FAILED(result))
+        {
+            RXN_LOGGER::Error(L"Failed to declare root signature.");
+            throw std::runtime_error("");
+        }
+
+#ifdef _DEBUG
+        NAME_D3D12_OBJECT(m_RootSignature);
+#endif
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
+        for (uint32 i = 0; i < swapChain.GetBufferCount(); i++)
+        {
+            CreateSwapChainRenderTargetView(swapChain, i, rtvHandle);
+        }
+        
+        CreateRenderTargetCopy(0, 2, rtvHandle);
+        CreateShaderResourceViewForRenderTargetView(GetRenderTarget(2));
+
+        m_DynamicConstantBuffer.Create(pDevice, sizeof(DrawConstantBuffer), 256, 2);
+        m_PipelineLibrary.Build(pDevice, m_RootSignature, 1, 256, 2);
+    }
+
+    void Scene::AddShapeFromRaw(ID3D12Device8 *pDevice, const std::vector<VertexPositionColour> &vertices, const std::vector<UINT> &indices, ID3D12GraphicsCommandList6 *cmdList)
     {
         auto shape = std::make_shared<Basic::Shape>();
         shape->ReadDataFromRaw(vertices, indices);
-        HRESULT result = shape->UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
+        HRESULT result = shape->UploadGpuResources(pDevice, cmdList);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
@@ -37,11 +150,11 @@ namespace Rxn::Graphics
         m_SceneShapes.emplace_back(std::move(shape));
     }
 
-    void Scene::AddQuadFromRaw(const std::vector<VertexPositionUV> &quadVertices, ComPointer<ID3D12CommandAllocator> cmdAl, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12GraphicsCommandList6> cmdList)
+    void Scene::AddQuadFromRaw(ID3D12Device8 *pDevice, const std::vector<VertexPositionUV> &quadVertices, ID3D12GraphicsCommandList6 *cmdList)
     {
         m_Quad.ReadDataFromRaw(quadVertices);
 
-        HRESULT result = m_Quad.UploadGpuResources(RenderContext::GetGraphicsDevice().Get(), cmdQueue, cmdAl, cmdList);
+        HRESULT result = m_Quad.UploadGpuResources(pDevice, cmdList);
         if (FAILED(result))
         {
             RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
@@ -49,87 +162,10 @@ namespace Rxn::Graphics
         }
     }
 
-    void Scene::AddTexture(ComPointer<ID3D12Resource> &textureUploadHeap, const D3D12_RESOURCE_DESC &textureDesc, ID3D12GraphicsCommandList *cmdList, D3D12_SUBRESOURCE_DATA textureData)
-    {
-        const auto heapTextureProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-
-        HRESULT result = RenderContext::GetGraphicsDevice()->CreateCommittedResource(&heapTextureProps, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_Texture));
-        if (FAILED(result))
-        {
-            RXN_LOGGER::Error(L"Failed to create committed resource for texture.");
-            throw std::runtime_error("");
-        }
-
-        // Create the GPU upload buffer.
-        const UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_Texture.Get(), 0, 1);
-        const auto uploadHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-        const auto uploadBufferSizeDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
-        ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateCommittedResource(&uploadHeap, D3D12_HEAP_FLAG_NONE, &uploadBufferSizeDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&textureUploadHeap)));
-
-        UpdateSubresources(cmdList, m_Texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
-        const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(m_Texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        cmdList->ResourceBarrier(1, &transition);
-
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Format = textureDesc.Format;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = 1;
-        RenderContext::GetGraphicsDevice()->CreateShaderResourceView(m_Texture.Get(), &srvDesc, m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
-    }
-
-    void Scene::InitHeaps()
-    {
-        // two swap chain + additional intermediate target
-        DescriptorHeapDesc rtvDesc(2 + 1);
-        rtvDesc.CreateRTVDescriptorHeap(m_RTVHeap);
-        m_RTVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-        DescriptorHeapDesc srvDesc(1);
-        srvDesc.CreateSRVDescriptorHeap(m_SRVHeap);
-        m_SRVDescriptorSize = RenderContext::GetGraphicsDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    }
-
-    void Scene::InitHeap(uint32 descriptorCount, ComPointer<ID3D12DescriptorHeap> &heap, D3D12_DESCRIPTOR_HEAP_TYPE type)
-    {
-        DescriptorHeapDesc desc(descriptorCount);
-        switch (type)
-        {
-        case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-            desc.CreateSRVDescriptorHeap(heap);
-            break;
-        case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-            desc.CreateSamplerDescriptorHeap(heap);
-            break;
-        case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
-            desc.CreateRTVDescriptorHeap(heap);
-            break;
-        case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-            desc.CreateDSVDescriptorHeap(heap);
-            break;
-        default:
-            throw std::runtime_error("");
-        }
-    }
-
-    void Scene::ReleaseResourceViews()
-    {
-        //m_RenderTargets[0].Release();
-        //m_RenderTargets[1].Release();
-        //m_RenderTargets[2].Release();
-
-        for (auto &[index, target] : m_Rtvs)
-        {
-            target.Release();
-        }
-    }
-
     void Scene::CreateSwapChainRenderTargetView(GPU::SwapChain &swapChain, uint32 swapChainBufferIndex, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle)
     {
         ComPointer<ID3D12Resource> rtv;
-        //CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
-
-        ThrowIfFailed(swapChain.GetBuffer(swapChainBufferIndex, rtv));
+        ThrowIfFailed(swapChain.GetBuffer(swapChainBufferIndex, &rtv));
         RenderContext::GetGraphicsDevice()->CreateRenderTargetView(rtv, nullptr, rtvHandle);
         rtvHandle.Offset(1, m_RTVDescriptorSize);
 
@@ -145,6 +181,16 @@ namespace Rxn::Graphics
         pair.second = rtv;
 
         m_Rtvs.emplace_back(pair);
+    }
+
+    ID3D12RootSignature *Scene::GetRootSignature()
+    {
+        return m_RootSignature;
+    }
+
+    Mapped::PipelineLibrary &Scene::GetPipelineLibrary()
+    {
+        return m_PipelineLibrary;
     }
 
     void Scene::CreateRenderTargetCopy(uint32 copyFromIndex, uint32 destinationIndex, CD3DX12_CPU_DESCRIPTOR_HANDLE &rtvHandle)
@@ -190,21 +236,21 @@ namespace Rxn::Graphics
 
     }
 
-    void Scene::InitSceneRenderTargets(const uint32 frameIndex, GPU::SwapChain &swapChain)
+    CD3DX12_CPU_DESCRIPTOR_HANDLE Scene::GetRenderTargetCPUDescriptorHandle(uint32 rtvIndex)
     {
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RTVHeap->GetCPUDescriptorHandleForHeapStart());
-        CreateSwapChainRenderTargetView(swapChain, 0, rtvHandle);
-        CreateSwapChainRenderTargetView(swapChain, 1, rtvHandle);
-        CreateRenderTargetCopy(frameIndex, 2, rtvHandle);
-        CreateShaderResourceViewForRenderTargetView(GetRenderTarget(2));
+        return CD3DX12_CPU_DESCRIPTOR_HANDLE{ 
+            m_RTVHeap->GetCPUDescriptorHandleForHeapStart(),
+            static_cast<int32>(rtvIndex),
+            m_RTVDescriptorSize 
+        };
     }
 
-    void Scene::UpdateConstantBufferByIndex(const DirectX::XMMATRIX &projMat, const uint32 frameIndex, const uint32 drawIndex)
+    void Scene::UpdateConstantBufferByIndex(const DirectX::XMMATRIX &projMat, const uint32 frameIndex, const uint32 bufferOffset)
     {
         static float rot = 0.0f;
-        auto *drawCB = (DrawConstantBuffer *)GetDynamicConstantBuffer().GetMappedMemory(drawIndex, frameIndex);
+        auto *drawCB = (DrawConstantBuffer *)GetDynamicConstantBuffer().GetMappedMemory(frameIndex, bufferOffset);
         drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * GetCamera().GetViewMatrix() * projMat);
-        rot += 0.01f;
+        rot += 0.005f;
     }
 
     Buffer::DynamicConstantBuffer & Scene::GetDynamicConstantBuffer()
@@ -222,7 +268,7 @@ namespace Rxn::Graphics
         return m_Quad;
     }
 
-    ComPointer<ID3D12Resource> & Scene::GetRenderTarget(const uint32 rtvIndex)
+    ID3D12Resource * Scene::GetRenderTarget(const uint32 rtvIndex)
     {
         for (auto &[index, target] : m_Rtvs)
         {
@@ -236,12 +282,12 @@ namespace Rxn::Graphics
         throw std::runtime_error("");
     }
 
-    ComPointer<ID3D12DescriptorHeap> & Scene::GetRtvHeap()
+    ID3D12DescriptorHeap* Scene::GetRtvHeap()
     {
         return m_RTVHeap;
     }
 
-    ComPointer<ID3D12DescriptorHeap> & Scene::GetSrvHeap()
+    ID3D12DescriptorHeap *Scene::GetSrvHeap()
     {
         return m_SRVHeap;
     }
@@ -256,7 +302,7 @@ namespace Rxn::Graphics
         return m_SRVDescriptorSize;
     }
 
-    void Scene::DrawSceneShapes(const ComPointer<ID3D12GraphicsCommandList6> &cmdList) const
+    void Scene::DrawSceneShapes(ID3D12GraphicsCommandList6 *cmdList) const
     {
         for (const auto &shape : m_SceneShapes)
         {
@@ -264,7 +310,7 @@ namespace Rxn::Graphics
         }
     }
 
-    void Scene::CreateSrvForResource(const D3D12_RESOURCE_DESC &resourceDesc, ComPointer<ID3D12Resource> &resource)
+    void Scene::CreateSrvForResource(const D3D12_RESOURCE_DESC &resourceDesc, ID3D12Resource *resource)
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

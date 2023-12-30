@@ -23,7 +23,7 @@ namespace Rxn::Core
 
     struct RxnBinaryFormat
     {
-        const std::array<uint8, 4> MagicNumber = { 0x72, 0x78, 0x6e, 0x62, };
+        const std::vector<uint32> MagicNumber = { 0x72, 0x78, 0x6e, 0x62 };
         std::vector<RxnBinaryData> Data;
     };
     

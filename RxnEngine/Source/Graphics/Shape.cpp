@@ -20,10 +20,10 @@ namespace Rxn::Graphics::Basic
         return E_NOTIMPL;
     }
 
-    HRESULT Shape::UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList)
+    HRESULT Shape::UploadGpuResources(ID3D12Device8 *pDevice, ID3D12GraphicsCommandList6 *pCmdList)
     {
-        Renderable::CreateCommittedBufferDestinationResource(device, m_VertexIndexBuffer, m_VertexIndexBufferSize);
-        Renderable::CreateCommittedUploadBufferResource(device, m_VertexIndexUpload, m_VertexIndexBufferSize);
+        Renderable::CreateCommittedBufferDestinationResource(pDevice, &m_VertexIndexBuffer, m_VertexIndexBufferSize);
+        Renderable::CreateCommittedUploadBufferResource(pDevice, &m_VertexIndexUpload, m_VertexIndexBufferSize);
 
 #ifdef _DEBUG
         NAME_D3D12_OBJECT(m_VertexIndexBuffer);
@@ -32,9 +32,9 @@ namespace Rxn::Graphics::Basic
         uint8 *heap = Renderable::MapAndGetHeapLocationFromBuffer(m_VertexIndexUpload);
         Renderable::CopyDataToHeap(&heap, m_Vertices);
         Renderable::CopyDataToHeap(&heap, m_Indices);
-        Renderable::AddCopyRegionTransition(cmdList, m_VertexIndexBuffer, m_VertexIndexBufferSize, m_VertexIndexUpload);
+        Renderable::AddCopyRegionTransition(pCmdList, &m_VertexIndexBuffer, m_VertexIndexBufferSize, &m_VertexIndexUpload);
 
-        m_VertexBufferView.BufferLocation = m_VertexIndexBuffer.Get()->GetGPUVirtualAddress();
+        m_VertexBufferView.BufferLocation = m_VertexIndexBuffer->GetGPUVirtualAddress();
         m_VertexBufferView.SizeInBytes = m_VertexDataSize;
         m_VertexBufferView.StrideInBytes = sizeof(VertexPositionColour);
 
@@ -45,7 +45,7 @@ namespace Rxn::Graphics::Basic
         return S_OK;
     }
 
-    void Shape::DrawInstanced(ComPointer<ID3D12GraphicsCommandList6> frameCmdList, uint32 instanceCount)
+    void Shape::DrawInstanced(ID3D12GraphicsCommandList6 *frameCmdList, uint32 instanceCount)
     {
         frameCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         frameCmdList->IASetVertexBuffers(0, 1, &m_VertexBufferView);

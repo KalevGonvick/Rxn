@@ -4,17 +4,6 @@ namespace Rxn::Graphics
 {
     const float32 INTERMEDIATE_CLEAR_COLOUR[4] = { 0.0f, 0.2f, 0.3f, 1.0f };
 
-    struct DrawConstantBuffer
-    {
-        DirectX::XMMATRIX worldViewProjection;
-    };
-
-    struct Resolution
-    {
-        uint32 Width;
-        uint32 Height;
-    };
-
     // graphics object hash keys
     namespace GOHKeys
     {
@@ -70,11 +59,6 @@ namespace Rxn::Graphics
             pInterface->Release();
             rpInterface = nullptr;
         }
-    }
-
-    inline UINT Align(UINT location, UINT align = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)
-    {
-        return (location + (align - 1)) & ~(align - 1);
     }
 
     inline void ThrowIfFailed(HRESULT result)

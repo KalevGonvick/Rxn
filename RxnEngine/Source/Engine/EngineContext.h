@@ -4,7 +4,7 @@
 
 namespace Rxn::Engine
 {
-    class RXN_ENGINE_API EngineContext
+    class EngineContext
     {
     public:
 
@@ -13,8 +13,8 @@ namespace Rxn::Engine
 
     public:
 
-        static EngineSettings &GetEngineSettings();
-        static Core::StepTimer &GetTimer();
+        RXN_ENGINE_API static EngineSettings &GetEngineSettings();
+        RXN_ENGINE_API static Core::StepTimer &GetTimer();
 
     private:
 

@@ -17,17 +17,14 @@ namespace Rxn::Graphics::GPU
 
     SwapChain::~SwapChain() = default;
 
-    void SwapChain::SetTearingSupport(bool tearingSupport)
+    void SwapChain::CreateSwapChain(ID3D12CommandQueue *cmdQueue, bool tearingSupport)
     {
         m_SwapChainDesc.Flags = tearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
         if (tearingSupport)
         {
             ThrowIfFailed(RenderContext::GetFactory()->MakeWindowAssociation(RenderContext::GetHWND(), DXGI_MWA_NO_ALT_ENTER));
         }
-    }
 
-    void SwapChain::CreateSwapChain(ID3D12CommandQueue *cmdQueue)
-    {
         ComPointer<IDXGISwapChain1> swapChain;
         ThrowIfFailed(RenderContext::GetFactory()->CreateSwapChainForHwnd(cmdQueue, RenderContext::GetHWND(), &m_SwapChainDesc, nullptr, nullptr, &swapChain));
         ThrowIfFailed(swapChain->QueryInterface(&m_SwapChain));
@@ -39,14 +36,19 @@ namespace Rxn::Graphics::GPU
         return m_SwapChain->GetCurrentBackBufferIndex();
     }
 
+    uint32 SwapChain::GetBufferCount() const
+    {
+        return m_SwapChainDesc.BufferCount;
+    }
+
     HANDLE SwapChain::GetFrameLatencyWaitableObject()
     {
         return m_SwapChain->GetFrameLatencyWaitableObject();
     }
 
-    HRESULT SwapChain::GetBuffer(uint32 bufferNum, ComPointer<ID3D12Resource> &bufferResource)
+    HRESULT SwapChain::GetBuffer(uint32 bufferNum, ID3D12Resource **bufferResource)
     {
-        return m_SwapChain->GetBuffer(bufferNum, IID_PPV_ARGS(&bufferResource));
+        return m_SwapChain->GetBuffer(bufferNum, IID_PPV_ARGS(bufferResource));
     }
 
     HRESULT SwapChain::ResizeBuffers(uint32 width, uint32 height)

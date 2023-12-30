@@ -30,6 +30,10 @@ namespace Rxn::Platform::Win32
 
     public:
 
+        RECT GetWindowSize();
+
+    public:
+
         WString m_TitleName;
         Caption m_WindowCaption{};
         SIZE m_Size;
@@ -50,19 +54,22 @@ namespace Rxn::Platform::Win32
         /**
          * .
          */
-        virtual void SetupWindow() {};
+        virtual void SetupWindow() 
+        {
+            RXN_LOGGER::Warn(L"Default 'SetupWindow' being used for window '%s'...", m_TitleName.c_str());
+        };
 
         /**
          * .
          *
          */
-        virtual void RegisterComponentClass() override;
+        void RegisterComponentClass() override;
 
         /**
          * .
          *
          */
-        virtual void InitializeWin32() override;
+        void InitializeWin32() override;
 
         /**
          * .

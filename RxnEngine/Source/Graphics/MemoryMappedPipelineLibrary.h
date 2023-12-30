@@ -35,7 +35,7 @@ namespace Rxn::Graphics::Mapped
          * 
          * \return 
          */
-        ComPointer<ID3D12PipelineLibrary> GetPipelineLibrary();
+        ComPointer<ID3D12PipelineLibrary> GetResource();
 
     private:
 

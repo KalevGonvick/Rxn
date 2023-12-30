@@ -9,7 +9,9 @@
 
 #include "CoreDefinitions.h"
 #include "Core/Math/Math.h"
+#include "Core/CHelpers.h"
 #include "Core/StringUtil.h"
+#include "Core/CommonTypes.h"
 
 #endif
 #pragma endregion

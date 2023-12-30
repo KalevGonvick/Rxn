@@ -9,18 +9,23 @@
 
 namespace Rxn::Graphics::GPU
 {
-    class RXN_ENGINE_API Fence
+    struct FenceException : std::runtime_error
+    {
+        explicit FenceException(const String &msg) : std::runtime_error(msg) {};
+    };
+
+    class Fence
     {
     public:
 
-        Fence();
+        explicit Fence(uint32 fenceCount);
         ~Fence();
 
     public:
 
         HANDLE GetFenceEvent();
         ID3D12Fence *GetFence();
-        uint64 GetFenceValue(uint64 index) const;
+        uint64 GetFenceValue(uint32 index) const;
 
         void CreateFenceEvent();
         void CreateFence(uint32 frameIndex, D3D12_FENCE_FLAGS flags = D3D12_FENCE_FLAG_NONE);
@@ -35,6 +40,6 @@ namespace Rxn::Graphics::GPU
 
         HANDLE m_FenceEvent = nullptr;
         ComPointer<ID3D12Fence> m_Fence;
-        uint64 m_FenceValues[2];
+        std::vector<uint64> m_FenceValues;
     };
 }

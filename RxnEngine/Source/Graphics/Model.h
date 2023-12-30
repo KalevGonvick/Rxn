@@ -109,8 +109,8 @@ namespace Rxn::Graphics::Basic
             if (Meshlets.size() == 0)
                 return 0;
 
-            auto &subset = MeshletSubsets[subsetIndex];
-            auto &meshlet = Meshlets[subset.Offset + subset.Count - 1];
+            const auto &subset = MeshletSubsets[subsetIndex];
+            const auto &meshlet = Meshlets[subset.Offset + subset.Count - 1];
 
             return std::min(maxGroupVerts / meshlet.VertCount, maxGroupPrims / meshlet.PrimCount);
         }
@@ -128,20 +128,20 @@ namespace Rxn::Graphics::Basic
             const unsigned char *addr = UniqueVertexIndices.data() + index * IndexSize;
             if (IndexSize == 4)
             {
-                return *reinterpret_cast<const unsigned int *>(addr);
+                return *std::bit_cast<const unsigned int *>(addr);
             }
             else
             {
-                return *reinterpret_cast<const unsigned short *>(addr);
+                return *std::bit_cast<const unsigned short *>(addr);
             }
         }
     };
 
-    class RXN_ENGINE_API Model : public Basic::Renderable
+    class RXN_ENGINE_API Model : public Renderable
     {
     public:
         virtual HRESULT LoadFromFile(const wchar_t *filename) override;
-        virtual HRESULT UploadGpuResources(ComPointer<ID3D12Device8> device, ComPointer<ID3D12CommandQueue> cmdQueue, ComPointer<ID3D12CommandAllocator> cmdAlloc, ComPointer<ID3D12GraphicsCommandList6> cmdList) override;
+        virtual HRESULT UploadGpuResources(ID3D12Device8 *pDevice, ID3D12GraphicsCommandList6 *pCmdList) override;
 
         unsigned int GetMeshCount() const { return static_cast<unsigned int>(m_meshes.size()); }
         const Mesh &GetMesh(unsigned int i) const { return m_meshes[i]; }

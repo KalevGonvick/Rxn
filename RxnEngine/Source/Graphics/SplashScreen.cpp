@@ -32,20 +32,22 @@ namespace Rxn::Engine
 
             SetTextAlign(hdc, TA_CENTER);
 
-            TextOut(hdc, m_Size.cx / 2, m_Size.cy - 30, m_pwOutputMessage, wcslen(m_pwOutputMessage));
+            TextOut(hdc, m_Size.cx / 2, m_Size.cy - 30, m_pwOutputMessage, static_cast<int32>(wcslen(m_pwOutputMessage)));
             EndPaint(hWnd, &ps);
-
+            break;
         }
-        break;
         case WM_OUTPUTMESSAGE:
         {
-            WCHAR *msg = (WCHAR *)wParam;
-            wcscpy_s(m_pwOutputMessage, msg);
+            const WCHAR *cMsg = (WCHAR *)wParam;
+            wcscpy_s(m_pwOutputMessage, cMsg);
             Redraw();
-
+            return 0;
         }
-        return 0;
-
+        default:
+        {
+            break;
+        }
+       
         }
         return Window::MessageHandler(hWnd, msg, wParam, lParam);
     }

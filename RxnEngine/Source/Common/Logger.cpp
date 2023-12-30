@@ -254,7 +254,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
+        wchar_t b[4096];
         vswprintf_s(b, fmt, args);
         PrintLn(LogLevel::RXN_INFO, b);
 
@@ -267,7 +267,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
+        wchar_t b[4096];
         vswprintf_s(b, fmt, args);
         PrintLn(LogLevel::RXN_DEBUG, b);
     }
@@ -279,7 +279,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
+        wchar_t b[4096];
         vswprintf_s(b, fmt, args);
         this->PrintLn(LogLevel::RXN_WARN, b);
     }
@@ -291,7 +291,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
+        wchar_t b[4096];
         vswprintf_s(b, fmt, args);
         this->PrintLn(LogLevel::RXN_ERROR, b);
     }
@@ -303,7 +303,7 @@ namespace Rxn::Common
             return;
         }
 
-        wchar_t b[Constants::MAX_LOG_LINE_LENGTH];
+        wchar_t b[4096];
         vswprintf_s(b, fmt, args);
         this->PrintLn(LogLevel::RXN_TRACE, b);
     }
