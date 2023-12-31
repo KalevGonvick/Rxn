@@ -22,7 +22,7 @@ namespace Rxn::Platform::Win32
         window->m_WindowBackgroundColour = windowDesc.windowBgColour;
         window->m_WindowBorderColour = windowDesc.windowBorderColour;
         window->m_WindowActiveBorderHighlightColour = windowDesc.windowActiveBorderHighlightColour;
-        window->m_WindowStyle = windowDesc.windowStyle;
+        window->m_WindowStyle = static_cast<uword>(windowDesc.windowStyle);
 
         m_ManagedWindows.try_emplace(window->GetClass(), window);
         m_WindowCounter++;

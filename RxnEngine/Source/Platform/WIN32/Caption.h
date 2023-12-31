@@ -32,11 +32,11 @@ namespace Rxn::Platform::Win32
         struct Button
         {
             int         id;
-            WString     txt;
+            WString     txt{};
             Command     cmd;
             int         offset;
             int         width;
-            RECT        rect;
+            RECT        rect{};
 
             Button(const int &btnId, const WString &btnTxt, const Command &btnCmd, const int &btnOffset, int btnWidth)
                 : txt(btnTxt)
@@ -44,7 +44,6 @@ namespace Rxn::Platform::Win32
                 , cmd(btnCmd)
                 , offset(btnOffset)
                 , width(btnWidth)
-                , rect{}
             {}
         };
 
@@ -62,16 +61,9 @@ namespace Rxn::Platform::Win32
         /**
          * .
          *
-         * \param id
-         */
-        void RemoveButton(const int32 &id);
-
-        /**
-         * .
-         *
          * \return
          */
-        std::list<std::shared_ptr<Caption::Button>> &GetButtons();
+        std::vector<Caption::Button> &GetButtons();
 
         /**
          * .
@@ -80,12 +72,12 @@ namespace Rxn::Platform::Win32
          * \param windowRect
          * \return
          */
-        Command GetWindowCaptionButtonClicked(POINT &cursor, const RECT &windowRect);
+        Command GetWindowCaptionButtonClicked(POINT &cursor, const RECT &windowRect) const;
 
     private:
 
 
-        std::list<std::shared_ptr<Caption::Button>> m_Buttons;
+        std::vector<Caption::Button> m_Buttons;
 
     };
 

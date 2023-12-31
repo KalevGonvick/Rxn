@@ -6,7 +6,7 @@ namespace Rxn::Graphics
     Scene::Scene()
     {
         m_Camera.Init({ 0.0f, 0.0f, 5.0f });
-        m_Camera.SetMoveSpeed(5.0f); 
+        m_Camera.SetMoveSpeed(10000.0f); 
     }
 
     Scene::~Scene()
@@ -143,7 +143,7 @@ namespace Rxn::Graphics
         HRESULT result = shape->UploadGpuResources(pDevice, cmdList);
         if (FAILED(result))
         {
-            RXN_LOGGER::Error(L"Failed to upload shape resources to gpu");
+            RXN_LOGGER::Error(L"Failed to upload shape resources.");
             throw std::runtime_error("");
         }
 
@@ -157,7 +157,7 @@ namespace Rxn::Graphics
         HRESULT result = m_Quad.UploadGpuResources(pDevice, cmdList);
         if (FAILED(result))
         {
-            RXN_LOGGER::Error(L"Failed to upload quad resources to gpu");
+            RXN_LOGGER::Error(L"Failed to upload quad resources.");
             throw std::runtime_error("");
         }
     }
@@ -197,7 +197,7 @@ namespace Rxn::Graphics
     {
         ComPointer<ID3D12Resource> rtv;        
         D3D12_CLEAR_VALUE clearValue = {};
-        memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
+        memcpy(clearValue.Color, RTV_CLEAR_COLOUR.data(), sizeof(*RTV_CLEAR_COLOUR.data()));
         clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
         D3D12_RESOURCE_DESC copyDesc = GetResourceForRenderTarget(copyFromIndex);

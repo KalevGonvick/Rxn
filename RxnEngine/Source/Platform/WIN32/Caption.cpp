@@ -12,49 +12,28 @@ namespace Rxn::Platform::Win32
 
         for (const auto &existingBtn : m_Buttons)
         {
-            newButtonOffset += existingBtn->width;
+            newButtonOffset += existingBtn.width;
         }
 
         int32 newId = static_cast<int32>(m_Buttons.size()) + 1;
-        auto newButton = std::make_shared<Caption::Button>(newId, text, command, newButtonOffset, width);
-        m_Buttons.push_back(newButton);
+        m_Buttons.emplace_back(newId, text, command, newButtonOffset, width);
     }
 
-    void Caption::RemoveButton(const int32 &removeId)
-    {
-        for (auto it = m_Buttons.begin(); it != m_Buttons.end();)
-        {
-            if (it->get()->id == removeId)
-            {
-                m_Buttons.erase(it);
-                break;
-            }
-            else
-            {
-                it++;
-            }
-        }
-
-
-    }
-
-    std::list<std::shared_ptr<Caption::Button>> &Caption::GetButtons()
+    std::vector<Caption::Button> &Caption::GetButtons()
     {
         return m_Buttons;
     }
 
-    Command Caption::GetWindowCaptionButtonClicked(POINT &cursor, const RECT &windowRect)
+    Command Caption::GetWindowCaptionButtonClicked(POINT &cursor, const RECT &windowRect) const
     {
         cursor.x -= windowRect.left;
         cursor.y -= windowRect.top;
 
-        for (auto currentButton = m_Buttons.begin(); currentButton != m_Buttons.end(); currentButton++)
+        for (const auto & currentButton : m_Buttons)
         {
-            std::shared_ptr<Button> itButton = *currentButton;
-
-            if (itButton->rect.left < cursor.x && itButton->rect.right > cursor.x && itButton->rect.top < cursor.y && itButton->rect.bottom > cursor.y)
+            if (currentButton.rect.left < cursor.x && currentButton.rect.right > cursor.x && currentButton.rect.top < cursor.y && currentButton.rect.bottom > cursor.y)
             {
-                return itButton->cmd;
+                return currentButton.cmd;
             }
         }
 

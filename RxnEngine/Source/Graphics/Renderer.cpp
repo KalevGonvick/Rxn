@@ -104,7 +104,7 @@ namespace Rxn::Graphics
 
         cmdList->ClearRenderTargetView(
             rtvHandle,
-            INTERMEDIATE_CLEAR_COLOUR,
+            RTV_CLEAR_COLOUR.data(),
             0,
             nullptr
         );

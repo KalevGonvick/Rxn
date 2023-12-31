@@ -53,7 +53,7 @@ namespace Rxn::Engine
     }
     void SplashWindow::SetupWindow()
     {
-        m_WindowStyle = Platform::Win32::WindowStyle::POPUP;
+        m_WindowStyle = static_cast<uword>(Platform::Win32::WindowStyle::POPUP);
         m_IsInteractive = false;
 
         RegisterComponentClass();

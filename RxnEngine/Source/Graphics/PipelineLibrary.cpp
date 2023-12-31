@@ -1,36 +1,33 @@
 #include "Rxn.h"
 #include "PipelineLibrary.h"
-#include <filesystem>
-#include <mutex>
 
 namespace Rxn::Graphics::Mapped
 {
     PipelineLibrary::PipelineLibrary()
     {
-
         wchar_t path[512];
-        Core::Strings::GetAssetsPath(path, _countof(path));
+        Core::Strings::GetAssetsPath(path, Core::C::ArraySize(path));
         m_CachePath = path;
 
         /* Push back some preset pipeline effects... */
-        m_PipelineEffects.push_back(g_Normal3D);
-        m_PipelineEffects.push_back(g_GenericPostEffect);
-        m_PipelineEffects.push_back(g_Blit);
-        m_PipelineEffects.push_back(g_Invert);
-        m_PipelineEffects.push_back(g_Grayscale);
-        m_PipelineEffects.push_back(g_EdgeDetect);
-        m_PipelineEffects.push_back(g_Blur);
-        m_PipelineEffects.push_back(g_Warp);
-        m_PipelineEffects.push_back(g_Pixelate);
-        m_PipelineEffects.push_back(g_Distort);
-        m_PipelineEffects.push_back(g_Wave);
-        m_PipelineEffects.push_back(g_Additional);
+        m_Pipelines.push_back(g_Normal3D);
+        m_Pipelines.push_back(g_GenericPostEffect);
+        m_Pipelines.push_back(g_Blit);
+        m_Pipelines.push_back(g_Invert);
+        m_Pipelines.push_back(g_Grayscale);
+        m_Pipelines.push_back(g_EdgeDetect);
+        m_Pipelines.push_back(g_Blur);
+        m_Pipelines.push_back(g_Warp);
+        m_Pipelines.push_back(g_Pixelate);
+        m_Pipelines.push_back(g_Distort);
+        m_Pipelines.push_back(g_Wave);
+        m_Pipelines.push_back(g_Additional);
     }
 
     PipelineLibrary::~PipelineLibrary()
     {
         WaitForThreads();
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
             effect.diskCache.DestroyFile(false);
         }
@@ -40,7 +37,7 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::WaitForThreads()
     {
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
             if (effect.threadHandle)
             {
@@ -55,19 +52,17 @@ namespace Rxn::Graphics::Mapped
         m_CbvRootSignatureIndex = cbvRootSignatureIndex;
         m_PipelineLibrariesSupported = m_PipelineLibrary.InitPipelineLibrary(pDevice, m_CachePath + PIPELINE_LIBRARY_FILE_NAME);
 
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
-            //effect.pipelineLibrary = (this);
             effect.pipelineMutex = &m_FlagsMutex;
             effect.pipelineLibrary = m_PipelineLibrary.GetResource();
             effect.pipelineStateObjectCachingMechanism = m_PipelineStateObjectCachingMechanism;
-            //effect.
         }
 
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
-            WString wName = std::filesystem::path(effect.GetEffectName().c_str()).wstring();
-            effect.diskCache.InitFile(m_CachePath + wName.c_str());
+            WString wname = Core::Strings::StringToWideString(effect.effectName);
+            effect.diskCache.InitFile(m_CachePath.append(wname));
         }
 
         if (!m_PipelineLibrariesSupported)
@@ -76,12 +71,12 @@ namespace Rxn::Graphics::Mapped
             m_PipelineStateObjectCachingMechanism = PSOCachingMechanism::CachedBlobs;
         }
 
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
-            if (effect.IsBaseEffect())
+            if (effect.baseEffect)
             {
-                WString name = std::filesystem::path(effect.GetEffectName()).wstring();
-                RXN_LOGGER::Debug(L"Compiling base effect: %s", name.c_str());
+                WString wname = Core::Strings::StringToWideString(effect.effectName);
+                RXN_LOGGER::Debug(L"Compiling base effect: %s", wname.c_str());
                 effect.device = pDevice;
                 effect.rootSignature = pRootSignature;
                 effect.pipelineMutex = &m_FlagsMutex;
@@ -98,35 +93,32 @@ namespace Rxn::Graphics::Mapped
     
     void PipelineLibrary::SetPipelineState(ID3D12RootSignature *pRootSignature, ID3D12GraphicsCommandList6 *pCommandList, uint32 pipelineIndex, uint32 frameIndex)
     {
-        auto &pipelineEffect = m_PipelineEffects.at(pipelineIndex);
+        auto &pipelineEffect = m_Pipelines.at(pipelineIndex);
         bool isBuilt = GetPipelineCompileFlagSafe(&pipelineEffect);
         bool isInFlight = GetPipelineInFlightFlagSafe(&pipelineEffect);
 
-
         if (!isBuilt && m_UseUberShaders)
         {
-            RXN_LOGGER::Debug(L"Ubershader using effect: %d", pipelineIndex);
+            RXN_LOGGER::Trace(L"Ubershader using effect: %d", pipelineIndex);
+            
             auto constantData = (UberShaderConstantBuffer *)m_DynamicConstantBuffer.GetMappedMemory(pipelineIndex, frameIndex);
             constantData->effectIndex = pipelineIndex;
             pCommandList->SetGraphicsRootConstantBufferView(m_CbvRootSignatureIndex, m_DynamicConstantBuffer.GetGpuVirtualAddress(pipelineIndex, frameIndex));
 
-            // We don't want to double compile
             if (!isInFlight)
             {
+                RXN_LOGGER::Trace(L"Compileing the pipeline state object on a background thread.");
+
                 pipelineEffect.device = RenderContext::GetGraphicsDevice().Get();
                 pipelineEffect.rootSignature = pRootSignature;
-                //pipelineEffect.pipelineLibrary = this;
                 pipelineEffect.pipelineMutex = &m_FlagsMutex;
                 pipelineEffect.pipelineLibrary = m_PipelineLibrary.GetResource();
                 pipelineEffect.pipelineStateObjectCachingMechanism = m_PipelineStateObjectCachingMechanism;
-
-                RXN_LOGGER::Debug(L"Compileing the pipeline state object on a background thread.");
-
                 pipelineEffect.threadHandle = (CreateThread(
                     nullptr,
                     0,
                     reinterpret_cast<LPTHREAD_START_ROUTINE>(CompilePipelineStateObject),
-                    std::bit_cast<void *>(&m_PipelineEffects[pipelineIndex]),
+                    std::bit_cast<void *>(&m_Pipelines[pipelineIndex]),
                     CREATE_SUSPENDED,
                     nullptr));
 
@@ -142,18 +134,18 @@ namespace Rxn::Graphics::Mapped
 
                 SetPipelineInFlightFlagSafe(&pipelineEffect, true);
             }
-
-            pCommandList->SetPipelineState(m_PipelineEffects[2].pipelineState);
+            // fall back
+            pCommandList->SetPipelineState(m_Pipelines[2].pipelineState);
         }
         else if (!isBuilt && !m_UseUberShaders)
         {
-            RXN_LOGGER::Debug(L"Not using ubershaders... This will take a long time and cause a hitch as the CPU is stalled!");
+            RXN_LOGGER::Trace(L"Not using ubershader... This will take a long time and cause a hitch as the CPU is stalled!");
+            
             pipelineEffect.device = RenderContext::GetGraphicsDevice().Get();
             pipelineEffect.rootSignature = pRootSignature;
             pipelineEffect.pipelineMutex = &m_FlagsMutex;
             pipelineEffect.pipelineLibrary = m_PipelineLibrary.GetResource();
             pipelineEffect.pipelineStateObjectCachingMechanism = m_PipelineStateObjectCachingMechanism;
-            //pipelineEffect.pipelineLibrary = this;
 
             CompilePipelineStateObject(&pipelineEffect);
             pCommandList->SetPipelineState(pipelineEffect.pipelineState);
@@ -166,7 +158,7 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::FallbackToCompiledPipeline(ID3D12GraphicsCommandList6 *pCommandList)
     {
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
             /* Fall back to pipeline effect in ready to use state. */
             if (effect.compileFlag && !effect.flightFlag && effect.pipelineState)
@@ -177,14 +169,14 @@ namespace Rxn::Graphics::Mapped
         }
     }
 
-    void PipelineLibrary::CompilePipelineStateObject(PipelineEffectTemplate *pPipelineEffect)
+    void PipelineLibrary::CompilePipelineStateObject(Pipeline *pPipelineEffect)
     {
-        WString wPipelineEffectName = Core::Strings::StringToWideString(pPipelineEffect->GetEffectName());
-        RXN_LOGGER::Debug(L"Compiling effect: '%s'", wPipelineEffectName.c_str());
+        WString wPipelineEffectName = Core::Strings::StringToWideString(pPipelineEffect->effectName);
+        RXN_LOGGER::Trace(L"Compiling effect: '%s'", wPipelineEffectName.c_str());
 
         bool useCache = CompileCacheCheck(pPipelineEffect);
 
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc = pPipelineEffect->CreatePipelineStateDesc();
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc = pPipelineEffect->pipelineDescriptor.BuildPipelineDesc(pPipelineEffect->rootSignature);
 
         if (useCache && (pPipelineEffect->pipelineStateObjectCachingMechanism == PSOCachingMechanism::PipelineLibraries))
         {
@@ -209,7 +201,7 @@ namespace Rxn::Graphics::Mapped
             uint64 size = pPipelineEffect->diskCache.GetSize();
             if (size == 0)
             {
-                RXN_LOGGER::Trace(L"File size is 0... The disk cache needs to be refreshed...");
+                RXN_LOGGER::Trace(L"File size is 0! The disk cache needs to be refreshed...");
                 ThrowIfFailed(RenderContext::GetGraphicsDevice()->CreateGraphicsPipelineState(&baseDesc, IID_PPV_ARGS(&pPipelineEffect->pipelineState)));
 
                 ComPointer<ID3DBlob> blob;
@@ -218,7 +210,7 @@ namespace Rxn::Graphics::Mapped
             }
             else
             {
-                RXN_LOGGER::Trace(L"Reading the blob data from disk instead of re-compiling shaders!");
+                RXN_LOGGER::Trace(L"Reading the blob data from disk");
                 baseDesc.CachedPSO.pCachedBlob = pPipelineEffect->diskCache.GetData();
                 baseDesc.CachedPSO.CachedBlobSizeInBytes = pPipelineEffect->diskCache.GetSize();
 
@@ -247,33 +239,31 @@ namespace Rxn::Graphics::Mapped
         SetPipelineInFlightFlagSafe(pPipelineEffect, false);
     }
 
-    bool PipelineLibrary::CompileCacheCheck(PipelineEffectTemplate *pPipelineEffect)
+    bool PipelineLibrary::CompileCacheCheck(Pipeline *pPipelineEffect)
     {
-        
         auto lock = std::scoped_lock(*pPipelineEffect->pipelineMutex);
-        return pPipelineEffect->m_UseDiskCache;
-        
+        return pPipelineEffect->useDiskCache;   
     }
 
-    bool PipelineLibrary::GetPipelineCompileFlagSafe(PipelineEffectTemplate *pPipelineEffect)
+    bool PipelineLibrary::GetPipelineCompileFlagSafe(Pipeline *pPipelineEffect)
     {
         auto lock = std::scoped_lock(*pPipelineEffect->pipelineMutex);
         return pPipelineEffect->compileFlag;
     }
 
-    bool PipelineLibrary::GetPipelineInFlightFlagSafe(PipelineEffectTemplate *pPipelineEffect)
+    bool PipelineLibrary::GetPipelineInFlightFlagSafe(Pipeline *pPipelineEffect)
     {
         auto lock = std::scoped_lock(*pPipelineEffect->pipelineMutex);
         return pPipelineEffect->flightFlag;
     }
 
-    void PipelineLibrary::SetPipelineInFlightFlagSafe(PipelineEffectTemplate *pPipelineEffect, bool flag)
+    void PipelineLibrary::SetPipelineInFlightFlagSafe(Pipeline *pPipelineEffect, bool flag)
     {
         auto lock = std::scoped_lock(*pPipelineEffect->pipelineMutex);
         pPipelineEffect->flightFlag = flag;
     }
 
-    void PipelineLibrary::SetPipelineCompileFlagSafe(PipelineEffectTemplate *pPipelineEffect, bool flag)
+    void PipelineLibrary::SetPipelineCompileFlagSafe(Pipeline *pPipelineEffect, bool flag)
     {
         auto lock = std::scoped_lock(*pPipelineEffect->pipelineMutex);
         pPipelineEffect->compileFlag = flag;
@@ -281,11 +271,11 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::ClearPSOCache()
     {
-        RXN_LOGGER::Debug(L"Clearing pipeline caches...");
+        RXN_LOGGER::Trace(L"Clearing pipeline caches...");
         WaitForThreads();
-        for (auto &effect : m_PipelineEffects)
+        for (auto &effect : m_Pipelines)
         {
-            if (!effect.IsBaseEffect() && effect.pipelineLibrary)
+            if (!effect.baseEffect && effect.pipelineLibrary)
             {
                 effect.pipelineState->Release();
                 effect.compileFlag = false;
@@ -316,9 +306,9 @@ namespace Rxn::Graphics::Mapped
 
     void PipelineLibrary::SwitchPSOCachingMechanism()
     {
-        RXN_LOGGER::Debug(L"Switching pipeline caching mechanism...");
+        RXN_LOGGER::Trace(L"Switching pipeline caching mechanism...");
         {
-            using enum Rxn::Graphics::Mapped::PSOCachingMechanism;
+            using enum Rxn::Graphics::PSOCachingMechanism;
             auto lock = std::scoped_lock(m_FlagsMutex);
 
             uint32 newMechanism = static_cast<uint32>(m_PipelineStateObjectCachingMechanism) + 1;
@@ -341,7 +331,7 @@ namespace Rxn::Graphics::Mapped
     {
         WaitForThreads();
 
-        auto &pipelineEffect = m_PipelineEffects.at(pipelineIndex);
+        auto &pipelineEffect = m_Pipelines.at(pipelineIndex);
 
         if (pipelineEffect.pipelineLibrary)
         {

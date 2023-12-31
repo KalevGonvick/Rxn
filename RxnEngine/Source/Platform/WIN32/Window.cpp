@@ -20,15 +20,15 @@ namespace Rxn::Platform::Win32
 
     void Window::RegisterComponentClass()
     {
-        RXN_LOGGER::Trace(L"Registering new win32 component %s", m_ClassName.c_str());
+        RXN_LOGGER::Trace(L"Registering WIN32 component '%s'", m_ClassName.c_str());
 
         WNDCLASSEX wcex{};
         wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
+        wcex.style = CS_OWNDC;
         wcex.cbClsExtra = 0;
         wcex.cbWndExtra = 0;
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcex.hbrBackground = CreateSolidBrush(m_WindowBackgroundColour);
+        wcex.hbrBackground = nullptr;
         wcex.hIcon = GetIcon();
         wcex.hIconSm = GetIcon();
         wcex.lpszClassName = m_ClassName.c_str();
@@ -47,7 +47,7 @@ namespace Rxn::Platform::Win32
         GetWindowRect(hDesktop, &desktop);
 
         HWND parent = GetParentHandle();
-
+        
         m_HWnd = CreateWindow(
             m_ClassName.c_str(),
             m_TitleName.c_str(),
@@ -64,14 +64,16 @@ namespace Rxn::Platform::Win32
 
         if (!m_HWnd)
         {
-            RXN_LOGGER::Error(L"Failed to create window %s.", m_TitleName.c_str());
-            return;
+            RXN_LOGGER::Error(L"Failed to create window with the name '%s'.", m_TitleName.c_str());
+            throw std::runtime_error("");
         }
     }
 
     LRESULT Window::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        switch (msg)
+        // TODO - revisit how we handle drawing the window itself. Most of this is just WIN32 jank.
+
+        /*switch (msg)
         {
         case WM_NCCREATE:
         {
@@ -87,42 +89,42 @@ namespace Rxn::Platform::Win32
         {
             HandleNonClientPaint((HRGN)wParam);
             return 0;
-        }
-        case WM_NCMBUTTONDBLCLK:
-        {
-            HandleNonClientAreaDoubleClick();
-            return 0;
-        }
-        case WM_NCLBUTTONDOWN:
-        {
-            HandleNonClientLeftClickDown();
-            break;
-        }
-        case WM_MOVE:
-        {
-            Redraw();
-            return 0;
-        }
+        }*/
+        //case WM_NCMBUTTONDBLCLK:
+        //{
+        //    HandleNonClientAreaDoubleClick();
+        //    return 0;
+        //}
+        //case WM_NCLBUTTONDOWN:
+        //{
+        //    HandleNonClientLeftClickDown();
+        //    break;
+        //}
+        //case WM_MOVE:
+        //{
+        //    Redraw();
+        //    return 0;
+        //}
         //case WM_SIZE:
-        case WM_TIMER:
-        {
-            Redraw();
+        //case WM_TIMER:
+        //{
+        //    Redraw();
+        //    break;
+        //}
+        /*default:
             break;
-        }
-        default:
-            break;
-        }
+        }*/
 
         return SubComponent::MessageHandler(hWnd, msg, wParam, lParam);
     }
 
-    void Window::ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable) const
+    void Window::ModifyClassStyle(HWND hWnd, const uword flagsToDisable, const uword flagsToEnable) const
     {
-        DWORD style = GetWindowLong(hWnd, GCL_STYLE);
+        uword style = GetWindowLong(hWnd, GCL_STYLE);
         SetClassLong(hWnd, GCL_STYLE, (style & ~flagsToDisable) | flagsToEnable);
     }
 
-    void Window::MaximizeWindow(const HWND &hwnd) const
+    void Window::MaximizeWindow(HWND hwnd) const
     {
         WINDOWPLACEMENT wPos{};
         GetWindowPlacement(hwnd, &wPos);
@@ -234,16 +236,16 @@ namespace Rxn::Platform::Win32
     {
         if (m_IsInteractive)
         {
-            RXN_LOGGER::Trace(L"Window %s is interactive, setting invalidate timer", m_ClassName.c_str());
+            RXN_LOGGER::Trace(L"Window '%s' is interactive, setting an invalidation timer", m_ClassName.c_str());
             SetTimer(m_HWnd, 1, 250, nullptr);
         }
 
 
-        RXN_LOGGER::Trace(L"Removing default theme from window %s.", m_ClassName.c_str());
-        SetWindowTheme(m_HWnd, L"", L"");
+        //RXN_LOGGER::Trace(L"Removing default theme from Window '%s'.", m_ClassName.c_str());
+        //SetWindowTheme(m_HWnd, L"", L"");
 
-        RXN_LOGGER::Trace(L"Adding dropshadow to window '%s'.", m_ClassName.c_str());
-        ModifyClassStyle(m_HWnd, 0, CS_DROPSHADOW);
+        //RXN_LOGGER::Trace(L"Adding drop-shadow to window '%s'.", m_ClassName.c_str());
+        //ModifyClassStyle(m_HWnd, 0, CS_DROPSHADOW);
 
         if (m_AddCloseButton)
         {
@@ -317,12 +319,11 @@ namespace Rxn::Platform::Win32
 
     void Window::PaintWindowCaptionButtons(const HDC &hdc, const SIZE &size)
     {
-        for (const auto &button : m_WindowCaption.GetButtons())
+        for (auto &button : m_WindowCaption.GetButtons())
         {
-            //button->rect = RECT{ size.cx - button->width - button->offset, 0, size.cx - button->offset, 30 };
-            button->rect.left = size.cx - button->width - button->offset;
-            button->rect.right = 0;
-            button->rect.bottom = 30;
+            button.rect = RECT{ size.cx - button.width - button.offset, 0, size.cx - button.offset, 30 };
+
+            // TODO - draw
         }
     }
 
