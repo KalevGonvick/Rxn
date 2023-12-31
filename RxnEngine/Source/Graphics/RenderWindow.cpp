@@ -21,23 +21,24 @@ namespace Rxn::Graphics
         m_AddMaximizeButton = true;
         m_AddMinimizeButton = true;
 
-        m_WindowStyle = WS_SIZEBOX;
+        m_WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
         RegisterComponentClass();
         InitializeWin32();
 
         RenderContext::SetHWND(m_HWnd);
+        // TODO - revisit a lot of the WIN32 stuff!
+        DWORD style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+        DWORD exStyle = WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW;
+        SetWindowLongW(m_HWnd, GWL_STYLE, style);
+        SetWindowLongW(m_HWnd, GWL_EXSTYLE, exStyle);
+
         InitializeRender();        
 
         ShowWindow(m_HWnd, SW_SHOW);
         UpdateWindow(m_HWnd);
         
     }
-
-    /* -------------------------------------------------------- */
-    /*  WIN-API                                                 */
-    /* -------------------------------------------------------- */
-#pragma region WIN-API
 
     LRESULT RenderWindow::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -80,11 +81,11 @@ namespace Rxn::Graphics
         case 'C':
             GetDisplay().WaitForDisplay(GetCommandQueuePool().Request(GetDisplay().GetFrameIndex()));
             GetScene().GetPipelineLibrary().ClearPSOCache();
-            GetScene().GetPipelineLibrary().Build(RenderContext::GetGraphicsDevice(), GetScene().GetRootSignature(), 1,256, 2);
+            GetScene().GetPipelineLibrary().Build(RenderContext::GetGraphicsDevice(), GetScene().GetRootSignature(), 1, 256, 2);
             break;
 
         case 'U':
-            RXN_LOGGER::Debug(L"U was pressed, toggling uber shader...");
+            RXN_LOGGER::Debug(L"U was pressed, toggling ubershader...");
             GetScene().GetPipelineLibrary().ToggleUberShader();
             break;
 
@@ -107,9 +108,6 @@ namespace Rxn::Graphics
         }
     }
 
-#pragma endregion // WIN-API
-    /* -------------------------------------------------------- */
-
 
     void RenderWindow::OnSizeChange()
     {
@@ -119,7 +117,7 @@ namespace Rxn::Graphics
         int64 newHeight = static_cast<int64>(clientRect.bottom) - static_cast<int64>(clientRect.top);
 
         //
-        // If the window size changed, resize our swapchain and recreate swapchain resources.
+        // If the window size changed, resize our swap chain and recreate SwapChain resources.
         //
         if (!GetDisplay().IsSizeEqual(static_cast<uint32>(newWidth), static_cast<uint32>(newHeight)))
         {
@@ -142,7 +140,7 @@ namespace Rxn::Graphics
             
             D3D12_RESOURCE_DESC renderTargetDesc = rtv1->GetDesc();
             D3D12_CLEAR_VALUE clearValue = {};
-            memcpy(clearValue.Color, INTERMEDIATE_CLEAR_COLOUR, sizeof(INTERMEDIATE_CLEAR_COLOUR));
+            memcpy(clearValue.Color, RTV_CLEAR_COLOUR.data(), sizeof(*RTV_CLEAR_COLOUR.data()));
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
             // Create an intermediate render target that is the same dimensions as the swap chain.
@@ -174,9 +172,16 @@ namespace Rxn::Graphics
     void RenderWindow::UpdateSimulation()
     {
         Engine::EngineContext::GetTimer().Tick(nullptr);
-        GetScene().GetCamera().Update(static_cast<float32>(Engine::EngineContext::GetTimer().GetElapsedSeconds()));
+        float64 elapsedTime = Engine::EngineContext::GetTimer().GetElapsedSeconds();
+
+        GetScene().GetCamera().Update(elapsedTime);
         GetDisplay().UpdateProjectionMatrix(GetScene().GetCamera());
         GetScene().UpdateConstantBufferByIndex(GetDisplay().GetProjectionMatrix(), GetDisplay().GetFrameIndex(), 0);
+        //static float rot = 0.0f;
+        //auto *drawCB = (DrawConstantBuffer *)GetScene().GetDynamicConstantBuffer().GetMappedMemory(GetDisplay().GetFrameIndex(), 0);
+        //drawCB->worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(rot) * DirectX::XMMatrixRotationX(-rot) * GetScene().GetCamera().GetViewMatrix() * GetDisplay().GetProjectionMatrix());
+        //rot += 0.005f;
+        Engine::EngineContext::GetTimer().ResetElapsedTime();
     }
 
 

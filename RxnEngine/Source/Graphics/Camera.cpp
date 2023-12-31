@@ -32,7 +32,7 @@ namespace Rxn::Graphics
         m_lookDirection = { 0.0f, 0.0f, -1.0f };
     }
 
-    void Camera::Update(float32 elapsedSeconds)
+    void Camera::Update(float64 elapsedSeconds)
     {
         // Calculate the move vector in camera space.
         DirectX::XMFLOAT3 move(0, 0, 0);
@@ -53,8 +53,8 @@ namespace Rxn::Graphics
             move.z = DirectX::XMVectorGetZ(vector);
         }
 
-        float32 moveInterval = m_moveSpeed * elapsedSeconds;
-        float32 rotateInterval = m_turnSpeed * elapsedSeconds;
+        float32 moveInterval = m_moveSpeed * static_cast<float32>(elapsedSeconds);
+        float32 rotateInterval = m_turnSpeed * static_cast<float32>(elapsedSeconds);
 
         if (m_keysPressed.left)
             m_yaw += rotateInterval;
@@ -82,6 +82,7 @@ namespace Rxn::Graphics
         m_lookDirection.z = r * cosf(m_yaw);
     }
 
+    // TODO - find out why camera is not updating via controls. I think it's just caused by the constant buffer using the wrong view matrix.
     DirectX::XMMATRIX Camera::GetViewMatrix()
     {
         return DirectX::XMMatrixLookToRH(XMLoadFloat3(&m_position), XMLoadFloat3(&m_lookDirection), XMLoadFloat3(&m_upDirection));

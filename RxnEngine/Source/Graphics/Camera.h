@@ -8,9 +8,11 @@ namespace Rxn::Graphics
         Camera();
 
         void Init(DirectX::XMFLOAT3 position);
-        void Update(float32 elapsedSeconds);
+        void Update(float64 elapsedSeconds);
+        
         DirectX::XMMATRIX GetViewMatrix();
         DirectX::XMMATRIX GetProjectionMatrix(float32 fov, float32 aspectRatio, float32 nearPlane = 1.0f, float32 farPlane = 1000.0f);
+        
         void SetMoveSpeed(float32 unitsPerSecond);
         void SetTurnSpeed(float32 radiansPerSecond);
 

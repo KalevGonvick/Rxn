@@ -468,7 +468,7 @@
     <ClInclude Include="Source\Graphics\PooledResource.h">
       <Filter>Source\Graphics\Classes\Pooled</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Graphics\Pipeline.hpp">
+    <ClInclude Include="Source\Graphics\Pipeline.h">
       <Filter>Source\Graphics\Classes\Descriptor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\PipelineDescriptor.h">

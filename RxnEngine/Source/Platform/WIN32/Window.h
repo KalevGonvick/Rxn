@@ -2,19 +2,19 @@
  * \file   Window.h
  * \brief
  *
- * \author kalev
+ * \author Kalev Gonvick
  * \date   July 2023
  *********************************************************************/
 #pragma once
 
 #include "Caption.h"
-#include <Uxtheme.h>
+//#include <Uxtheme.h>
 
-#pragma comment(lib,"uxtheme.lib")
+//#pragma comment(lib,"uxtheme.lib")
 
 namespace Rxn::Platform::Win32
 {
-    enum WindowStyle : DWORD
+    enum class WindowStyle : uword
     {
         STATIC = WS_OVERLAPPED,
         RESIZEABLE = WS_SIZEBOX,
@@ -37,13 +37,13 @@ namespace Rxn::Platform::Win32
         WString m_TitleName;
         Caption m_WindowCaption{};
         SIZE m_Size;
-        DWORD m_WindowStyle = WindowStyle::STATIC;
+        uword m_WindowStyle = static_cast<uword>(WindowStyle::STATIC);
 
-        COLORREF m_WindowBackgroundColour = RGB(36, 36, 36);
-        COLORREF m_WindowBorderColour = RGB(46, 46, 46);
-        COLORREF m_WindowActiveBorderHighlightColour = RGB(155, 80, 255);
-        COLORREF m_WindowTitleActiveTextColour = RGB(255, 255, 255);
-        COLORREF m_WindowTitleInactiveTextColour = RGB(92, 92, 92);
+        uword m_WindowBackgroundColour = RGB(36, 36, 36);
+        uword m_WindowBorderColour = RGB(46, 46, 46);
+        uword m_WindowActiveBorderHighlightColour = RGB(155, 80, 255);
+        uword m_WindowTitleActiveTextColour = RGB(255, 255, 255);
+        uword m_WindowTitleInactiveTextColour = RGB(92, 92, 92);
 
         bool m_AddCloseButton = false;
         bool m_AddMinimizeButton = false;
@@ -200,15 +200,14 @@ namespace Rxn::Platform::Win32
          * \param flagsToDisable    - all flags you want to disable on the window class.
          * \param flagsToEnable     - all flags you want to enable on the window class.
          */
-        void ModifyClassStyle(const HWND &hWnd, const DWORD &flagsToDisable, const DWORD &flagsToEnable) const;
+        void ModifyClassStyle(HWND hWnd, const uword flagsToDisable, const uword flagsToEnable) const;
 
         /**
          * Maximizes the window.
          *
          * \param hwnd              - window handle
          */
-        void MaximizeWindow(const HWND &hwnd) const;
-
+        void MaximizeWindow(HWND hwnd) const;
 
     };
 

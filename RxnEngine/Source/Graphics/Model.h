@@ -130,10 +130,8 @@ namespace Rxn::Graphics::Basic
             {
                 return *std::bit_cast<const unsigned int *>(addr);
             }
-            else
-            {
-                return *std::bit_cast<const unsigned short *>(addr);
-            }
+
+            return *std::bit_cast<const unsigned short *>(addr);
         }
     };
 
